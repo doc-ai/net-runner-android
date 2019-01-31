@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <group
+        android:checkableBehavior="single"
+        android:id="@+id/selectFragments">
+        <item
+            android:id="@+id/live_camera_fragment_menu_item"
+            android:checked="true"
+            android:title="@string/live_camera_menu_item_title" />
+        <item
+            android:id="@+id/bulk_inference_fragment_menu_item"
+            android:title="@string/bulk_classification_menu_item_title" />
+        <item
+            android:id="@+id/benchmark_fragment_menu_item"
+            android:title="@string/benchmark_menu_item_title" />
+    </group>
+
+    <item android:title="Configuration">
+        <menu>
+            <item
+                android:id="@+id/nav_select_model"
+                android:title="@string/model_menu_item_title"
+                app:actionLayout="@layout/menu_item_spinner" />
+            <item
+                android:id="@+id/nav_select_accelerator"
+                android:title="@string/device_menu_item_title"
+                app:actionLayout="@layout/menu_item_spinner" />
+            <item
+                android:id="@+id/nav_select_threads"
+                android:title="@string/threads_menu_item_title"
+                app:actionLayout="@layout/menu_item_spinner" />
+            <item
+                android:id="@+id/nav_switch_precision"
+                android:title="@string/precision_menu_item_title"
+                app:actionLayout="@layout/menu_item_switch" />
+        </menu>
+    </item>
+</menu>
