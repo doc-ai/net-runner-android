@@ -3,6 +3,8 @@ package ai.doc.netrunner_android.tensorio.TIOModel;
 import android.support.annotation.NonNull;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerDescription;
@@ -96,12 +98,12 @@ public abstract class TIOModel {
     /**
      * Returns descriptions of the model's inputs indexed to the order they appear in model.json.
      */
-    private TIOLayerInterface[] inputs;
+    private List<TIOLayerInterface> inputs;
 
     /**
      * Returns descriptions of the model's outputs indexed to the order they appear in model.json.
      */
-    private TIOLayerInterface[] outputs;
+    private List<TIOLayerInterface> outputs;
 
     /**
      * The designated initializer for conforming classes.
@@ -125,6 +127,10 @@ public abstract class TIOModel {
         this.placeholder = bundle.isPlaceholder();
         this.quantized = bundle.isQuantized();
         this.type = bundle.getType();
+
+        this.inputs = bundle.getIndexedInputInterfaces();
+        this.outputs = bundle.getIndexedOutputInterfaces();
+
     }
 
     /**
@@ -167,11 +173,11 @@ public abstract class TIOModel {
      */
     public abstract TIOData runOn(TIOData input);
 
-    public TIOLayerInterface[] getInputs() {
+    public List<TIOLayerInterface> getInputs() {
         return inputs;
     }
 
-    public TIOLayerInterface[] getOutputs() {
+    public List<TIOLayerInterface> getOutputs() {
         return outputs;
     }
 
@@ -250,8 +256,8 @@ public abstract class TIOModel {
                 ", quantized=" + quantized +
                 ", type='" + type + '\'' +
                 ", loaded=" + loaded +
-                ", inputs=" + Arrays.toString(inputs) +
-                ", outputs=" + Arrays.toString(outputs) +
+                ", inputs=" + inputs.toString() +
+                ", outputs=" + outputs.toString() +
                 '}';
     }
 }
