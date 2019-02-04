@@ -404,13 +404,16 @@ public class TIOModelBundle {
         }
 
         // Labels
-        String[] labels;
+        String[] labels = null;
         if (dict.optString("labels", null) != null) {
-            String contents = FileIO.readFile(c, path + "/" + TFMODEL_ASSETS_DIRECTORY + "/" + dict.getString("labels"));
-            contents = contents.trim();
-            labels = contents.split("\\n");
-        } else {
-            throw new TIOModelBundleException("There was a problem reading the labels file, no labels were loaded");
+            try {
+                String contents = FileIO.readFile(c, path + "/" + TFMODEL_ASSETS_DIRECTORY + "/" + dict.getString("labels"));
+                contents = contents.trim();
+                labels = contents.split("\\n");
+            }
+            catch (IOException e){
+                throw new TIOModelBundleException("There was a problem reading the labels file, no labels were loaded", e);
+            }
         }
 
         // Quantization
@@ -426,7 +429,6 @@ public class TIOModelBundle {
         }
 
         // Interface
-
         return new TIOLayerInterface(
                 name,
                 isInput,
