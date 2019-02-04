@@ -12,11 +12,8 @@ package ai.doc.netrunner_android.tensorio.TIOData;
  */
 public abstract class TIOPixelDenormalizer {
     /**
-     * A `TIOPixelNormalizer` is a function that transforms a pixel value in the range `[0,255]`
+     * A `TIOPixelNormalizer` transforms a pixel value in the range `[0,255]`
      * to some other range, where the transformation may be channel dependent.
-     * <p>
-     * The normalizer will typically be constructed with the help of a `TIOPixelNormalization`
-     * struct or using one of the core or standard normalizers provided.
      *
      * @param value   The single byte pixel value being transformed.
      * @param channel The RGB channel of the pixel value being transformed.
@@ -67,12 +64,7 @@ public abstract class TIOPixelDenormalizer {
 
     public static TIOPixelDenormalizer TIOPixelDenormalizerZeroToOne() {
         float scale = 255.0f;
-        return new TIOPixelDenormalizer() {
-            @Override
-            public int denormalize(float value, int channel) {
-                return (int) (value * scale);
-            }
-        };
+        return TIOPixelDenormalizerSingleBias(scale, 0.0f);
     }
 
     /**
@@ -83,14 +75,8 @@ public abstract class TIOPixelDenormalizer {
 
     public static TIOPixelDenormalizer TIOPixelDenormalizerNegativeOneToOne() {
         float scale = 255.0f / 2.0f;
-        float bias = 1;
-
-        return new TIOPixelDenormalizer() {
-            @Override
-            public int denormalize(float value, int channel) {
-                return (int) ((value + bias) * scale);
-            }
-        };
+        float bias = 1f;
+        return TIOPixelDenormalizerSingleBias(scale, bias);
     }
 
 }

@@ -2,7 +2,7 @@ package ai.doc.netrunner_android.tensorio.TIOData;
 
 /**
  * A `TIODataDequantizer` dequantizes quantized values, converting them from
- * uint8_t representations to floating point representations.
+ * int representations to floating point representations.
  */
 public abstract class TIODataDequantizer {
 
@@ -14,12 +14,13 @@ public abstract class TIODataDequantizer {
 
 
     /**
-     * A dequantizing function that applies the provide scale and bias according to the following forumla
+     * A dequantizing function that applies the provided scale and bias according to the following forumla
+     * <pre>dequantized_value = (value * scale) + bias</pre>
      *
      * @param scale The scale
      * @param bias  The bias value
      * @return TIODataQuantizer The quantizing function
-     * <pre>dequantized_value = (value * scale) + bias</pre>
+     *
      */
 
     public static TIODataDequantizer TIODataDequantizerWithDequantization(float scale, float bias) {
@@ -37,13 +38,8 @@ public abstract class TIODataDequantizer {
      * This is equivalent to applying a scaling factor of `1.0/255.0` and no bias.
      */
     public static TIODataDequantizer TIODataDequantizerZeroToOne() {
-        return new TIODataDequantizer() {
-            @Override
-            public float dequantize(int value) {
-                float scale = 1.0f / 255.0f;
-                return value * scale;
-            }
-        };
+        float scale = 1.0f / 255.0f;
+        return TIODataDequantizerWithDequantization(scale, 0f);
     }
 
     /**
@@ -53,15 +49,9 @@ public abstract class TIODataDequantizer {
      */
 
     public static TIODataDequantizer TIODataDequantizerNegativeOneToOne() {
-        return new TIODataDequantizer() {
-            @Override
-            public float dequantize(int value) {
-                float scale = 2.0f / 255.0f;
-                float bias = -1f;
-
-                return (value * scale) + bias;
-            }
-        };
+        float scale = 2.0f / 255.0f;
+        float bias = -1f;
+        return TIODataDequantizerWithDequantization(scale, bias);
     }
 
 }

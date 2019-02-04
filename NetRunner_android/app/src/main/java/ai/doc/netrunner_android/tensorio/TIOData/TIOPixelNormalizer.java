@@ -11,21 +11,18 @@ package ai.doc.netrunner_android.tensorio.TIOData;
  */
 public abstract class TIOPixelNormalizer {
     /**
-     * A `TIOPixelNormalizer` is a function that transforms a pixel value in the range `[0,255]`
+     * A `TIOPixelNormalizer` transforms a pixel value in the range `[0,255]`
      * to some other range, where the transformation may be channel dependent.
-     * <p>
-     * The normalizer will typically be constructed with the help of a `TIOPixelNormalization`
-     * struct or using one of the core or standard normalizers provided.
      *
      * @param value   The single byte pixel value being transformed.
      * @param channel The RGB channel of the pixel value being transformed.
-     * @return float_t The transformed value.
+     * @return float The transformed value.
      */
     public abstract float normalize(int value, int channel);
 
 
     /**
-     * A normalizing function that applies a scaling factor and equal bias to each pixel channel.
+     * A normalizer that applies a scaling factor and equal bias to each pixel channel.
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerSingleBias(float scale, float bias) {
@@ -39,7 +36,7 @@ public abstract class TIOPixelNormalizer {
 
 
     /**
-     * A normalizing function that applies a scaling factor and different biases to each pixel channel.
+     * A normalizer that applies a scaling factor and different biases to each pixel channel.
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerPerChannelBias(float scale, float redBias, float greenBias, float blueBias) {
@@ -66,13 +63,8 @@ public abstract class TIOPixelNormalizer {
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerZeroToOne(){
-        return new TIOPixelNormalizer() {
-            @Override
-            public float normalize(int value, int channel) {
-                float scale = 1.0f/255.0f;
-                return (value * scale);
-            }
-        };
+        float scale = 1.0f/255.0f;
+        return TIOPixelNormalizerSingleBias(scale, 0.0f);
     }
 
     /**
@@ -82,14 +74,8 @@ public abstract class TIOPixelNormalizer {
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerNegativeOneToOne(){
-        return new TIOPixelNormalizer() {
-            @Override
-            public float normalize(int value, int channel) {
-                float scale = 2.0f/255.0f;
-                float bias = -1f;
-
-                return (value * scale) + bias;
-            }
-        };
+        float scale = 2.0f/255.0f;
+        float bias = -1f;
+        return TIOPixelNormalizerSingleBias(scale, bias);
     }
 }
