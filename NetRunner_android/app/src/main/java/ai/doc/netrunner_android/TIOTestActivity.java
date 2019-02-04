@@ -16,7 +16,7 @@ public class TIOTestActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tiotest);
 
         try {
-            TIOModelBundle bundle = new TIOModelBundle(this, "mobilenet_v2_1.4_224.tfbundle");
+            TIOModelBundle bundle = new TIOModelBundle(this, "2_in_2_out_matrices_test.tfbundle");
             Log.i("bundle", bundle.toString());
             TIOModel model = bundle.newModel();
             Log.i("model", model.toString());
