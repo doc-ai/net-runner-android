@@ -84,12 +84,32 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
     public TIOVectorLayerDescription(int length, String[] labels, boolean quantized, TIODataQuantizer quantizer, TIODataDequantizer dequantizer) {
         this.length = length;
         this.labels = labels;
+        this.labeled = labels != null && labels.length > 0;
         this.quantized = quantized;
         this.quantizer = quantizer;
         this.dequantizer = dequantizer;
 
     }
 
+    public int getLength() {
+        return length;
+    }
+
+    public String[] getLabels() {
+        return labels;
+    }
+
+    public boolean isLabeled() {
+        return labeled;
+    }
+
+    public TIODataQuantizer getQuantizer() {
+        return quantizer;
+    }
+
+    public TIODataDequantizer getDequantizer() {
+        return dequantizer;
+    }
 
     /**
      * Given the output vector of a tensor, returns labeled outputs using `labels`.

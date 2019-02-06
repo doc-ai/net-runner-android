@@ -26,4 +26,7 @@ public class TIOModelOptions {
         }
     }
 
+    public String getDevicePosition() {
+        return devicePosition;
+    }
 }

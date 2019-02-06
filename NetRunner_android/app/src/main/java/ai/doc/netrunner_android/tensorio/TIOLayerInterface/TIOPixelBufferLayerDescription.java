@@ -59,4 +59,25 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
         this.denormalizer = denormalizer;
         this.quantized = quantized;
     }
+
+    @Override
+    public boolean isQuantized() {
+        return quantized;
+    }
+
+    public TIOPixelFormat getPixelFormat() {
+        return pixelFormat;
+    }
+
+    public TIOImageVolume getShape() {
+        return shape;
+    }
+
+    public TIOPixelNormalizer getNormalizer() {
+        return normalizer;
+    }
+
+    public TIOPixelDenormalizer getDenormalizer() {
+        return denormalizer;
+    }
 }
