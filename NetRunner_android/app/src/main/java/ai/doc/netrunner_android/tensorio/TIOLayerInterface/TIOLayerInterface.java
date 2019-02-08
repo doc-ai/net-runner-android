@@ -1,5 +1,7 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
+import java.nio.ByteBuffer;
+
 /**
  * Encapsulates information about the input and output layers of a model, fully described by a
  *

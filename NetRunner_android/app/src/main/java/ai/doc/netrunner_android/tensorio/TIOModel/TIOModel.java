@@ -1,10 +1,13 @@
 package ai.doc.netrunner_android.tensorio.TIOModel;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerDescription;
@@ -93,7 +96,7 @@ public abstract class TIOModel {
      * as some models contain hundreds of megabytes of paramters.
      */
 
-    private boolean loaded;
+    protected boolean loaded;
 
     /**
      * Returns descriptions of the model's inputs indexed to the order they appear in model.json.
@@ -105,6 +108,8 @@ public abstract class TIOModel {
      */
     private List<TIOLayerInterface> outputs;
 
+    private Context context;
+
     /**
      * The designated initializer for conforming classes.
      * <p>
@@ -115,7 +120,8 @@ public abstract class TIOModel {
      *
      * @param bundle `TIOModelBundle` containing information about the model and its path
      */
-    public TIOModel(TIOModelBundle bundle) {
+    public TIOModel(Context context, TIOModelBundle bundle) {
+        this.context = context;
         this.bundle = bundle;
 
         this.options = bundle.getOptions();
@@ -134,14 +140,6 @@ public abstract class TIOModel {
     }
 
     /**
-     * Convenience method for initializing a model directly from bundle at some path
-     *
-     * @param path The path to the model bundle folder
-     */
-    public TIOModel(String path) {
-    }
-
-    /**
      * Loads a model into memory.
      * <p>
      * A model should load itself prior to running on any input, but consumers of the model may want
@@ -150,9 +148,8 @@ public abstract class TIOModel {
      * <p>
      * Conforming classes should override this method to perform custom loading and set loaded=YES.
      *
-     * @return BOOL `YES` if the model is successfully loaded, `NO` otherwise.
      */
-    public abstract boolean load();
+    public abstract void load() throws TIOModelException;
 
     /**
      * Unloads a model from memory
@@ -171,7 +168,26 @@ public abstract class TIOModel {
      * @param input Any class conforming to `TIOData` that you want to run inference on
      * @return TIOData The results of performing inference
      */
-    public abstract TIOData runOn(TIOData input);
+    public Object runOn(Map<String, Object> input) throws TIOModelException{
+        if (getInputs().size() != input.size()){
+            throw new TIOModelException("The model has "+getInputs().size()+" input layers but received "+input.size()+ " inputs");
+        }
+        if (!input.keySet().equals(getBundle().getNamedInputInterfaces().keySet())){
+            for (TIOLayerInterface layer: getInputs()){
+                if (!input.containsKey(layer.getName())){
+                    throw new TIOModelException("The model recieved no input for layer \""+layer.getName()+"\"");
+                }
+            }
+        }
+        return null;
+    }
+
+    public Object runOn(Object input) throws TIOModelException {
+        if (getInputs().size() != 1){
+            throw new TIOModelException("The model has "+getInputs().size()+" input layers but only received one input");
+        }
+        return null;
+    }
 
     public List<TIOLayerInterface> getInputs() {
         return inputs;
@@ -259,5 +275,53 @@ public abstract class TIOModel {
                 ", inputs=" + inputs.toString() +
                 ", outputs=" + outputs.toString() +
                 '}';
+    }
+
+    public TIOModelBundle getBundle() {
+        return bundle;
+    }
+
+    public TIOModelOptions getOptions() {
+        return options;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getLicense() {
+        return license;
+    }
+
+    public boolean isPlaceholder() {
+        return placeholder;
+    }
+
+    public boolean isQuantized() {
+        return quantized;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public boolean isLoaded() {
+        return loaded;
+    }
+
+    public Context getContext() {
+        return context;
     }
 }

@@ -40,6 +40,7 @@ public class TIOModelBundle {
     private static final String TFMODEL_ASSETS_DIRECTORY = "assets";
     private static final String TENSOR_TYPE_VECTOR = "array";
     private static final String TENSOR_TYPE_IMAGE = "image";
+    private final Context context;
 
     /**
      * The deserialized information contained in the model.json file.
@@ -127,12 +128,14 @@ public class TIOModelBundle {
     /**
      * @param path Fully qualified path to the model bundle folder.
      */
-    public TIOModelBundle(Context c, String path) throws TIOModelBundleException {
+    public TIOModelBundle(Context context, String path) throws TIOModelBundleException {
+        this.context = context;
+
         String json;
         JSONObject bundle;
 
         try {
-            json = FileIO.readFile(c, path + "/" + TFMODEL_INFO_FILE);
+            json = FileIO.readFile(context, path + "/" + TFMODEL_INFO_FILE);
         } catch (IOException e) {
             throw new TIOModelBundleException("Error reading model file", e);
         }
@@ -183,14 +186,14 @@ public class TIOModelBundle {
 
         if (!this.placeholder) {
             try {
-                this.modelFilePath = "assets" + "/" + path + "/" + modelJsonObject.getString("file");
+                this.modelFilePath = path + "/" + modelJsonObject.getString("file");
             } catch (JSONException e) {
                 throw new TIOModelBundleException("Incomplete JSON model file, could not find model file declaration", e);
             }
         }
 
         try {
-            parseInputs(c, bundle.getJSONArray("inputs"));
+            parseInputs(context, bundle.getJSONArray("inputs"));
         } catch (JSONException e) {
             throw new TIOModelBundleException("Error parsing inputs field", e);
         } catch (IOException e) {
@@ -198,7 +201,7 @@ public class TIOModelBundle {
         }
 
         try {
-            parseOutputs(c, bundle.getJSONArray("outputs"));
+            parseOutputs(context, bundle.getJSONArray("outputs"));
         } catch (JSONException e) {
             throw new TIOModelBundleException("Error parsing outputs field", e);
         } catch (IOException e) {
@@ -211,7 +214,7 @@ public class TIOModelBundle {
      */
     public TIOModel newModel() throws TIOModelBundleException {
         try {
-            return (TIOModel) Class.forName(modelClassName).getConstructor(TIOModelBundle.class).newInstance(this);
+            return (TIOModel) Class.forName(modelClassName).getConstructor(Context.class, TIOModelBundle.class).newInstance(context, this);
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException | NoSuchMethodException | ClassNotFoundException e) {
             throw new TIOModelBundleException("Error creating TIOModel", e);
         }

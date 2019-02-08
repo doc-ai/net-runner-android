@@ -1,5 +1,7 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
+import java.nio.ByteBuffer;
+
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataDequantizer;
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataQuantizer;
 
@@ -109,6 +111,16 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
 
     public TIODataDequantizer getDequantizer() {
         return dequantizer;
+    }
+
+    @Override
+    public ByteBuffer toByteBuffer(Object o) {
+        return null;
+    }
+
+    @Override
+    public Object fromByteBuffer(ByteBuffer buffer) {
+        return null;
     }
 
     /**
