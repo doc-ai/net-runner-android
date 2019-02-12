@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
+import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
+
 /**
  * Classifies images with Tensorflow Lite.
  */

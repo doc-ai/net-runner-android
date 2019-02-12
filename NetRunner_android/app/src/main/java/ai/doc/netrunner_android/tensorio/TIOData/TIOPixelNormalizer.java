@@ -22,7 +22,7 @@ public abstract class TIOPixelNormalizer {
 
 
     /**
-     * A normalizer that applies a scaling factor and equal bias to each pixel channel.
+     * A TIOPixelNormalizer that applies a scaling factor and equal bias to each pixel channel.
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerSingleBias(float scale, float bias) {
@@ -36,7 +36,7 @@ public abstract class TIOPixelNormalizer {
 
 
     /**
-     * A normalizer that applies a scaling factor and different biases to each pixel channel.
+     * A TIOPixelNormalizer that applies a scaling factor and different biases to each pixel channel.
      */
 
     public static TIOPixelNormalizer TIOPixelNormalizerPerChannelBias(float scale, float redBias, float greenBias, float blueBias) {

@@ -9,7 +9,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Display;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -18,13 +17,13 @@ import android.widget.Spinner;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleException;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleManager;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
+import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 import ai.doc.netrunner_android.view.BenchmarkFragment;
 import ai.doc.netrunner_android.view.BulkInferenceFragment;
@@ -54,13 +53,9 @@ public class MainActivity extends AppCompatActivity {
                 TIOModelBundle bundle = manager.bundleWithId("mobilenet-v2-100-224-unquantized");
                 TIOModel model = bundle.newModel();
                 model.load();
-                ModelRunner modelRunner = new ModelRunner(model);
+                ModelRunner modelRunner = new ModelRunner((TIOTFLiteModel)model);
                 vm.setModelRunner(modelRunner);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (TIOModelException e) {
-                e.printStackTrace();
-            } catch (TIOModelBundleException e) {
+            } catch (IOException | TIOModelException | TIOModelBundleException e) {
                 e.printStackTrace();
             }
         }

@@ -2,23 +2,17 @@ package ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
-import android.graphics.Bitmap;
-import android.os.SystemClock;
-import android.util.Log;
 
+import org.tensorflow.lite.Delegate;
 import org.tensorflow.lite.Interpreter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
 import java.util.Map;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
@@ -29,6 +23,7 @@ public class TIOTFLiteModel extends TIOModel {
     private Interpreter tflite;
     private MappedByteBuffer tfliteModel;
     private final Interpreter.Options tfliteOptions = new Interpreter.Options();
+    private Delegate gpuDelegate = null;
 
     public TIOTFLiteModel(Context context, TIOModelBundle bundle) {
         super(context, bundle);
@@ -43,14 +38,13 @@ public class TIOTFLiteModel extends TIOModel {
             throw new TIOModelException("Error loading model file", e);
         }
         tflite = new Interpreter(tfliteModel, tfliteOptions);
-        this.loaded = true;
-
-
+        super.load();
     }
 
     @Override
     public void unload() {
         tflite.close();
+        super.unload();
     }
 
     @Override
@@ -74,6 +68,43 @@ public class TIOTFLiteModel extends TIOModel {
         long startOffset = fileDescriptor.getStartOffset();
         long declaredLength = fileDescriptor.getDeclaredLength();
         return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+    }
+
+    private void recreateInterpreter() {
+        if (tflite != null) {
+            tflite.close();
+            // TODO(b/120679982)
+            //gpuDelegate.close();
+            tflite = new Interpreter(tfliteModel, tfliteOptions);
+        }
+    }
+
+    public void useGPU() {
+        if (gpuDelegate == null && GpuDelegateHelper.isGpuDelegateAvailable()) {
+            gpuDelegate = GpuDelegateHelper.createGpuDelegate();
+            tfliteOptions.addDelegate(gpuDelegate);
+            recreateInterpreter();
+        }
+    }
+
+    public void useCPU() {
+        tfliteOptions.setUseNNAPI(false);
+        recreateInterpreter();
+    }
+
+    public void useNNAPI() {
+        tfliteOptions.setUseNNAPI(true);
+        recreateInterpreter();
+    }
+
+    public void setNumThreads(int numThreads) {
+        tfliteOptions.setNumThreads(numThreads);
+        recreateInterpreter();
+    }
+
+    public void setAllow16BitPrecision(boolean use16Bit) {
+        tfliteOptions.setAllowFp16PrecisionForFp32(use16Bit);
+        recreateInterpreter();
     }
 
 

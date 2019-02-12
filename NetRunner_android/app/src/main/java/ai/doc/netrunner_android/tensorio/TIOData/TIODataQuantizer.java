@@ -12,7 +12,7 @@ public abstract class TIODataQuantizer {
     public abstract int quantize(float value);
 
     /**
-     * A quantizing function that applies the provided scale and bias according to the following forumla
+     * A TIODataQuantizer that applies the provided scale and bias according to the following forumla
      *
      * <pre>
      * quantized_value = (value + bias) * scale
@@ -20,7 +20,7 @@ public abstract class TIODataQuantizer {
      *
      * @param scale The scale
      * @param bias  The bias values
-     * @return TIODataQuantizer The quantizing function
+     * @return TIODataQuantizer
      */
 
     public static TIODataQuantizer TIODataQuantizerWithQuantization(float scale, float bias) {
@@ -33,7 +33,7 @@ public abstract class TIODataQuantizer {
     }
 
     /**
-     * A standard quantization function that converts values from a range of `[0,1]` to `[0,255]`
+     * A standard TIODataQuantizer function that converts values from a range of `[0,1]` to `[0,255]`
      */
     public static TIODataQuantizer TIODataQuantizerZeroToOne() {
         return new TIODataQuantizer() {
@@ -45,7 +45,7 @@ public abstract class TIODataQuantizer {
     }
 
     /**
-     * A standard quantization function that converts values from a range of `[-1,1]` to `[0,255]`
+     * A standard TIODataQuantizer function that converts values from a range of `[-1,1]` to `[0,255]`
      */
     public static TIODataQuantizer TIODataQuantizerNegativeOneToOne() {
         float scale = 255.0f/2.0f;

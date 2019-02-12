@@ -2,7 +2,7 @@ package ai.doc.netrunner_android.tensorio.TIOData;
 
 /**
  * Describes a denormalization, or how pixel values in some arbitrary range will be
- * denormalized back to pixe values in the range of `[0,255]`
+ * denormalized back to pixel values in the range of `[0,255]`
  * <p>
  * Pixels will typically be denormalized from values in the range `[0,1]` or `[-1,+1]`,
  * although separate denormaliation biases may be required for each of the RGB channels.
@@ -23,7 +23,7 @@ public abstract class TIOPixelDenormalizer {
 
 
     /**
-     * A denormalizing function that applies a scaling factor and equal bias to each pixel channel.
+     * A TIOPixelDenormalizer that applies a scaling factor and equal bias to each pixel channel.
      */
 
     public static TIOPixelDenormalizer TIOPixelDenormalizerSingleBias(float scale, float bias) {
@@ -36,7 +36,7 @@ public abstract class TIOPixelDenormalizer {
     }
 
     /**
-     * A denormalizing function that applies a scaling factor and different biases to each pixel channel.
+     * A TIOPixelDenormalizer that applies a scaling factor and different biases to each pixel channel.
      */
 
     public static TIOPixelDenormalizer TIOPixelDenormalizerPerChannelBias(float scale, float redBias, float greenBias, float blueBias) {

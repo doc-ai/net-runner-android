@@ -56,9 +56,9 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
     public void onResume() {
         super.onResume();
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
-        vm.getModelRunner().startStreamClassification(this, (requestId, result) -> {
-            predictions.postValue(result.getPrediction());
-            latency.postValue(result.getLatency());
+        vm.getModelRunner().startStreamClassification(this, (requestId, predictionText, latencyText) -> {
+            predictions.postValue(predictionText);
+            latency.postValue(latencyText);
         });
     }
 

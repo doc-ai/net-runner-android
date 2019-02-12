@@ -96,7 +96,7 @@ public abstract class TIOModel {
      * as some models contain hundreds of megabytes of paramters.
      */
 
-    protected boolean loaded;
+    private boolean loaded;
 
     /**
      * Returns descriptions of the model's inputs indexed to the order they appear in model.json.
@@ -146,10 +146,11 @@ public abstract class TIOModel {
      * more control over when a model is loaded in order to avoid placing parameters into memory
      * before they are needed.
      * <p>
-     * Conforming classes should override this method to perform custom loading and set loaded=YES.
      *
      */
-    public abstract void load() throws TIOModelException;
+    public void load() throws TIOModelException{
+        loaded = true;
+    }
 
     /**
      * Unloads a model from memory
@@ -157,9 +158,10 @@ public abstract class TIOModel {
      * A model will unload its resources automatically when it is deallocated, but the unload function
      * may do this as well in order to provide finer grained control to consumers.
      * <p>
-     * Conforming classes should override this method to perform custom unloading and set `loaded=NO`.
      */
-    public abstract void unload();
+    public void unload(){
+        loaded = false;
+    }
 
     /**
      * Performs inference on the provided input and returns the results. The primary interface to a

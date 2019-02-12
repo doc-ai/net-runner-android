@@ -1,6 +1,5 @@
 package ai.doc.netrunner_android;
 
-import android.arch.lifecycle.LiveData;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -11,29 +10,36 @@ import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 
 import java.util.AbstractMap;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerInterface;
+import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
+import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
+import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 
 
-public class ModelRunner extends LiveData<ModelPrediction> {
+public class ModelRunner {
+    private static final String TAG = "TfLiteCameraDemo";
+
     private final String[] labels;
+    private int inputWidth;
+    private int inputHeight;
+
     private int numThreads;
     private boolean use16Bit;
+    private Device device;
+
     private ModelRunnerDataSource dataSource;
     private ClassificationResultListener listener;
-    private Device device;
-    private static final String TAG = "TfLiteCameraDemo";
-    private TIOModel classifier;
+
+    private TIOTFLiteModel classifier;
+
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
     private static final String HANDLE_THREAD_NAME = "CameraBackground";
+
     private final Object lock = new Object();
     private boolean runClassifier = false;
     private float[][] filterLabelProbArray = null;
@@ -45,12 +51,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     private PriorityQueue<Map.Entry<String, Float>> sortedLabels =
             new PriorityQueue<>(
                     RESULTS_TO_SHOW,
-                    new Comparator<Map.Entry<String, Float>>() {
-                        @Override
-                        public int compare(Map.Entry<String, Float> o1, Map.Entry<String, Float> o2) {
-                            return (o1.getValue()).compareTo(o2.getValue());
-                        }
-                    });
+                    (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
 
 
     public interface ModelRunnerDataSource {
@@ -58,7 +59,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     }
 
     public interface ClassificationResultListener {
-        void classificationResult(int requestId, ModelPrediction result);
+        void classificationResult(int requestId, String prediction, String latency);
     }
 
     public class UnsupportedConfigurationException extends RuntimeException {
@@ -71,16 +72,17 @@ public class ModelRunner extends LiveData<ModelPrediction> {
         CPU, GPU, NNAPI
     }
 
-    public ModelRunner(TIOModel classifier) {
+    public ModelRunner(TIOTFLiteModel classifier) {
         this.classifier = classifier;
         this.labels = ((TIOVectorLayerDescription)classifier.getOutputs().get(0).getDataDescription()).getLabels();
+        this.inputWidth = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().width;
+        this.inputHeight = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().height;
+
         filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+
         backgroundThread = new HandlerThread(HANDLE_THREAD_NAME);
         backgroundThread.start();
         backgroundHandler = new Handler(backgroundThread.getLooper());
-
-
-
     }
 
     private Runnable periodicClassify =
@@ -96,19 +98,22 @@ public class ModelRunner extends LiveData<ModelPrediction> {
                             SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
                             SpannableStringBuilder latencyBuilder = new SpannableStringBuilder();
 
-                            Bitmap bitmap = dataSource.getNextInput(224, 224);
+                            Bitmap bitmap = dataSource.getNextInput(inputWidth, inputHeight);
                             if (bitmap != null) {
                                 try {
 
+                                    // run inference
                                     long startTime = SystemClock.uptimeMillis();
-                                    float[][] result = new float[][]{(float[])classifier.runOn(bitmap)};
+                                    float[] result = (float[])classifier.runOn(bitmap);
                                     long endTime = SystemClock.uptimeMillis();
 
                                     // Smooth the results across frames.
                                     applyFilter(result);
 
-                                    // Print the results.
+                                    // Show the prediction
                                     printTopKLabels(predictionsBuilder,result);
+
+                                    // Show the latency
                                     long duration = endTime - startTime;
                                     latencyBuilder.append(new SpannableString(duration + " ms"));
 
@@ -116,10 +121,8 @@ public class ModelRunner extends LiveData<ModelPrediction> {
                                     e.printStackTrace();
                                 }
                                 bitmap.recycle();
-                                ModelPrediction prediction = new ModelPrediction();
-                                prediction.setPrediction(predictionsBuilder.toString());
-                                prediction.setLatency(latencyBuilder.toString());
-                                listener.classificationResult(-1, prediction);
+
+                                listener.classificationResult(-1, predictionsBuilder.toString(), latencyBuilder.toString());
                             }
                         }
                     }
@@ -134,13 +137,13 @@ public class ModelRunner extends LiveData<ModelPrediction> {
                 }
             };
 
-    private void applyFilter(float[][] result) {
+    private void applyFilter(float[] result) {
         int numLabels = getNumLabels();
 
         // Low pass filter `labelProbArray` into the first stage of the filter.
         for (int j = 0; j < numLabels; ++j) {
             filterLabelProbArray[0][j] +=
-                    FILTER_FACTOR * (result[0][j] - filterLabelProbArray[0][j]);
+                    FILTER_FACTOR * (result[j] - filterLabelProbArray[0][j]);
         }
         // Low pass filter each stage into the next.
         for (int i = 1; i < FILTER_STAGES; ++i) {
@@ -151,21 +154,20 @@ public class ModelRunner extends LiveData<ModelPrediction> {
         }
 
         // Copy the last stage filter output back to `labelProbArray`.
-        for (int j = 0; j < numLabels; ++j) {
-            result[0][j] = filterLabelProbArray[FILTER_STAGES - 1][j];
-        }
+        System.arraycopy(filterLabelProbArray[FILTER_STAGES - 1], 0, result, 0, numLabels);
     }
 
-    private void printTopKLabels(SpannableStringBuilder builder, float[][] result) {
+    private void printTopKLabels(SpannableStringBuilder builder, float[] result) {
+        // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
         for (int i = 0; i < getNumLabels(); ++i) {
-            sortedLabels.add(
-                    new AbstractMap.SimpleEntry<>(labels[i], result[0][i]));
+            sortedLabels.add(new AbstractMap.SimpleEntry<>(labels[i], result[i]));
             if (sortedLabels.size() > RESULTS_TO_SHOW) {
                 sortedLabels.poll();
             }
         }
 
         final int size = sortedLabels.size();
+
         for (int i = 0; i < size; i++) {
             Map.Entry<String, Float> label = sortedLabels.poll();
             SpannableString span =
@@ -186,6 +188,30 @@ public class ModelRunner extends LiveData<ModelPrediction> {
 
 
     public void classifyFrame(int requestId, Bitmap frame, ClassificationResultListener listener) {
+        backgroundHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
+                SpannableStringBuilder latencyBuilder = new SpannableStringBuilder();
+
+                try {
+                    long startTime = SystemClock.uptimeMillis();
+                    float[] result = (float[])classifier.runOn(frame);
+                    long endTime = SystemClock.uptimeMillis();
+
+                    // Show the prediction
+                    printTopKLabels(predictionsBuilder,result);
+
+                    // Show the latency
+                    long duration = endTime - startTime;
+                    latencyBuilder.append(new SpannableString(duration + " ms"));
+
+                    listener.classificationResult(requestId, predictionsBuilder.toString(), latencyBuilder.toString());
+                } catch (TIOModelException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void startStreamClassification(ModelRunnerDataSource dataSource, ClassificationResultListener listener) {
@@ -225,7 +251,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
                     this.device = Device.CPU;
                     throw new UnsupportedConfigurationException("GPU not supported in this build");
                 } else {
-                    //classifier.useGPU();
+                    classifier.useGPU();
                     this.device = Device.GPU;
                 }
             });
@@ -235,7 +261,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     public void useCPU() {
         if (this.device != Device.CPU) {
             backgroundHandler.post(() -> {
-                //classifier.useCPU();
+                classifier.useCPU();
                 this.device = Device.CPU;
             });
         }
@@ -245,7 +271,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     public void useNNAPI() {
         if (this.device != Device.NNAPI) {
             backgroundHandler.post(() -> {
-                //classifier.useNNAPI();
+                classifier.useNNAPI();
                 this.device = Device.NNAPI;
             });
         }
@@ -254,7 +280,7 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     public void setNumThreads(int numThreads) {
         if (this.numThreads != numThreads) {
             backgroundHandler.post(() -> {
-                //classifier.setNumThreads(numThreads);
+                classifier.setNumThreads(numThreads);
                 this.numThreads = numThreads;
             });
         }
@@ -263,16 +289,16 @@ public class ModelRunner extends LiveData<ModelPrediction> {
     public void setUse16bit(boolean use16Bit) {
         if (this.use16Bit != use16Bit) {
             backgroundHandler.post(() -> {
-                //classifier.setAllow16BitPrecision(use16Bit);
+                classifier.setAllow16BitPrecision(use16Bit);
                 this.use16Bit = use16Bit;
             });
         }
     }
 
     public void close() {
-        //backgroundHandler.removeCallbacksAndMessages(null);
-        //backgroundHandler.post(() -> {
-        //    classifier.close();
-        //});
+        backgroundHandler.removeCallbacksAndMessages(null);
+        backgroundHandler.post(() -> {
+            classifier.unload();
+        });
     }
 }

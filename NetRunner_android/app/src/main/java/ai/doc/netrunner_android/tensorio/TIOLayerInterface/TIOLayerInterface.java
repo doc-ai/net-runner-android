@@ -1,10 +1,7 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
-import java.nio.ByteBuffer;
-
 /**
  * Encapsulates information about the input and output layers of a model, fully described by a
- *
  * @see TIOLayerDescription . Used internally by a model when parsing its description. Also used to
  * match inputs and outputs to their corresponding layers.
  * <p>
@@ -23,7 +20,7 @@ public class TIOLayerInterface {
      * The name of the model interface
      * <p>
      * May corresponding to an actual layer name or be your own name. The name will be used to copy
-     * values to a tensor buffer when a model is run on an `NSDictionary` input or to associate an
+     * values to a tensor buffer when a model is run with multiple inputs or to associate an
      * output with a given name.
      */
 
@@ -42,16 +39,17 @@ public class TIOLayerInterface {
     private TIOLayerDescription dataDescription;
 
     /**
-     * Initializes a @see TIOLayerInterface with a pixel buffer description.
+     * Initializes a @see TIOLayerInterface with a layer description.
      *
-     * @param pixelBufferDescription Description of the expected pixel buffer
+     * @param description Description of the expected  buffer
      */
 
-    public TIOLayerInterface(String name, boolean isInput, TIOPixelBufferLayerDescription pixelBufferDescription) {
+    public TIOLayerInterface(String name, boolean isInput, TIOLayerDescription description) {
         this.name = name;
         this.input = isInput;
-        this.dataDescription = pixelBufferDescription;
+        this.dataDescription = description;
     }
+
 
     /**
      * Initializes a @see TIOLayerInterface with a vector description, e.g. the description of a vector,
@@ -60,12 +58,13 @@ public class TIOLayerInterface {
      * @param vectorDescription Description of the expected vector
      */
 
-
+    /*
     public TIOLayerInterface(String name, boolean isInput, TIOVectorLayerDescription vectorDescription) {
         this.name = name;
         this.input = isInput;
         this.dataDescription = vectorDescription;
     }
+    */
 
 
     /**

@@ -19,7 +19,7 @@
             android:fitsSystemWindows="true"
             android:minHeight="?attr/actionBarSize"
             app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-            android:background="?attr/colorPrimaryDark"></android.support.v7.widget.Toolbar>
+            android:background="?attr/colorPrimaryDark" />
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -37,7 +37,7 @@
         android:layout_gravity="start"
         android:fitsSystemWindows="true"
         app:menu="@menu/drawer_view"
-        app:headerLayout="@layout/nav_header"></android.support.design.widget.NavigationView>
+        app:headerLayout="@layout/nav_header" />
 
 
 </android.support.v4.widget.DrawerLayout>

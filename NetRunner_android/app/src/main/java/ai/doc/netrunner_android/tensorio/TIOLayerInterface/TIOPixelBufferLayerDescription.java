@@ -22,7 +22,7 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
     private boolean quantized;
 
     /**
-     * The pixel format of the image data, must be PixelFormat.RGB or kPixelFormat.BGR
+     * The pixel format of the image data, must be TIOPixelFormat.RGB or TIOPixelFormat.BGR
      */
 
     private TIOPixelFormat pixelFormat;
@@ -34,30 +34,28 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
     private TIOImageVolume shape;
 
     /**
-     * A function that normalizes pixel values from a uint8_t range of `[0,255]` to some other
+     * A function that normalizes pixel values from a byte range of `[0,255]` to some other
      * floating point range, may be `nil`.
      */
 
     private TIOPixelNormalizer normalizer;
 
     /**
-     * A function that denormalizes pixel values from a floating point range back to uint8_t values
+     * A function that denormalizes pixel values from a floating point range back to byte values
      * in the range `[0,255]`, may be nil.
      */
 
-    private TIOPixelDenormalizer denormalizer ;
+    private TIOPixelDenormalizer denormalizer;
 
-/**
- * Designated initializer. Creates a pixel buffer description from the properties parsed in a
- * model.json file.
- *
- * @param pixelFormat The expected format of the pixels
- * @param shape The shape of the input image
- * @param normalizer A function which normalizes the pixel values for an input layer, may be `nil`.
- * @param denormalizer A function which denormalizes pixel values for an output layer, may be `nil`
- * @param quantized `YES` if this layer expectes quantized values, `NO` otherwise
- *
- */
+    /**
+     * Creates a pixel buffer description from the properties parsed in a model.json file.
+     *
+     * @param pixelFormat  The expected format of the pixels
+     * @param shape        The shape of the input image
+     * @param normalizer   A function which normalizes the pixel values for an input layer, may be null.
+     * @param denormalizer A function which denormalizes pixel values for an output layer, may be null
+     * @param quantized    true if this layer expectes quantized values, false otherwise
+     */
     public TIOPixelBufferLayerDescription(TIOPixelFormat pixelFormat, TIOImageVolume shape, TIOPixelNormalizer normalizer, TIOPixelDenormalizer denormalizer, boolean quantized) {
         this.pixelFormat = pixelFormat;
         this.shape = shape;
@@ -74,13 +72,12 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
 
     @Override
     public ByteBuffer toByteBuffer(Object o) {
-        if (o == null){
+        if (o == null) {
             throw new NullPointerException("Input to a model can not be null");
-        }
-        else if (!(o instanceof Bitmap)){
+        } else if (!(o instanceof Bitmap)) {
             throw new IllegalArgumentException("Image input should be bitmap");
         }
-        this.data.putData((Bitmap)o);
+        this.data.putData((Bitmap) o);
         return this.data.getByteBuffer();
     }
 

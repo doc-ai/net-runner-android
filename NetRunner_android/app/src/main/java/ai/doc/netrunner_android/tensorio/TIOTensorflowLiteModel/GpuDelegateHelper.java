@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-package ai.doc.netrunner_android;
+package ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel;
 
 import org.tensorflow.lite.Delegate;
 
