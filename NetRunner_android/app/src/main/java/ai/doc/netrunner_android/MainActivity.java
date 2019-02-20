@@ -8,12 +8,15 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.Spinner;
+import android.widget.Switch;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
 
         if (vm.getModelRunner() == null) {
             try {
-                //ImageClassifier classifier = new ImageClassifierFloatMobileNet(this);
                 TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
                 TIOModelBundle bundle = manager.bundleWithId("mobilenet-v2-100-224-unquantized");
                 TIOModel model = bundle.newModel();
@@ -135,6 +137,15 @@ public class MainActivity extends AppCompatActivity {
                 ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
                 vm.getModelRunner().setNumThreads(1);
                 s3.setSelection(0);
+            }
+        });
+
+        SwitchCompat s4 = (SwitchCompat)nav.getMenu().findItem(R.id.nav_switch_precision).getActionView();
+        s4.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
+                vm.getModelRunner().setUse16bit(isChecked);
             }
         });
 
