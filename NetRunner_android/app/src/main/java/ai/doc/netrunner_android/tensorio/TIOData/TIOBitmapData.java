@@ -18,7 +18,7 @@ public class TIOBitmapData implements TIOData<Bitmap> {
     }
 
     @Override
-    public ByteBuffer getByteBuffer() {
+    public ByteBuffer getBackingByteBuffer() {
         return buffer;
     }
 

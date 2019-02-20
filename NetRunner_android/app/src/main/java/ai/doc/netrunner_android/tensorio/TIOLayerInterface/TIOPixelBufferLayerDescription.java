@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import java.nio.ByteBuffer;
 
 import ai.doc.netrunner_android.tensorio.TIOData.TIOBitmapData;
+import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelDenormalizer;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelNormalizer;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOVisionModel.TIOImageVolume;
@@ -78,12 +79,17 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
             throw new IllegalArgumentException("Image input should be bitmap");
         }
         this.data.putData((Bitmap) o);
-        return this.data.getByteBuffer();
+        return this.data.getBackingByteBuffer();
     }
 
     @Override
     public Bitmap fromByteBuffer(ByteBuffer buffer) {
         return null;
+    }
+
+    @Override
+    public ByteBuffer getBackingByteBuffer() {
+        return data.getBackingByteBuffer();
     }
 
     public TIOPixelFormat getPixelFormat() {

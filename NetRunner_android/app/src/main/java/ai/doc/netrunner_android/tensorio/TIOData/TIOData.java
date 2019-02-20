@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  */
 
 public interface TIOData<T> {
-    public ByteBuffer getByteBuffer();
+    public ByteBuffer getBackingByteBuffer();
     public void putData(T data);
     public T getData();
 }

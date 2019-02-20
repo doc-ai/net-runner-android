@@ -1,9 +1,14 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
+import ai.doc.netrunner_android.tensorio.TIOData.TIOBitmapData;
+import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataDequantizer;
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataQuantizer;
+import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
 
 /**
  * The description of a vector (array) input or output later.
@@ -39,6 +44,9 @@ import ai.doc.netrunner_android.tensorio.TIOData.TIODataQuantizer;
  */
 
 public class TIOVectorLayerDescription extends TIOLayerDescription {
+
+    private final TIOFloatTensorData data;
+    private final int[] shape;
     /**
      * The length of the vector in terms of its number of elements.
      */
@@ -76,20 +84,27 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
      * Designated initializer. Creates a vector description from the properties parsed in a model.json
      * file.
      *
-     * @param length      The total number of elements in this layer.
      * @param labels      The indexed labels associated with the outputs of this layer. May be `nil`.
      * @param quantized   True if the values are quantized
      * @param quantizer   A function that transforms unquantized values to quantized input
      * @param dequantizer A function that transforms quantized output to unquantized values
      */
 
-    public TIOVectorLayerDescription(int length, String[] labels, boolean quantized, TIODataQuantizer quantizer, TIODataDequantizer dequantizer) {
-        this.length = length;
+    public TIOVectorLayerDescription(int[] shape, String[] labels, boolean quantized, TIODataQuantizer quantizer, TIODataDequantizer dequantizer) {
+        this.shape = shape;
+
+        // Total Volume
+        this.length = 1;
+        for (int i : shape) {
+            length *= i;
+        }
+
         this.labels = labels;
         this.labeled = labels != null && labels.length > 0;
         this.quantized = quantized;
         this.quantizer = quantizer;
         this.dequantizer = dequantizer;
+        this.data = new TIOFloatTensorData(shape);
 
     }
 
@@ -115,27 +130,38 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
 
     @Override
     public ByteBuffer toByteBuffer(Object o) {
-        return null;
+        this.data.putData((float[])o);
+        return this.data.getBackingByteBuffer();
     }
 
     @Override
     public Object fromByteBuffer(ByteBuffer buffer) {
-        return null;
+        return data.getData();
+    }
+
+    @Override
+    public ByteBuffer getBackingByteBuffer() {
+        return data.getBackingByteBuffer();
     }
 
     /**
      * Given the output vector of a tensor, returns labeled outputs using `labels`.
      *
-     * @param vector A `TIOVector` of values.
-     * @return NSDictionary The labeled values, where the dictionary keys are the labels and the
+     * @param vector An array of float values.
+     * @return  The labeled values, where the dictionary keys are the labels and the
      * dictionary values are the associated vector values.
-     * <p>
-     * `labels` must not be `nil`.
      */
-    /*
-    public Map<String, Float> labeledValues(TIOVector vector) {
-        return null;
+
+    public Map<String, Float> labeledValues(float[] vector) {
+        if (!isLabeled()){
+            return null;
+        }
+        Map<String, Float> result = new HashMap<>(vector.length);
+        for (int i = 0; i < labels.length; i++){
+            result.put(labels[i], vector[i]);
+        }
+        return result;
     }
-    */
+
 
 }

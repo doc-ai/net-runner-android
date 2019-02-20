@@ -400,12 +400,6 @@ public class TIOModelBundle {
         String name = dict.getString("name");
         boolean isOutput = !isInput;
 
-        // Total Volume
-        int length = 1;
-        for (int i : shape) {
-            length *= i;
-        }
-
         // Labels
         String[] labels = null;
         if (dict.optString("labels", null) != null) {
@@ -435,7 +429,7 @@ public class TIOModelBundle {
         return new TIOLayerInterface(
                 name,
                 isInput,
-                new TIOVectorLayerDescription(length, labels, quantized, quantizer, dequantizer)
+                new TIOVectorLayerDescription(shape, labels, quantized, quantizer, dequantizer)
         );
     }
 

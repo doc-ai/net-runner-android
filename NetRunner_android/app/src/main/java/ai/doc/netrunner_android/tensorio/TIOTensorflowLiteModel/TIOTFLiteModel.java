@@ -15,6 +15,7 @@ import java.nio.channels.FileChannel;
 import java.util.Map;
 
 import ai.doc.netrunner_android.ModelRunner;
+import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
@@ -61,10 +62,13 @@ public class TIOTFLiteModel extends TIOModel {
     @Override
     public Object runOn(Object input) throws TIOModelException {
         super.runOn(input);
-        TIOFloatTensorData output = new TIOFloatTensorData(new int[]{1001});
+
         ByteBuffer inputBuffer = getBundle().getIndexedInputInterfaces().get(0).getDataDescription().toByteBuffer(input);
-        tflite.run(inputBuffer, output.getByteBuffer());
-        return output.getData();
+        ByteBuffer outputBuffer = getBundle().getIndexedOutputInterfaces().get(0).getDataDescription().getBackingByteBuffer();
+
+        tflite.run(inputBuffer, outputBuffer);
+
+        return getBundle().getIndexedOutputInterfaces().get(0).getDataDescription().fromByteBuffer(outputBuffer);
     }
 
     private MappedByteBuffer loadModelFile(Context context, String path) throws IOException {

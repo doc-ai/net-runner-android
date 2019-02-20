@@ -2,6 +2,8 @@ package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
 import java.nio.ByteBuffer;
 
+import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
+
 /**
  * Describes an input or output layer. Used internally by a model when parsing its description.
  * <p>
@@ -24,5 +26,6 @@ public abstract class TIOLayerDescription {
 
     public abstract ByteBuffer toByteBuffer(Object o);
     public abstract Object fromByteBuffer(ByteBuffer buffer);
+    public abstract ByteBuffer getBackingByteBuffer();
 
 }

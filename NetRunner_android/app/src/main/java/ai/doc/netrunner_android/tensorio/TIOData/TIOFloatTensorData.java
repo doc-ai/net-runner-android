@@ -24,7 +24,7 @@ public class TIOFloatTensorData implements TIOData<float[]> {
     }
 
     @Override
-    public ByteBuffer getByteBuffer() {
+    public ByteBuffer getBackingByteBuffer() {
         return buffer;
     }
 
