@@ -5,6 +5,7 @@ import android.content.res.AssetFileDescriptor;
 
 import org.tensorflow.lite.Delegate;
 import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.experimental.GpuDelegate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Map;
 
+import ai.doc.netrunner_android.ModelRunner;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
@@ -22,8 +24,12 @@ public class TIOTFLiteModel extends TIOModel {
 
     private Interpreter tflite;
     private MappedByteBuffer tfliteModel;
-    private final Interpreter.Options tfliteOptions = new Interpreter.Options();
-    private Delegate gpuDelegate = null;
+    private GpuDelegate gpuDelegate = null;
+
+    private int numThreads = 1;
+    private boolean useGPU = false;
+    private boolean useNNAPI = false;
+    private boolean use16bit = false;
 
     public TIOTFLiteModel(Context context, TIOModelBundle bundle) {
         super(context, bundle);
@@ -37,7 +43,7 @@ public class TIOTFLiteModel extends TIOModel {
         } catch (IOException e) {
             throw new TIOModelException("Error loading model file", e);
         }
-        tflite = new Interpreter(tfliteModel, tfliteOptions);
+        tflite = new Interpreter(tfliteModel);
         super.load();
     }
 
@@ -73,37 +79,49 @@ public class TIOTFLiteModel extends TIOModel {
     private void recreateInterpreter() {
         if (tflite != null) {
             tflite.close();
-            // TODO(b/120679982)
-            //gpuDelegate.close();
+            if (gpuDelegate != null) {
+                gpuDelegate.close();
+            }
+
+            Interpreter.Options tfliteOptions = new Interpreter.Options();
+            tfliteOptions.setAllowFp16PrecisionForFp32(use16bit);
+            tfliteOptions.setUseNNAPI(useNNAPI);
+            tfliteOptions.setNumThreads(numThreads);
+            if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
+                tfliteOptions.addDelegate((GpuDelegate)GpuDelegateHelper.createGpuDelegate());
+            }
+
             tflite = new Interpreter(tfliteModel, tfliteOptions);
         }
     }
 
     public void useGPU() {
-        if (gpuDelegate == null && GpuDelegateHelper.isGpuDelegateAvailable()) {
-            gpuDelegate = GpuDelegateHelper.createGpuDelegate();
-            tfliteOptions.addDelegate(gpuDelegate);
+        if (GpuDelegateHelper.isGpuDelegateAvailable()){
+            useGPU = true;
             recreateInterpreter();
         }
+
     }
 
     public void useCPU() {
-        tfliteOptions.setUseNNAPI(false);
+        useGPU = false;
+        useNNAPI = false;
         recreateInterpreter();
     }
 
     public void useNNAPI() {
-        tfliteOptions.setUseNNAPI(true);
+        useGPU = false;
+        useNNAPI = true;
         recreateInterpreter();
     }
 
     public void setNumThreads(int numThreads) {
-        tfliteOptions.setNumThreads(numThreads);
+        this.numThreads = numThreads;
         recreateInterpreter();
     }
 
     public void setAllow16BitPrecision(boolean use16Bit) {
-        tfliteOptions.setAllowFp16PrecisionForFp32(use16Bit);
+        this.use16bit = use16Bit;
         recreateInterpreter();
     }
 
