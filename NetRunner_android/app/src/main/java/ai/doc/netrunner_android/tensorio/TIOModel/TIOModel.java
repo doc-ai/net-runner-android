@@ -3,13 +3,9 @@ package ai.doc.netrunner_android.tensorio.TIOModel;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import java.util.AbstractSet;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerDescription;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerInterface;
 
@@ -167,8 +163,6 @@ public abstract class TIOModel {
      * Performs inference on the provided input and returns the results. The primary interface to a
      * conforming class.
      *
-     * @param input Any class conforming to `TIOData` that you want to run inference on
-     * @return TIOData The results of performing inference
      */
     public Object runOn(Map<String, Object> input) throws TIOModelException{
         if (getInputs().size() != input.size()){

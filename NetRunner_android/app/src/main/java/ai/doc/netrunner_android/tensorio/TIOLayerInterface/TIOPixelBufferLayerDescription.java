@@ -1,11 +1,11 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOBitmapData;
-import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelDenormalizer;
 import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelNormalizer;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOVisionModel.TIOImageVolume;
@@ -15,11 +15,9 @@ import ai.doc.netrunner_android.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat;
  * The description of a pixel buffer input or output layer.
  */
 public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
-    private final TIOBitmapData data;
     /**
      * `true` is the layer is quantized, `false` otherwise
      */
-
     private boolean quantized;
 
     /**
@@ -48,6 +46,9 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
 
     private TIOPixelDenormalizer denormalizer;
 
+    private int[] intValues;
+    private ByteBuffer buffer;
+
     /**
      * Creates a pixel buffer description from the properties parsed in a model.json file.
      *
@@ -63,12 +64,26 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
         this.normalizer = normalizer;
         this.denormalizer = denormalizer;
         this.quantized = quantized;
-        this.data = new TIOBitmapData(this.normalizer, this.denormalizer);
+
     }
 
     @Override
     public boolean isQuantized() {
         return quantized;
+    }
+
+    private void addPixelValue(int pixelValue, ByteBuffer imgData){
+        if (this.normalizer != null){
+            imgData.putFloat(this.normalizer.normalize((pixelValue >> 16) & 0xFF, 0));
+            imgData.putFloat(this.normalizer.normalize((pixelValue >> 8) & 0xFF, 1));
+            imgData.putFloat(this.normalizer.normalize(pixelValue & 0xFF, 2));
+        }
+        else{
+            imgData.putFloat((pixelValue >> 16) & 0xFF);
+            imgData.putFloat((pixelValue >> 8) & 0xFF);
+            imgData.putFloat(pixelValue & 0xFF);
+        }
+
     }
 
     @Override
@@ -78,18 +93,48 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
         } else if (!(o instanceof Bitmap)) {
             throw new IllegalArgumentException("Image input should be bitmap");
         }
-        this.data.putData((Bitmap) o);
-        return this.data.getBackingByteBuffer();
+
+        Bitmap bitmap = (Bitmap)o;
+
+        if (this.intValues == null){
+            this.intValues = new int[this.shape.width * this.shape.height];
+        }
+
+        if (buffer == null) {
+            if (isQuantized()){
+                this.buffer = ByteBuffer.allocateDirect(this.shape.width*this.shape.height*3);
+            }
+            else{
+                this.buffer = ByteBuffer.allocateDirect(this.shape.width*this.shape.height*3*4);
+            }
+            this.buffer.order(ByteOrder.nativeOrder());
+        }
+
+        buffer.rewind();
+
+        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        // Convert the image to floating point.
+        int pixel = 0;
+        for (int i = 0; i < bitmap.getWidth(); ++i) {
+            for (int j = 0; j < bitmap.getHeight(); ++j) {
+                final int val = intValues[pixel++];
+                addPixelValue(val, buffer);
+            }
+        }
+        return buffer;
     }
 
     @Override
     public Bitmap fromByteBuffer(ByteBuffer buffer) {
-        return null;
+        byte[] imageBytes= new byte[buffer.remaining()];
+        buffer.get(imageBytes);
+        return BitmapFactory.decodeByteArray(imageBytes,0,imageBytes.length);
     }
 
     @Override
     public ByteBuffer getBackingByteBuffer() {
-        return data.getBackingByteBuffer();
+        return buffer;
     }
 
     public TIOPixelFormat getPixelFormat() {

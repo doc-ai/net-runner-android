@@ -1,14 +1,13 @@
 package ai.doc.netrunner_android.tensorio.TIOLayerInterface;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOBitmapData;
-import ai.doc.netrunner_android.tensorio.TIOData.TIOData;
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataDequantizer;
 import ai.doc.netrunner_android.tensorio.TIOData.TIODataQuantizer;
-import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
 
 /**
  * The description of a vector (array) input or output later.
@@ -38,15 +37,13 @@ import ai.doc.netrunner_android.tensorio.TIOData.TIOFloatTensorData;
  * Because output layers are also exposed as an array of bytes, a `TIOTFLiteModel` will always return
  * a vector in one dimension. If is up to you to reshape it if required.
  * <p>
- * WARNING: A `TIOVectorLayerDescription`'s length is different than the byte length of a `TIOData` object.
- * For example a quantized `TIOVector` (uint8_t) of length 4 will occupy 4 bytes of memory but an
- * unquantized `TIOVector` (float_t) of length 4 will occupy 16 bytes of memory.
  */
 
 public class TIOVectorLayerDescription extends TIOLayerDescription {
 
-    private final TIOFloatTensorData data;
     private final int[] shape;
+    private ByteBuffer buffer;
+
     /**
      * The length of the vector in terms of its number of elements.
      */
@@ -104,7 +101,14 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
         this.quantized = quantized;
         this.quantizer = quantizer;
         this.dequantizer = dequantizer;
-        this.data = new TIOFloatTensorData(shape);
+
+        if (quantized){
+            this.buffer = ByteBuffer.allocate(length);
+        }
+        else{
+            this.buffer = ByteBuffer.allocate(length*4);
+        }
+        this.buffer.order(ByteOrder.nativeOrder());
 
     }
 
@@ -130,18 +134,23 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
 
     @Override
     public ByteBuffer toByteBuffer(Object o) {
-        this.data.putData((float[])o);
-        return this.data.getBackingByteBuffer();
+        buffer.rewind();
+        FloatBuffer f = buffer.asFloatBuffer();
+        f.put((float[])o);
+        return buffer;
     }
 
     @Override
     public Object fromByteBuffer(ByteBuffer buffer) {
-        return data.getData();
+        float[] result = new float[this.length];
+        buffer.rewind();
+        buffer.asFloatBuffer().get(result);
+        return result;
     }
 
     @Override
     public ByteBuffer getBackingByteBuffer() {
-        return data.getBackingByteBuffer();
+        return buffer;
     }
 
     /**
