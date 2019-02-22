@@ -164,7 +164,7 @@ public abstract class TIOModel {
      * conforming class.
      *
      */
-    public Object runOn(Map<String, Object> input) throws TIOModelException{
+    public Object runOn(Map input) throws TIOModelException{
         if (getInputs().size() != input.size()){
             throw new TIOModelException("The model has "+getInputs().size()+" input layers but received "+input.size()+ " inputs");
         }

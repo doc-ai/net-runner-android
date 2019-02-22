@@ -11,9 +11,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerDescription;
+import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerInterface;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
@@ -52,8 +55,42 @@ public class TIOTFLiteModel extends TIOModel {
     }
 
     @Override
-    public Object runOn(Map<String, Object> input) throws TIOModelException {
-        return super.runOn(input);
+    public Object runOn(Map input) throws TIOModelException {
+        super.runOn(input);
+
+        Object[] inputs = new Object[getInputs().size()];
+
+        // Fetch the input and output layer descriptions from the model
+        List<TIOLayerInterface> inputLayers = getBundle().getIndexedInputInterfaces();
+        List<TIOLayerInterface> outputLayers = getBundle().getIndexedOutputInterfaces();
+
+        for (int i=0; i<inputLayers.size(); i++){
+            // Ask the input layer to parse the input object into a Bytebuffer
+            TIOLayerInterface layer = inputLayers.get(i);
+            ByteBuffer inputBuffer = layer.getDataDescription().toByteBuffer(input.get(layer.getName()));
+            inputs[i] = inputBuffer;
+        }
+
+        Map<Integer, Object> outputs = new HashMap<>(getOutputs().size());
+        for (int i=0; i<outputLayers.size(); i++){
+            // Ask the output layer for a buffer to store the output in
+            TIOLayerInterface layer = outputLayers.get(i);
+            ByteBuffer outputBuffer = layer.getDataDescription().getBackingByteBuffer();
+            outputBuffer.rewind();
+            outputs.put(i, outputBuffer);
+        }
+
+        // Run the model on the input buffers, store the output in the outputbuffers
+        tflite.runForMultipleInputsOutputs(inputs, outputs);
+
+        // Ask the outputlayer to convert the outputbuffer back to an object to return to the user
+        Map<String, Object> outputMap = new HashMap<>(outputLayers.size());
+        for (int i=0; i<outputLayers.size(); i++){
+            TIOLayerInterface layer = outputLayers.get(i);
+            Object o = layer.getDataDescription().fromByteBuffer((ByteBuffer)outputs.get(i));
+            outputMap.put(layer.getName(), o);
+        }
+        return outputMap;
     }
 
     @Override
