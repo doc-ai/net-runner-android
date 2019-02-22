@@ -151,7 +151,6 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
                 FloatBuffer f = buffer.asFloatBuffer();
                 f.put((float[])o);
             }
-
         }
         else if (o instanceof byte[]){
             buffer.put((byte[])o);
