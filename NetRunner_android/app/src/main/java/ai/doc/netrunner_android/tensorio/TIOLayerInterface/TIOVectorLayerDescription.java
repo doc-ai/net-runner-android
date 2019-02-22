@@ -139,7 +139,11 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
             if (quantized){
                 if (quantizer != null){
                     FloatBuffer f = buffer.asFloatBuffer();
-                    for (float v: (float[])o){
+                    float[] floatInput = (float[])o;
+                    if (floatInput.length != this.length){
+                        throw new IllegalArgumentException("Provided input is of different size than the size expected by the model, expected "+this.length+" input has length "+floatInput.length);
+                    }
+                    for (float v: floatInput){
                         f.put(v);
                     }
                 }
@@ -148,12 +152,20 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
                 }
             }
             else{
+                float[] floatInput = (float[])o;
+                if (floatInput.length != this.length){
+                    throw new IllegalArgumentException("Provided input is of different size than the size expected by the model, expected "+this.length+" input has length "+floatInput.length);
+                }
                 FloatBuffer f = buffer.asFloatBuffer();
-                f.put((float[])o);
+                f.put(floatInput);
             }
         }
         else if (o instanceof byte[]){
-            buffer.put((byte[])o);
+            byte[] byteInput = (byte[])o;
+            if (byteInput.length != this.length){
+                throw new IllegalArgumentException("Provided input is of different size than the size expected by the model, expected "+this.length+" input has length "+byteInput.length);
+            }
+            buffer.put(byteInput);
         }
         else{
             throw new IllegalArgumentException("Expected float[] or byte[] as input to the model");

@@ -9,23 +9,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelNormalizer;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerInterface;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleException;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelOptions;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -68,6 +58,17 @@ public class IntegrationTests {
             assertEquals(1, result_dict.size());
             assertEquals(1, result_dict.get("output_z").length);
             assertEquals(25f, result_dict.get("output_z")[0], epsilon);
+
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                input = new float[]{1, 2, 3, 4, 5};
+                model.runOn(input);
+                fail();
+            }
+            catch (IllegalArgumentException e){
+
+            }
+
 
         } catch (TIOModelBundleException | TIOModelException e) {
             e.printStackTrace();
@@ -113,6 +114,26 @@ public class IntegrationTests {
             assertEquals(4, result_dict.get("output_z").length);
             assertTrue(Arrays.equals(expected, result_dict.get("output_z")));
 
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                input = new float[]{1, 2, 3, 4, 5};
+                model.runOn(input);
+                fail();
+            }
+            catch (IllegalArgumentException e){
+
+            }
+
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                input = new float[]{1};
+                model.runOn(input);
+                fail();
+            }
+            catch (IllegalArgumentException e){
+            }
+
+
         } catch (TIOModelBundleException | TIOModelException e) {
             e.printStackTrace();
             fail();
@@ -151,6 +172,30 @@ public class IntegrationTests {
 
             assertEquals(64, result.get("output_s")[0], epsilon);
             assertEquals(240, result.get("output_z")[0],epsilon);
+
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                inputs = new HashMap<>();
+                inputs.put("input_x", new float[]{1, 2, 3, 5, 6});
+                inputs.put("input_y", new float[]{10, 20, 30});
+                model.runOn(inputs);
+                fail();
+            }
+            catch (IllegalArgumentException e){
+
+            }
+
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                inputs = new HashMap<>();
+                inputs.put("input_x", new float[]{1});
+                inputs.put("input_y", new float[]{10, 20, 30});
+                model.runOn(inputs);
+                fail();
+            }
+            catch (IllegalArgumentException e){
+            }
+
 
 
         } catch (TIOModelBundleException | TIOModelException e) {
