@@ -135,17 +135,58 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
     @Override
     public ByteBuffer toByteBuffer(Object o) {
         buffer.rewind();
-        FloatBuffer f = buffer.asFloatBuffer();
-        f.put((float[])o);
+        if (o instanceof float[]){
+            if (quantized){
+                if (quantizer != null){
+                    FloatBuffer f = buffer.asFloatBuffer();
+                    for (float v: (float[])o){
+                        f.put(v);
+                    }
+                }
+                else{
+                    throw new IllegalArgumentException("Float[] given as input to quantized model without quantizer, expected byte[] or quantizer");
+                }
+            }
+            else{
+                FloatBuffer f = buffer.asFloatBuffer();
+                f.put((float[])o);
+            }
+
+        }
+        else if (o instanceof byte[]){
+            buffer.put((byte[])o);
+        }
+        else{
+            throw new IllegalArgumentException("Expected float[] or byte[] as input to the model");
+        }
+
         return buffer;
     }
 
     @Override
     public Object fromByteBuffer(ByteBuffer buffer) {
-        float[] result = new float[this.length];
-        buffer.rewind();
-        buffer.asFloatBuffer().get(result);
-        return result;
+        if (quantized){
+            if (dequantizer != null){
+                float[] result = new float[this.length*4];
+                buffer.rewind();
+                for (int i=0; i<this.length; i++) {
+                    result[i] = dequantizer.dequantize(buffer.get());
+                }
+                return result;
+            }
+            else{
+                byte[] result = new byte[this.length];
+                buffer.rewind();
+                buffer.get(result);
+                return result;
+            }
+        }
+        else{
+            float[] result = new float[this.length];
+            buffer.rewind();
+            buffer.asFloatBuffer().get(result);
+            return result;
+        }
     }
 
     @Override

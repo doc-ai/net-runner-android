@@ -104,14 +104,17 @@ public class ModelRunner {
 
                                     // run inference
                                     long startTime = SystemClock.uptimeMillis();
-                                    float[] result = (float[])classifier.runOn(bitmap);
+                                    float[] resultArray;
+                                    Object result = classifier.runOn(bitmap);
                                     long endTime = SystemClock.uptimeMillis();
+                                    resultArray = (float[])result;
+
 
                                     // Smooth the results across frames.
-                                    applyFilter(result);
+                                    applyFilter(resultArray);
 
                                     // Show the prediction
-                                    printTopKLabels(predictionsBuilder,result);
+                                    printTopKLabels(predictionsBuilder,resultArray);
 
                                     // Show the latency
                                     long duration = endTime - startTime;

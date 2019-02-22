@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <group
         android:checkableBehavior="single"
@@ -20,20 +21,21 @@
     <item android:title="Configuration">
         <menu>
             <item
+                tools:ignore="MenuTitle"
                 android:id="@+id/nav_select_model"
-                android:title="@string/model_menu_item_title"
                 app:actionLayout="@layout/menu_item_spinner" />
             <item
+                tools:ignore="MenuTitle,icon"
                 android:id="@+id/nav_select_accelerator"
-                android:title="@string/device_menu_item_title"
                 app:actionLayout="@layout/menu_item_spinner" />
             <item
+                tools:ignore="MenuTitle,icon"
                 android:id="@+id/nav_select_threads"
-                android:title="@string/threads_menu_item_title"
                 app:actionLayout="@layout/menu_item_spinner" />
             <item
+                tools:ignore="MenuTitle,icon"
+                android:title="Use 16 bit precision"
                 android:id="@+id/nav_switch_precision"
-                android:title="@string/precision_menu_item_title"
                 app:actionLayout="@layout/menu_item_switch" />
         </menu>
     </item>

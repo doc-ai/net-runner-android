@@ -73,16 +73,24 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
     }
 
     private void addPixelValue(int pixelValue, ByteBuffer imgData){
-        if (this.normalizer != null){
-            imgData.putFloat(this.normalizer.normalize((pixelValue >> 16) & 0xFF, 0));
-            imgData.putFloat(this.normalizer.normalize((pixelValue >> 8) & 0xFF, 1));
-            imgData.putFloat(this.normalizer.normalize(pixelValue & 0xFF, 2));
+        if (quantized){
+            imgData.put((byte) ((pixelValue >> 16) & 0xFF));
+            imgData.put((byte) ((pixelValue >> 8) & 0xFF));
+            imgData.put((byte) (pixelValue & 0xFF));
         }
         else{
-            imgData.putFloat((pixelValue >> 16) & 0xFF);
-            imgData.putFloat((pixelValue >> 8) & 0xFF);
-            imgData.putFloat(pixelValue & 0xFF);
+            if (this.normalizer != null){
+                imgData.putFloat(this.normalizer.normalize((pixelValue >> 16) & 0xFF, 0));
+                imgData.putFloat(this.normalizer.normalize((pixelValue >> 8) & 0xFF, 1));
+                imgData.putFloat(this.normalizer.normalize(pixelValue & 0xFF, 2));
+            }
+            else{
+                imgData.putFloat((pixelValue >> 16) & 0xFF);
+                imgData.putFloat((pixelValue >> 8) & 0xFF);
+                imgData.putFloat(pixelValue & 0xFF);
+            }
         }
+
 
     }
 

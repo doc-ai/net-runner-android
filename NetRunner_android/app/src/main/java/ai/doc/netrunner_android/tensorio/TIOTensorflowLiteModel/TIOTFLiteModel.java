@@ -69,6 +69,7 @@ public class TIOTFLiteModel extends TIOModel {
 
         // Ask the output layer for a buffer to store the output in
         ByteBuffer outputBuffer = outputLayer.getBackingByteBuffer();
+        outputBuffer.rewind();
 
         // Run the model on the input buffer, store the output in the outputbuffer
         tflite.run(inputBuffer, outputBuffer);
@@ -133,6 +134,10 @@ public class TIOTFLiteModel extends TIOModel {
     public void setAllow16BitPrecision(boolean use16Bit) {
         this.use16bit = use16Bit;
         recreateInterpreter();
+    }
+
+    public long getLastInferenceDuration(){
+        return tflite.getLastNativeInferenceDurationNanoseconds();
     }
 
 

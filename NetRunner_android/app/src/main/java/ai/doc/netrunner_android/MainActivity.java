@@ -16,10 +16,11 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
-import android.widget.Switch;
+import android.widget.TextView;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Set;
 
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
@@ -43,32 +44,34 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        setupModels();
-        setupDevices();
-        setupDrawer();
+        try {
+            TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
+            modelStrings.addAll(manager.getBundleIds());
 
-        ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
+            setupDevices();
+            setupDrawer();
 
-        if (vm.getModelRunner() == null) {
-            try {
-                TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
-                TIOModelBundle bundle = manager.bundleWithId("mobilenet-v2-100-224-unquantized");
+            ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
+
+            if (vm.getModelRunner() == null) {
+                TIOModelBundle bundle = manager.bundleWithId("mobilenet-v1-100-224-quantized");
                 TIOModel model = bundle.newModel();
                 model.load();
-                ModelRunner modelRunner = new ModelRunner((TIOTFLiteModel)model);
+                ModelRunner modelRunner = new ModelRunner((TIOTFLiteModel) model);
                 vm.setModelRunner(modelRunner);
-            } catch (IOException | TIOModelException | TIOModelBundleException e) {
-                e.printStackTrace();
             }
-        }
 
-        if (vm.getCurrentTab() != -1) {
-            NavigationView nav = findViewById(R.id.nav_view);
-            nav.getMenu().findItem(vm.getCurrentTab()).setChecked(true);
-        } else {
-            vm.setCurrentTab(R.id.live_camera_fragment_menu_item);
+            if (vm.getCurrentTab() != -1) {
+                NavigationView nav = findViewById(R.id.nav_view);
+                nav.getMenu().findItem(vm.getCurrentTab()).setChecked(true);
+            } else {
+                vm.setCurrentTab(R.id.live_camera_fragment_menu_item);
+            }
+
+            setupFragment(vm.getCurrentTab());
+        } catch (IOException | TIOModelException | TIOModelBundleException e) {
+            e.printStackTrace();
         }
-        setupFragment(vm.getCurrentTab());
     }
 
 
@@ -92,7 +95,8 @@ public class MainActivity extends AppCompatActivity {
         }
         NavigationView nav = findViewById(R.id.nav_view);
 
-        Spinner s = (Spinner) nav.getMenu().findItem(R.id.nav_select_accelerator).getActionView();
+        Spinner s = nav.getMenu().findItem(R.id.nav_select_accelerator).getActionView().findViewById(R.id.spinner);
+        ((TextView)nav.getMenu().findItem(R.id.nav_select_accelerator).getActionView().findViewById(R.id.menu_title)).setText(R.string.device_menu_item_title);
         s.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions));
         s.setSelection(0);
         s.setOnItemSelectedListener(new SpinnerListener() {
@@ -111,7 +115,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Spinner s2 = (Spinner) nav.getMenu().findItem(R.id.nav_select_model).getActionView();
+        Spinner s2 = nav.getMenu().findItem(R.id.nav_select_model).getActionView().findViewById(R.id.spinner);
+        ((TextView)nav.getMenu().findItem(R.id.nav_select_model).getActionView().findViewById(R.id.menu_title)).setText(R.string.model_menu_item_title);
         s2.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, modelStrings));
         s2.setSelection(0);
         s2.setOnItemSelectedListener(new SpinnerListener() {
@@ -121,7 +126,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Spinner s3 = (Spinner) nav.getMenu().findItem(R.id.nav_select_threads).getActionView();
+        Spinner s3 = nav.getMenu().findItem(R.id.nav_select_threads).getActionView().findViewById(R.id.spinner);
+        ((TextView)nav.getMenu().findItem(R.id.nav_select_threads).getActionView().findViewById(R.id.menu_title)).setText(R.string.threads_menu_item_title);
         s3.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions));
         s3.setSelection(0);
         s3.setOnItemSelectedListener(new SpinnerListener() {
@@ -140,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        SwitchCompat s4 = (SwitchCompat)nav.getMenu().findItem(R.id.nav_switch_precision).getActionView();
+        SwitchCompat s4 = (SwitchCompat) nav.getMenu().findItem(R.id.nav_switch_precision).getActionView();
         s4.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -164,10 +170,6 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    private void setupModels() {
-        modelStrings.add(getString(R.string.mobilenetV1Float));
-        modelStrings.add(getString(R.string.mobilenetV1Quant));
-    }
 
     private void setupDevices() {
         deviceOptions.add(getString(R.string.cpu));
