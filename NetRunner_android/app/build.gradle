@@ -57,78 +57,7 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
 
-    // dependencies for navigation
-    def nav_version = "1.0.0-alpha09"
-    implementation "android.arch.navigation:navigation-fragment:$nav_version" // use -ktx for Kotlin
-    implementation "android.arch.navigation:navigation-ui:$nav_version" // use -ktx for Kotlin
-
     // Tensorflow dependency
     implementation 'org.tensorflow:tensorflow-lite:0.0.0-gpu-experimental'
 }
 
-def targetFolder = "src/main/assets"
-def modelFloatDownloadUrl = "http://download.tensorflow.org/models/mobilenet_v1_2018_02_22/mobilenet_v1_1.0_224.tgz"
-def modelQuantDownloadUrl = "http://download.tensorflow.org/models/mobilenet_v1_2018_08_02/mobilenet_v1_1.0_224_quant.tgz"
-def localCacheFloat = "build/intermediates/mobilenet_v1_1.0_224.tgz"
-def localCacheQuant = "build/intermediates/mmobilenet_v1_1.0_224_quant.tgz"
-
-
-task downloadModelFloat(type: DownloadUrlTask) {
-    doFirst {
-        println "Downloading ${modelFloatDownloadUrl}"
-    }
-    sourceUrl = "${modelFloatDownloadUrl}"
-    target = file("${localCacheFloat}")
-}
-
-task downloadModelQuant(type: DownloadUrlTask) {
-    doFirst {
-        println "Downloading ${modelQuantDownloadUrl}"
-    }
-    sourceUrl = "${modelQuantDownloadUrl}"
-    target = file("${localCacheQuant}")
-}
-
-task unzipModelFloat(type: Copy, dependsOn: 'downloadModelFloat') {
-    doFirst {
-        println "Unzipping ${localCacheFloat}"
-    }
-    from tarTree("${localCacheFloat}")
-    into "${targetFolder}"
-}
-
-task unzipModelQuant(type: Copy, dependsOn: 'downloadModelQuant') {
-    doFirst {
-        println "Unzipping ${localCacheQuant}"
-    }
-    from tarTree("${localCacheQuant}")
-    into "${targetFolder}"
-}
-
-task cleanUnusedFiles(type: Delete, dependsOn: ['unzipModelFloat', 'unzipModelQuant']) {
-    delete fileTree("${targetFolder}").matching {
-        include "*.pb"
-        include "*.ckpt.*"
-        include "*.pbtxt.*"
-        include "*.quant_info.*"
-        include "*.meta"
-    }
-}
-
-// Ensure the model file is downloaded and extracted before every build
-preBuild.dependsOn unzipModelFloat
-preBuild.dependsOn unzipModelQuant
-preBuild.dependsOn cleanUnusedFiles
-
-class DownloadUrlTask extends DefaultTask {
-    @Input
-    String sourceUrl
-
-    @OutputFile
-    File target
-
-    @TaskAction
-    void download() {
-        ant.get(src: sourceUrl, dest: target)
-    }
-}
