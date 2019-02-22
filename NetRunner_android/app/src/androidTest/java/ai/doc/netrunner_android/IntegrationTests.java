@@ -117,7 +117,46 @@ public class IntegrationTests {
             e.printStackTrace();
             fail();
         }
+    }
 
+    @Test
+    public void test2x2VectorsModel() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        try {
+            TIOModelBundle bundle = new TIOModelBundle(appContext, "2_in_2_out_vectors_test.tfbundle");
+            assertNotNull(bundle);
+
+            TIOTFLiteModel model = (TIOTFLiteModel) bundle.newModel();
+            assertNotNull(model);
+            model.load();
+
+            // Ensure inputs and outputs return correct count
+            assertEquals(2, model.getInputs().size());
+            assertEquals(2, model.getOutputs().size());
+
+            Map<String, float[]> inputs = new HashMap<>();
+            inputs.put("input_x", new float[]{1, 2, 3, 4});
+            inputs.put("input_y", new float[]{10, 20, 30, 40});
+
+            Object output = model.runOn(inputs);
+            assertTrue(output instanceof Map);
+            Map<String, float[]> result = (Map<String, float[]>)output;
+
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("output_s"));
+            assertTrue(result.containsKey("output_z"));
+
+            assertEquals(1, result.get("output_s").length);
+            assertEquals(1, result.get("output_z").length);
+
+            assertEquals(64, result.get("output_s")[0], epsilon);
+            assertEquals(240, result.get("output_z")[0],epsilon);
+
+
+        } catch (TIOModelBundleException | TIOModelException e) {
+            e.printStackTrace();
+            fail();
+        }
     }
 
 }
