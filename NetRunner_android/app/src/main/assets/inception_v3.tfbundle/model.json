@@ -1,0 +1,41 @@
+{
+  "name": "Inception V3",
+  "details": "Inception V3",
+  "id": "inception-v3",
+  "version": "1",
+  "author": "",
+  "license": "",
+  "model": {
+    "file": "inceptionv3_slim_2016.tflite",
+    "quantized": false
+  },
+  "inputs": [
+    {
+      "name": "image",
+      "type": "image",
+      "shape": [
+        299,
+        299,
+        3
+      ],
+      "format": "RGB",
+      "normalize": {
+        "standard": "[-1,1]"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "classification",
+      "type": "array",
+      "shape": [
+        1,
+        1001
+      ],
+      "labels": "labels_imagenet_slim.txt"
+    }
+  ],
+  "options": {
+    "device_position": "back"
+  }
+}

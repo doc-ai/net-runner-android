@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
             ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
 
             if (vm.getModelRunner() == null) {
-                TIOModelBundle bundle = manager.bundleWithId("mobilenet-v1-100-224-quantized");
+                TIOModelBundle bundle = manager.bundleWithId("inception-v3");
                 TIOModel model = bundle.newModel();
                 model.load();
                 ModelRunner modelRunner = new ModelRunner((TIOTFLiteModel) model);
