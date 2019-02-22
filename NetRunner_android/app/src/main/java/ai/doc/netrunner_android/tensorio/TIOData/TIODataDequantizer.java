@@ -2,15 +2,15 @@ package ai.doc.netrunner_android.tensorio.TIOData;
 
 /**
  * A `TIODataDequantizer` dequantizes quantized values, converting them from
- * byte representations to floating point representations.
+ * int representations to floating point representations.
  */
 public abstract class TIODataDequantizer {
 
     /**
-     * @param value The byte value that will be dequantized
+     * @param value The int value that will be dequantized
      * @return A floating point representation of the value
      */
-    public abstract float dequantize(byte value);
+    public abstract float dequantize(int value);
 
 
     /**
@@ -26,7 +26,7 @@ public abstract class TIODataDequantizer {
     public static TIODataDequantizer TIODataDequantizerWithDequantization(float scale, float bias) {
         return new TIODataDequantizer() {
             @Override
-            public float dequantize(byte value) {
+            public float dequantize(int value) {
                 return (value * scale) + bias;
             }
         };

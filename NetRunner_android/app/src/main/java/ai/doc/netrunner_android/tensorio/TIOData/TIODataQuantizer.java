@@ -2,14 +2,14 @@ package ai.doc.netrunner_android.tensorio.TIOData;
 
 /**
  * A `TIODataQuantizer` quantizes unquantized values, converting them from
- * floating point representations to byte representations.
+ * floating point representations to int representations.
  */
 public abstract class TIODataQuantizer {
     /**
      * @param value The float value that will be quantized
      * @return A quantized representation of the value
      */
-    public abstract byte quantize(float value);
+    public abstract int quantize(float value);
 
     /**
      * A TIODataQuantizer that applies the provided scale and bias according to the following forumla
@@ -26,8 +26,8 @@ public abstract class TIODataQuantizer {
     public static TIODataQuantizer TIODataQuantizerWithQuantization(float scale, float bias) {
         return new TIODataQuantizer() {
             @Override
-            public byte quantize(float value) {
-                return (byte)((value+bias) * scale);
+            public int quantize(float value) {
+                return (int)((value+bias) * scale);
             }
         };
     }
@@ -38,8 +38,8 @@ public abstract class TIODataQuantizer {
     public static TIODataQuantizer TIODataQuantizerZeroToOne() {
         return new TIODataQuantizer() {
             @Override
-            public byte quantize(float value) {
-                return (byte)(value * 255.0f);
+            public int quantize(float value) {
+                return (int)(value * 255.0f);
             }
         };
     }
