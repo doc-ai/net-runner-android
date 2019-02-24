@@ -260,13 +260,71 @@ public class IntegrationTests {
             assertArrayEquals(expectedS, result.get("output_s"), epsilon);
             assertArrayEquals(expectedZ, result.get("output_z"), epsilon);
 
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                inputs = new HashMap<>();
+                inputs.put("input_x", new float[]{5, 6, 7, 8});
+                inputs.put("input_y", new float[]{5, 6, 7, 8});
+                model.runOn(inputs);
+                fail();
+            } catch (IllegalArgumentException e) {
+            }
+
+
+        } catch (TIOModelBundleException | TIOModelException e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
+    public void test3x3MatricesModel() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        try {
+            TIOModelBundle bundle = new TIOModelBundle(appContext, "1_in_1_out_tensors_test.tfbundle");
+            assertNotNull(bundle);
+
+            TIOTFLiteModel model = (TIOTFLiteModel) bundle.newModel();
+            assertNotNull(model);
+            model.load();
+
+            // Ensure inputs and outputs return correct count
+            assertEquals(1, model.getInputs().size());
+            assertEquals(1, model.getOutputs().size());
+
+            float[] expectedZ = new float[]{
+                    2, 3, 4, 5, 6, 7, 8, 9, 10,
+                    12, 22, 32, 42, 52, 62, 72, 82, 92,
+                    103, 203, 303, 403, 503, 603, 703, 803, 903
+            };
+
+            float[] inputX = new float[]{
+                    1, 2, 3, 4, 5, 6, 7, 8, 9,
+                    10, 20, 30, 40, 50, 60, 70, 80, 90,
+                    100, 200, 300, 400, 500, 600, 700, 800, 900
+            };
+
+            Object output = model.runOn(inputX);
+
+            assertTrue(output instanceof float[]);
+            float[] result = (float[]) output;
+
+            assertEquals(27, result.length);
+            assertTrue(Arrays.equals(expectedZ, result));
+
+            // try running on input of of the wrong length, should throw IllegalArgumentException
+            try {
+                model.runOn(new float[]{5, 6, 7, 8});
+                fail();
+            } catch (IllegalArgumentException e) {
+            }
+
+
         } catch (TIOModelBundleException | TIOModelException e) {
             e.printStackTrace();
             fail();
         }
 
-
     }
-
 
 }
