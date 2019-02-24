@@ -14,6 +14,7 @@ import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleException;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -42,7 +43,7 @@ public class IntegrationTests {
             float[] input = new float[]{2};
             Object output = model.runOn(input);
             assertTrue(output instanceof float[]);
-            float[] result = (float[])output;
+            float[] result = (float[]) output;
 
             assertEquals(1, result.length);
             assertEquals(25f, result[0], epsilon);
@@ -52,7 +53,7 @@ public class IntegrationTests {
             input_dict.put("input_x", new float[]{2});
             output = model.runOn(input_dict);
             assertTrue(output instanceof Map);
-            Map<String, float[]> result_dict = (Map<String, float[]>)output;
+            Map<String, float[]> result_dict = (Map<String, float[]>) output;
 
             assertTrue(result_dict.containsKey("output_z"));
             assertEquals(1, result_dict.size());
@@ -64,8 +65,7 @@ public class IntegrationTests {
                 input = new float[]{1, 2, 3, 4, 5};
                 model.runOn(input);
                 fail();
-            }
-            catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
 
             }
 
@@ -97,7 +97,7 @@ public class IntegrationTests {
             // Run the model on a vector
             Object output = model.runOn(input);
             assertTrue(output instanceof float[]);
-            float[] result = (float[])output;
+            float[] result = (float[]) output;
 
             assertEquals(4, result.length);
             assertTrue(Arrays.equals(expected, result));
@@ -107,7 +107,7 @@ public class IntegrationTests {
             input_dict.put("input_x", input);
             output = model.runOn(input_dict);
             assertTrue(output instanceof Map);
-            Map<String, float[]> result_dict = (Map<String, float[]>)output;
+            Map<String, float[]> result_dict = (Map<String, float[]>) output;
 
             assertTrue(result_dict.containsKey("output_z"));
             assertEquals(1, result_dict.size());
@@ -119,8 +119,7 @@ public class IntegrationTests {
                 input = new float[]{1, 2, 3, 4, 5};
                 model.runOn(input);
                 fail();
-            }
-            catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
 
             }
 
@@ -129,8 +128,7 @@ public class IntegrationTests {
                 input = new float[]{1};
                 model.runOn(input);
                 fail();
-            }
-            catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
             }
 
 
@@ -161,7 +159,7 @@ public class IntegrationTests {
 
             Object output = model.runOn(inputs);
             assertTrue(output instanceof Map);
-            Map<String, float[]> result = (Map<String, float[]>)output;
+            Map<String, float[]> result = (Map<String, float[]>) output;
 
             assertEquals(2, result.size());
             assertTrue(result.containsKey("output_s"));
@@ -171,7 +169,7 @@ public class IntegrationTests {
             assertEquals(1, result.get("output_z").length);
 
             assertEquals(64, result.get("output_s")[0], epsilon);
-            assertEquals(240, result.get("output_z")[0],epsilon);
+            assertEquals(240, result.get("output_z")[0], epsilon);
 
             // try running on input of of the wrong length, should throw IllegalArgumentException
             try {
@@ -180,8 +178,7 @@ public class IntegrationTests {
                 inputs.put("input_y", new float[]{10, 20, 30});
                 model.runOn(inputs);
                 fail();
-            }
-            catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
 
             }
 
@@ -192,10 +189,8 @@ public class IntegrationTests {
                 inputs.put("input_y", new float[]{10, 20, 30});
                 model.runOn(inputs);
                 fail();
+            } catch (IllegalArgumentException e) {
             }
-            catch (IllegalArgumentException e){
-            }
-
 
 
         } catch (TIOModelBundleException | TIOModelException e) {
@@ -203,5 +198,75 @@ public class IntegrationTests {
             fail();
         }
     }
+
+    @Test
+    public void test2x2MatricesModel() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        try {
+            TIOModelBundle bundle = new TIOModelBundle(appContext, "2_in_2_out_matrices_test.tfbundle");
+            assertNotNull(bundle);
+
+            TIOTFLiteModel model = (TIOTFLiteModel) bundle.newModel();
+            assertNotNull(model);
+            model.load();
+
+            // Ensure inputs and outputs return correct count
+            assertEquals(2, model.getInputs().size());
+            assertEquals(2, model.getOutputs().size());
+
+            float[] expectedS = new float[]{
+                    18f, 18f, 18f, 18f,
+                    180f, 180f, 180f, 180f,
+                    1800f, 1800f, 1800f, 1800f,
+                    18000f, 18000f, 18000f, 18000f
+            };
+
+            float[] expectedZ = new float[]{
+                    56f, 72f, 56f, 72f,
+                    5600f, 7200f, 5600f, 7200f,
+                    560000f, 720000f, 560000f, 720000f,
+                    56000000f, 72000000f, 56000000f, 72000000f
+            };
+
+            float[] inputX = new float[]{
+                    1f, 2f, 3f, 4f,
+                    10f, 20f, 30f, 40f,
+                    100f, 200f, 300f, 400f,
+                    1000f, 2000f, 3000f, 4000f
+            };
+
+            float[] inputY = new float[]{
+                    5, 6, 7, 8,
+                    50, 60, 70, 80,
+                    500, 600, 700, 800,
+                    5000, 6000, 7000, 8000
+            };
+
+            Map<String, float[]> inputs = new HashMap<>();
+            inputs.put("input_x", inputX);
+            inputs.put("input_y", inputY);
+
+            Object output = model.runOn(inputs);
+            assertTrue(output instanceof Map);
+            Map<String, float[]> result = (Map<String, float[]>) output;
+
+            assertEquals(2, result.size());
+            assertTrue(result.containsKey("output_s"));
+            assertTrue(result.containsKey("output_z"));
+
+            assertEquals(16, result.get("output_s").length);
+            assertEquals(16, result.get("output_z").length);
+
+            assertArrayEquals(expectedS, result.get("output_s"), epsilon);
+            assertArrayEquals(expectedZ, result.get("output_z"), epsilon);
+
+        } catch (TIOModelBundleException | TIOModelException e) {
+            e.printStackTrace();
+            fail();
+        }
+
+
+    }
+
 
 }
