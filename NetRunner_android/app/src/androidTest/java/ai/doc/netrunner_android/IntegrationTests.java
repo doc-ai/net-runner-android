@@ -1,6 +1,10 @@
 package ai.doc.netrunner_android;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
@@ -324,7 +328,117 @@ public class IntegrationTests {
             e.printStackTrace();
             fail();
         }
+    }
 
+    @Test
+    public void testPixelBufferIdentityModel() {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        try {
+            TIOModelBundle bundle = new TIOModelBundle(appContext, "1_in_1_out_pixelbuffer_identity_test.tfbundle");
+            assertNotNull(bundle);
+
+            TIOTFLiteModel model = (TIOTFLiteModel) bundle.newModel();
+            assertNotNull(model);
+            model.load();
+
+            // Ensure inputs and outputs return correct count
+            assertEquals(1, model.getInputs().size());
+            assertEquals(1, model.getOutputs().size());
+
+            int width = 224;
+            int height = 224;
+
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bmp);
+            Paint paint = new Paint();
+            //paint.setColor(Color.RED);
+            paint.setColor(Color.rgb(89, 0, 84));
+            canvas.drawRect(0F, 0F, width, height, paint);
+
+            Object output = model.runOn(bmp);
+
+            assertTrue(output instanceof Bitmap);
+
+            Bitmap outputBitmap = (Bitmap) output;
+
+            // Inspect pixel buffer bytes
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    assertEquals((bmp.getPixel(x, y)) & 0xFF, (outputBitmap.getPixel(x, y)) & 0xFF, epsilon = 1);
+                    assertEquals((bmp.getPixel(x, y) >> 8) & 0xFF, (outputBitmap.getPixel(x, y) >> 8) & 0xFF, epsilon = 1);
+                    assertEquals((bmp.getPixel(x, y) >> 16) & 0xFF, (outputBitmap.getPixel(x, y) >> 16) & 0xFF, epsilon = 1);
+                }
+            }
+
+            // Try running on input image of wrong size, should throw IllegalArgumentException
+            try {
+                Bitmap small = Bitmap.createScaledBitmap(bmp, 128, 128, true);
+                model.runOn(small);
+                fail();
+            } catch (IllegalArgumentException e) {
+            }
+
+
+        } catch (TIOModelBundleException | TIOModelException e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    @Test
+    public void testPixelBufferNormalizationTransformationModel() {
+
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        try {
+            TIOModelBundle bundle = new TIOModelBundle(appContext, "1_in_1_out_pixelbuffer_normalization_test.tfbundle");
+            assertNotNull(bundle);
+
+            TIOTFLiteModel model = (TIOTFLiteModel) bundle.newModel();
+            assertNotNull(model);
+            model.load();
+
+            // Ensure inputs and outputs return correct count
+            assertEquals(1, model.getInputs().size());
+            assertEquals(1, model.getOutputs().size());
+
+            int width = 224;
+            int height = 224;
+
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bmp);
+            Paint paint = new Paint();
+            //paint.setColor(Color.RED);
+            paint.setColor(Color.rgb(89, 0, 84));
+            canvas.drawRect(0F, 0F, width, height, paint);
+
+            Object output = model.runOn(bmp);
+
+            assertTrue(output instanceof Bitmap);
+
+            Bitmap outputBitmap = (Bitmap) output;
+
+            // Inspect pixel buffer bytes
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    assertEquals((bmp.getPixel(x, y)) & 0xFF, (outputBitmap.getPixel(x, y)) & 0xFF, epsilon = 1);
+                    assertEquals((bmp.getPixel(x, y) >> 8) & 0xFF, (outputBitmap.getPixel(x, y) >> 8) & 0xFF, epsilon = 1);
+                    assertEquals((bmp.getPixel(x, y) >> 16) & 0xFF, (outputBitmap.getPixel(x, y) >> 16) & 0xFF, epsilon = 1);
+                }
+            }
+
+            // Try running on input image of wrong size, should throw IllegalArgumentException
+            try {
+                Bitmap small = Bitmap.createScaledBitmap(bmp, 128, 128, true);
+                model.runOn(small);
+                fail();
+            } catch (IllegalArgumentException e) {
+            }
+
+
+        } catch (TIOModelBundleException | TIOModelException e) {
+            e.printStackTrace();
+            fail();
+        }
     }
 
 }
