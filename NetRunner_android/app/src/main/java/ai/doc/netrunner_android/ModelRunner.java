@@ -15,6 +15,7 @@ import java.util.PriorityQueue;
 
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
+import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
@@ -23,7 +24,7 @@ import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 public class ModelRunner {
     private static final String TAG = "TfLiteCameraDemo";
 
-    private final String[] labels;
+    private String[] labels;
     private int inputWidth;
     private int inputHeight;
 
@@ -245,6 +246,20 @@ public class ModelRunner {
         } catch (InterruptedException e) {
             Log.e(TAG, "Interrupted when stopping background thread", e);
         }
+    }
+
+    public void switchModel(TIOTFLiteModel newModel) throws TIOModelException {
+        backgroundHandler.post(() -> {
+            classifier.unload();
+            classifier = newModel;
+
+            ModelRunner.this.labels = ((TIOVectorLayerDescription)classifier.getOutputs().get(0).getDataDescription()).getLabels();
+            ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().width;
+            ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().height;
+
+            filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+        });
+
     }
 
     public void useGPU() {

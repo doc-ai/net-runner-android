@@ -10,6 +10,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -45,13 +46,20 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         try {
-            TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
+            ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
+
+            if (vm.getManager() == null){
+                TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
+                vm.setManager(manager);
+            }
+
+            TIOModelBundleManager manager = vm.getManager();
+
             modelStrings.addAll(manager.getBundleIds());
 
             setupDevices();
             setupDrawer();
 
-            ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
 
             if (vm.getModelRunner() == null) {
                 TIOModelBundle bundle = manager.bundleWithId("mobilenet-v1-100-224-quantized");
@@ -98,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         Spinner s = nav.getMenu().findItem(R.id.nav_select_accelerator).getActionView().findViewById(R.id.spinner);
         ((TextView)nav.getMenu().findItem(R.id.nav_select_accelerator).getActionView().findViewById(R.id.menu_title)).setText(R.string.device_menu_item_title);
         s.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions));
-        s.setSelection(0);
+        s.setSelection(0, false);
         s.setOnItemSelectedListener(new SpinnerListener() {
             @Override
             public void OnUserSelectedItem(AdapterView<?> parent, View view, int position, long id) {
@@ -118,18 +126,30 @@ public class MainActivity extends AppCompatActivity {
         Spinner s2 = nav.getMenu().findItem(R.id.nav_select_model).getActionView().findViewById(R.id.spinner);
         ((TextView)nav.getMenu().findItem(R.id.nav_select_model).getActionView().findViewById(R.id.menu_title)).setText(R.string.model_menu_item_title);
         s2.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, modelStrings));
-        s2.setSelection(0);
+        s2.setSelection(0, false);
         s2.setOnItemSelectedListener(new SpinnerListener() {
             @Override
             public void OnUserSelectedItem(AdapterView<?> parent, View view, int position, long id) {
                 String model = modelStrings.get(position);
+                ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
+                TIOModelBundleManager manager = vm.getManager();
+                TIOModelBundle bundle = manager.bundleWithId(model);
+                try {
+                    TIOTFLiteModel newModel = (TIOTFLiteModel)bundle.newModel();
+                    newModel.load();
+                    vm.getModelRunner().switchModel(newModel);
+                } catch (TIOModelBundleException e) {
+                    e.printStackTrace();
+                } catch (TIOModelException e) {
+                    e.printStackTrace();
+                }
             }
         });
 
         Spinner s3 = nav.getMenu().findItem(R.id.nav_select_threads).getActionView().findViewById(R.id.spinner);
         ((TextView)nav.getMenu().findItem(R.id.nav_select_threads).getActionView().findViewById(R.id.menu_title)).setText(R.string.threads_menu_item_title);
         s3.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions));
-        s3.setSelection(0);
+        s3.setSelection(0, false);
         s3.setOnItemSelectedListener(new SpinnerListener() {
             @Override
             public void OnUserSelectedItem(AdapterView<?> parent, View view, int position, long id) {

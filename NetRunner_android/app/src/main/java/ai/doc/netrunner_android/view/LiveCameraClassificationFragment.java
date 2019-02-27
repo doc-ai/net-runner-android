@@ -55,6 +55,17 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
     @Override
     public void onResume() {
         super.onResume();
+        startClassification();
+    }
+
+    @Override
+    public void onPause() {
+        super.closeCamera();
+        stopClassification();
+        super.onPause();
+    }
+
+    public void startClassification(){
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
         vm.getModelRunner().startStreamClassification(this, (requestId, predictionText, latencyText) -> {
             predictions.postValue(predictionText);
@@ -62,12 +73,9 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
         });
     }
 
-    @Override
-    public void onPause() {
-        super.closeCamera();
+    public void stopClassification(){
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
-        super.onPause();
     }
 
 
