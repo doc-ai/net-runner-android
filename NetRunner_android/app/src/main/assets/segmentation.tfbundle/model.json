@@ -1,0 +1,31 @@
+{
+	"name": "1 in 1 out pixel buffer identity test",
+	"details": "Outputs the input pixel buffer. Made to test the normalization and denormalization functions.",
+	"id": "segmentation",
+	"version": "1",
+	"author": "doc.ai",
+	"license": "",
+	"model": {
+		"file": "300.tflite",
+		"quantized": true
+	},
+	"inputs": [
+		{
+			"name": "image",
+			"type": "image",
+			"shape": [300,300,3],
+			"format": "RGB",
+			"normalize": {
+				"standard": "[-1,1]"
+			}
+		}
+	],
+	"outputs": [
+		{
+			"name": "image",
+			"type": "array",
+			"shape": [300,300,1],
+			"format": "RGB"
+		}
+	]
+}

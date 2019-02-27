@@ -5,9 +5,11 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.ImageView;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Map;
@@ -29,13 +31,21 @@ public class TIOTestActivity extends AppCompatActivity {
 
         try {
             TIOModelBundleManager manager = new TIOModelBundleManager(getApplicationContext(), "");
-            TIOModelBundle bundle = manager.bundleWithId("mobilenet-v2-100-224-unquantized");
+            TIOModelBundle bundle = manager.bundleWithId("segmentation");
             TIOModel model = bundle.newModel();
             model.load();
 
             InputStream bitmap=getAssets().open("picture2.jpg");
             Bitmap bMap= BitmapFactory.decodeStream(bitmap);
-            bMap = Bitmap.createScaledBitmap(bMap, 224, 224, false);
+            bMap = Bitmap.createScaledBitmap(bMap, 300, 300, false);
+            byte[] result = (byte[])model.runOn(bMap);
+            Bitmap bmp = Bitmap.createBitmap(300, 300, Bitmap.Config.ALPHA_8);
+            bmp.copyPixelsFromBuffer(ByteBuffer.wrap(result));
+
+            ImageView iv = (ImageView)findViewById(R.id.imageView);
+            iv.setImageBitmap(bmp);
+
+            /*
 
             float[] result = (float[])model.runOn(bMap);
 
@@ -51,7 +61,7 @@ public class TIOTestActivity extends AppCompatActivity {
                 Map.Entry<Integer, Float> e = pq.poll();
                 Log.i(labels[e.getKey()], ""+e.getValue());
             }
-
+            */
         } catch (IOException e) {
             e.printStackTrace();
         } catch (TIOModelBundleException e) {

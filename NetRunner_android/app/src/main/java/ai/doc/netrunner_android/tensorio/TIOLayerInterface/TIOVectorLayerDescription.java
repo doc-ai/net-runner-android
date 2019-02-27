@@ -186,10 +186,12 @@ public class TIOVectorLayerDescription extends TIOLayerDescription {
                 return result;
             }
             else{
-                int[] result = new int[this.length];
-                buffer.rewind();
-                buffer.asIntBuffer().get(result);
-                return result;
+                return buffer.array();
+                //int[] result = new int[this.length];
+                //buffer.rewind();
+                //buffer.asIntBuffer().get(result);
+                //buffer.asIntBuffer().get(result);
+                //return result;
             }
         }
         else{

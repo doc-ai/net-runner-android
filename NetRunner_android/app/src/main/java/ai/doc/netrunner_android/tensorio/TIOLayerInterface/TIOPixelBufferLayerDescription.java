@@ -65,9 +65,9 @@ public class TIOPixelBufferLayerDescription extends TIOLayerDescription {
         this.quantized = quantized;
 
         if (isQuantized()) {
-            this.buffer = ByteBuffer.allocateDirect(this.shape.width * this.shape.height * 3); // Input layer expects bytes
+            this.buffer = ByteBuffer.allocateDirect(this.shape.width * this.shape.height * this.shape.channels); // Input layer expects bytes
         } else {
-            this.buffer = ByteBuffer.allocateDirect(this.shape.width * this.shape.height * 3 * 4); // input layer expects floats
+            this.buffer = ByteBuffer.allocateDirect(this.shape.width * this.shape.height * this.shape.channels * 4); // input layer expects floats
         }
         this.buffer.order(ByteOrder.nativeOrder());
 
