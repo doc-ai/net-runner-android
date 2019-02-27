@@ -258,6 +258,18 @@ public class ModelRunner {
             ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().height;
 
             filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+
+            if (use16Bit){
+                classifier.setAllow16BitPrecision(true);
+            }
+            if(device == Device.GPU){
+                classifier.useGPU();
+            }
+            else if (device == Device.NNAPI){
+                classifier.useNNAPI();
+            }
+
+            classifier.setNumThreads(numThreads);
         });
 
     }

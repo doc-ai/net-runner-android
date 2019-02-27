@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -114,10 +115,13 @@ public class MainActivity extends AppCompatActivity {
                 ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
                 if (device.equals(getString(R.string.cpu))) {
                     vm.getModelRunner().useCPU();
+                    Toast.makeText(MainActivity.this, "using the CPU", Toast.LENGTH_LONG).show();
                 } else if (device.equals(getString(R.string.gpu))) {
                     vm.getModelRunner().useGPU();
+                    Toast.makeText(MainActivity.this, "using the GPU", Toast.LENGTH_LONG).show();
                 } else {
                     vm.getModelRunner().useNNAPI();
+                    Toast.makeText(MainActivity.this, "using NNAPI", Toast.LENGTH_LONG).show();
                 }
 
             }
@@ -138,6 +142,7 @@ public class MainActivity extends AppCompatActivity {
                     TIOTFLiteModel newModel = (TIOTFLiteModel)bundle.newModel();
                     newModel.load();
                     vm.getModelRunner().switchModel(newModel);
+                    Toast.makeText(MainActivity.this, "Loading "+model, Toast.LENGTH_LONG).show();
                 } catch (TIOModelBundleException e) {
                     e.printStackTrace();
                 } catch (TIOModelException e) {
@@ -156,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
                 ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
                 int threads = numThreadsOptions[position];
                 vm.getModelRunner().setNumThreads(threads);
+                Toast.makeText(MainActivity.this, "using "+threads+" threads", Toast.LENGTH_LONG).show();
             }
 
             @Override
