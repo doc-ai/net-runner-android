@@ -335,8 +335,6 @@ public class LiveCameraFragment extends Fragment implements ActivityCompat.OnReq
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
 
         try {
-
-            Log.i("cameralist", Arrays.toString(manager.getCameraIdList()));
             for (String cameraId : manager.getCameraIdList()) {
                 CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 

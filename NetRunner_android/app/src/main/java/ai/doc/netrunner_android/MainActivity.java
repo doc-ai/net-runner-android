@@ -3,6 +3,7 @@ package ai.doc.netrunner_android;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -12,6 +13,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -102,22 +104,19 @@ public class MainActivity extends AppCompatActivity {
     private void loadFaceModel(){
         ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
 
-        modelSpinner.setSelection(modelStrings.indexOf(FACE_MODEL_ID));
+        modelSpinner.setSelection(modelStrings.indexOf(FACE_MODEL_ID), false);
         modelSpinner.setEnabled(false);
 
-        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)));
+        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false);
         deviceSpinner.setEnabled(false);
 
         TIOModelBundleManager manager = vm.getManager();
         TIOModelBundle bundle = manager.bundleWithId(FACE_MODEL_ID);
         try {
             TIOTFLiteModel newModel = (TIOTFLiteModel) bundle.newModel();
-            newModel.load();
             vm.getModelRunner().switchModel(newModel, false, false, numThreadsOptions[threadsSpinner.getSelectedItemPosition()], precisionSwitch.isChecked());
             Toast.makeText(MainActivity.this, "Loading " + FACE_MODEL_ID, Toast.LENGTH_SHORT).show();
         } catch (TIOModelBundleException e) {
-            e.printStackTrace();
-        } catch (TIOModelException e) {
             e.printStackTrace();
         }
 
@@ -128,22 +127,19 @@ public class MainActivity extends AppCompatActivity {
         ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
 
-        modelSpinner.setSelection(modelStrings.indexOf(DEFAULT_MODEL_ID));
+        modelSpinner.setSelection(modelStrings.indexOf(DEFAULT_MODEL_ID), false);
         modelSpinner.setEnabled(true);
 
-        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)));
+        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false);
         deviceSpinner.setEnabled(true);
 
         TIOModelBundleManager manager = vm.getManager();
         TIOModelBundle bundle = manager.bundleWithId(DEFAULT_MODEL_ID);
         try {
             TIOTFLiteModel newModel = (TIOTFLiteModel) bundle.newModel();
-            newModel.load();
             vm.getModelRunner().switchModel(newModel, false, false, numThreadsOptions[threadsSpinner.getSelectedItemPosition()], precisionSwitch.isChecked());
             Toast.makeText(MainActivity.this, "Loading " + DEFAULT_MODEL_ID, Toast.LENGTH_SHORT).show();
         } catch (TIOModelBundleException e) {
-            e.printStackTrace();
-        } catch (TIOModelException e) {
             e.printStackTrace();
         }
 
@@ -212,7 +208,6 @@ public class MainActivity extends AppCompatActivity {
                     TIOModelBundle bundle = manager.bundleWithId(model);
                     try {
                         TIOTFLiteModel newModel = (TIOTFLiteModel) bundle.newModel();
-                        newModel.load();
                         vm.getModelRunner().switchModel(newModel);
                         Toast.makeText(MainActivity.this, "Loading " + model, Toast.LENGTH_SHORT).show();
                     } catch (TIOModelBundleException e) {
@@ -296,7 +291,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.benchmark_fragment_menu_item:
                 loadFaceModel();
-
                 getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
                 break;
         }

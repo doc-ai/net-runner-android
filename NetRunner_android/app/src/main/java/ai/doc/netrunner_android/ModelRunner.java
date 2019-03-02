@@ -66,6 +66,14 @@ public class ModelRunner {
         backgroundThread.start();
 
         backgroundHandler = new Handler(backgroundThread.getLooper());
+
+        backgroundHandler.post(() -> {
+            try {
+                ModelRunner.this.classifier.load();
+            } catch (TIOModelException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private Runnable periodicClassify =
@@ -74,11 +82,6 @@ public class ModelRunner {
                 public void run() {
                     synchronized (lock) {
                         if (runClassifier) {
-                            if (classifier == null) {
-                                Log.e(TAG, "Uninitialized Classifier or invalid context.");
-                                return;
-                            }
-
                             Bitmap bitmap = dataSource.getNextInput(inputWidth, inputHeight);
                             if (bitmap != null) {
                                 try {
@@ -94,11 +97,7 @@ public class ModelRunner {
                                 }
                                 bitmap.recycle();
                             }
-                        }
-                        try {
                             backgroundHandler.post(periodicClassify);
-                        } catch (IllegalStateException e) {
-                            Log.i(TAG, e.getLocalizedMessage());
                         }
                     }
                 }
@@ -128,8 +127,6 @@ public class ModelRunner {
 
     public void startStreamClassification(ModelRunnerDataSource dataSource, ClassificationResultListener listener) {
         synchronized (lock){
-            backgroundHandler.removeCallbacksAndMessages(null);
-
             ModelRunner.this.dataSource = dataSource;
             ModelRunner.this.listener = listener;
 
@@ -142,7 +139,8 @@ public class ModelRunner {
     public void stopStreamClassification() {
         synchronized (lock) {
             runClassifier = false;
-            backgroundHandler.removeCallbacksAndMessages(null);
+            listener = null;
+            dataSource = null;
         }
     }
 
@@ -151,28 +149,36 @@ public class ModelRunner {
     }
 
     public void switchModel(TIOTFLiteModel newModel, boolean useGPU, boolean useNNAPI, int numThreads, boolean use16Bit){
-        synchronized (lock){
-            classifier.unload();
-            classifier = newModel;
+        backgroundHandler.post(() -> {
+            synchronized (lock){
+                classifier.unload();
+                classifier = newModel;
 
-            ModelRunner.this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
-            ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
-            ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
+                try {
+                    classifier.load();
+                } catch (TIOModelException e) {
+                    e.printStackTrace();
+                }
 
-            ModelRunner.this.use16Bit = use16Bit;
+                ModelRunner.this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
+                ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
+                ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
 
-            ModelRunner.this.device = Device.CPU;
-            if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
-                ModelRunner.this.device = Device.GPU;
+                ModelRunner.this.use16Bit = use16Bit;
+
+                ModelRunner.this.device = Device.CPU;
+                if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
+                    ModelRunner.this.device = Device.GPU;
+                }
+                else if (useNNAPI){
+                    ModelRunner.this.device = Device.NNAPI;
+                }
+
+                ModelRunner.this.numThreads = numThreads;
+
+                classifier.setOptions(use16Bit, useGPU, useNNAPI, numThreads);
             }
-            else if (useNNAPI){
-                ModelRunner.this.device = Device.NNAPI;
-            }
-
-            ModelRunner.this.numThreads = numThreads;
-
-            classifier.setOptions(use16Bit, useGPU, useNNAPI, numThreads);
-        }
+        });
     }
 
     public void useGPU() {

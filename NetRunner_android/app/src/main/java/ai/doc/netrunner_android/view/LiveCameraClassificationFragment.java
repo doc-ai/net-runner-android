@@ -78,27 +78,26 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
         super.onPause();
     }
 
-    public void startClassification(){
+    public void startClassification() {
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
         vm.getModelRunner().startStreamClassification(this, (requestId, prediction, l) -> {
-            if (prediction instanceof float[]) {
-                float[] resultArray = (float[]) prediction;
-                String[] labels = vm.getModelRunner().getLabels();
+            float[] resultArray = (float[]) prediction;
+            String[] labels = vm.getModelRunner().getLabels();
 
-                // Smooth the results across frames.
-                applyFilter(resultArray, labels.length);
+            // Smooth the results across frames.
+            applyFilter(resultArray, labels.length);
 
-                // Show the prediction
-                SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
-                printTopKLabels(predictionsBuilder, resultArray, labels);
+            // Show the prediction
+            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
+            printTopKLabels(predictionsBuilder, resultArray, labels);
 
-                predictions.postValue(predictionsBuilder.toString());
-                latency.postValue(l + " ms");
-            }
+            predictions.postValue(predictionsBuilder.toString());
+            latency.postValue(l + " ms");
+
         });
     }
 
-    public void stopClassification(){
+    public void stopClassification() {
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
     }
@@ -144,7 +143,7 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
 
     private void applyFilter(float[] result, int numLabels) {
 
-        if (filterLabelProbArray == null || filterLabelProbArray[0].length != numLabels){
+        if (filterLabelProbArray == null || filterLabelProbArray[0].length != numLabels) {
             filterLabelProbArray = new float[FILTER_STAGES][numLabels];
         }
 

@@ -170,22 +170,6 @@ public class TIOTFLiteModel extends TIOModel {
     }
 
     private void recreateInterpreter() {
-        /*if (tflite != null) {
-            tflite.close();
-            if (gpuDelegate != null) {
-                gpuDelegate.close();
-            }
-
-            Interpreter.Options tfliteOptions = new Interpreter.Options();
-            tfliteOptions.setAllowFp16PrecisionForFp32(use16bit);
-            tfliteOptions.setUseNNAPI(useNNAPI);
-            tfliteOptions.setNumThreads(numThreads);
-            if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
-                tfliteOptions.addDelegate((GpuDelegate)GpuDelegateHelper.createGpuDelegate());
-            }
-
-            tflite = new Interpreter(tfliteModel, tfliteOptions);
-        }*/
         unload();
         Interpreter.Options tfliteOptions = new Interpreter.Options();
         tfliteOptions.setAllowFp16PrecisionForFp32(use16bit);

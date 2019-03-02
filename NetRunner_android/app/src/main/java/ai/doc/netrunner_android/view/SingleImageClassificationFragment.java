@@ -102,8 +102,6 @@ public class SingleImageClassificationFragment extends Fragment {
 
             predictions.postValue(predictionsBuilder.toString());
             latency.postValue(l+" ms");
-           // SingleImageClassificationFragment.this.predictions.postValue(prediction);
-            //SingleImageClassificationFragment.this.latency.postValue(latency);
         });
     }
 

@@ -210,7 +210,7 @@ public class TIOModelBundle {
     }
 
     /**
-     * @return a new instance of the TIOModel represented by this bundle. Returns nil if the model cannot be instantiated.
+     * @return a new instance of the TIOModel represented by this bundle.
      */
     public TIOModel newModel() throws TIOModelBundleException {
         try {
