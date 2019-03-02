@@ -28,7 +28,7 @@ public class ModelRunner {
     private int inputWidth;
     private int inputHeight;
 
-    private int numThreads;
+    private int numThreads = 1;
     private boolean use16Bit;
     private Device device;
 
@@ -192,28 +192,25 @@ public class ModelRunner {
 
 
     public void classifyFrame(int requestId, Bitmap frame, ClassificationResultListener listener) {
-        backgroundHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
-                SpannableStringBuilder latencyBuilder = new SpannableStringBuilder();
+        backgroundHandler.post(() -> {
+            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
+            SpannableStringBuilder latencyBuilder = new SpannableStringBuilder();
 
-                try {
-                    long startTime = SystemClock.uptimeMillis();
-                    float[] result = (float[])classifier.runOn(frame);
-                    long endTime = SystemClock.uptimeMillis();
+            try {
+                long startTime = SystemClock.uptimeMillis();
+                float[] result = (float[])classifier.runOn(frame);
+                long endTime = SystemClock.uptimeMillis();
 
-                    // Show the prediction
-                    printTopKLabels(predictionsBuilder,result);
+                // Show the prediction
+                printTopKLabels(predictionsBuilder,result);
 
-                    // Show the latency
-                    long duration = endTime - startTime;
-                    latencyBuilder.append(new SpannableString(duration + " ms"));
+                // Show the latency
+                long duration = endTime - startTime;
+                latencyBuilder.append(new SpannableString(duration + " ms"));
 
-                    listener.classificationResult(requestId, predictionsBuilder.toString(), latencyBuilder.toString());
-                } catch (TIOModelException e) {
-                    e.printStackTrace();
-                }
+                listener.classificationResult(requestId, predictionsBuilder.toString(), latencyBuilder.toString());
+            } catch (TIOModelException e) {
+                e.printStackTrace();
             }
         });
     }
@@ -230,22 +227,14 @@ public class ModelRunner {
     }
 
     public void stopStreamClassification() {
-        backgroundThread.quitSafely();
-        try {
-            backgroundThread.join();
-            backgroundThread = null;
-            backgroundHandler = null;
-            synchronized (lock) {
-                runClassifier = false;
+        backgroundHandler.postAtFrontOfQueue(new Runnable() {
+            @Override
+            public void run() {
+                backgroundHandler.removeCallbacksAndMessages(null);
+                ModelRunner.this.dataSource = null;
+                ModelRunner.this.listener = null;
             }
-            backgroundThread = new HandlerThread(HANDLE_THREAD_NAME);
-            backgroundThread.start();
-            backgroundHandler = new Handler(backgroundThread.getLooper());
-            this.dataSource = null;
-            this.listener = null;
-        } catch (InterruptedException e) {
-            Log.e(TAG, "Interrupted when stopping background thread", e);
-        }
+        });
     }
 
     public void switchModel(TIOTFLiteModel newModel) throws TIOModelException {
@@ -259,17 +248,7 @@ public class ModelRunner {
 
             filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
 
-            if (use16Bit){
-                classifier.setAllow16BitPrecision(true);
-            }
-            if(device == Device.GPU){
-                classifier.useGPU();
-            }
-            else if (device == Device.NNAPI){
-                classifier.useNNAPI();
-            }
-
-            classifier.setNumThreads(numThreads);
+            classifier.setOptions(use16Bit, this.device == Device.GPU, this.device == Device.NNAPI, this.numThreads);
         });
 
     }
@@ -330,5 +309,13 @@ public class ModelRunner {
         backgroundHandler.post(() -> {
             classifier.unload();
         });
+    }
+
+    public int getInputWidth() {
+        return inputWidth;
+    }
+
+    public int getInputHeight() {
+        return inputHeight;
     }
 }

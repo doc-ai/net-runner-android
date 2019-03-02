@@ -2,6 +2,7 @@ package ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
+import android.util.Log;
 
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.experimental.GpuDelegate;
@@ -50,7 +51,14 @@ public class TIOTFLiteModel extends TIOModel {
 
     @Override
     public void unload() {
-        tflite.close();
+        if (tflite != null) {
+            tflite.close();
+            this.tflite = null;
+        }
+        if (this.gpuDelegate != null){
+            this.gpuDelegate.close();
+            this.gpuDelegate = null;
+        }
         super.unload();
     }
 
@@ -125,7 +133,7 @@ public class TIOTFLiteModel extends TIOModel {
     }
 
     private void recreateInterpreter() {
-        if (tflite != null) {
+        /*if (tflite != null) {
             tflite.close();
             if (gpuDelegate != null) {
                 gpuDelegate.close();
@@ -140,7 +148,18 @@ public class TIOTFLiteModel extends TIOModel {
             }
 
             tflite = new Interpreter(tfliteModel, tfliteOptions);
+        }*/
+        unload();
+        Interpreter.Options tfliteOptions = new Interpreter.Options();
+        tfliteOptions.setAllowFp16PrecisionForFp32(use16bit);
+        tfliteOptions.setUseNNAPI(useNNAPI);
+        tfliteOptions.setNumThreads(numThreads);
+        if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
+            tfliteOptions.addDelegate((GpuDelegate)GpuDelegateHelper.createGpuDelegate());
         }
+
+        tflite = new Interpreter(tfliteModel, tfliteOptions);
+
     }
 
     public void useGPU() {
@@ -148,7 +167,6 @@ public class TIOTFLiteModel extends TIOModel {
             useGPU = true;
             recreateInterpreter();
         }
-
     }
 
     public void useCPU() {
@@ -175,6 +193,20 @@ public class TIOTFLiteModel extends TIOModel {
 
     public long getLastInferenceDuration(){
         return tflite.getLastNativeInferenceDurationNanoseconds();
+    }
+
+    public void setOptions(boolean use16bit, boolean useGPU, boolean useNNAPI, int numThreads){
+        this.use16bit = use16bit;
+        if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
+            this.useGPU = true;
+            this.useNNAPI = false;
+        }
+        else if (useNNAPI){
+            this.useGPU = false;
+            this.useNNAPI = true;
+        }
+        this.numThreads = numThreads;
+        recreateInterpreter();
     }
 
 
