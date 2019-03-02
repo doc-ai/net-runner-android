@@ -29,7 +29,7 @@ import ai.doc.netrunner_android.tensorio.utils.FileIO;
 /**
  * Encapsulates information about a @see TIOModel without actually loading the model.
  * <p>
- * A TIOModelBundle is used by the UI to show model details and is used to instantiate model instances as a model factory. There is currently a one-to-one correspondence between a TIOModelBundle and a .tfbundle folder in the models directory.
+ * A TIOModelBundle is used by the UI to show model details and is used to instantiate model instances as a model factory. There is currently a one-to-one correspondence between a TIOModelBundle and a .mobilenet_V1_0.25_128.tfbundle folder in the models directory.
  * <p>
  * A model bundle folder must contain at least a model.json file, which contains information about the model. Some information is required, such as the identifier and name field, while other information may be added as needed by your use case.
  */
