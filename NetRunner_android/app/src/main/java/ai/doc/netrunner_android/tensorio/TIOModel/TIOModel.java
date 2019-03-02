@@ -142,9 +142,8 @@ public abstract class TIOModel {
      * more control over when a model is loaded in order to avoid placing parameters into memory
      * before they are needed.
      * <p>
-     *
      */
-    public void load() throws TIOModelException{
+    public void load() throws TIOModelException {
         loaded = true;
     }
 
@@ -155,33 +154,34 @@ public abstract class TIOModel {
      * may do this as well in order to provide finer grained control to consumers.
      * <p>
      */
-    public void unload(){
+    public void unload() {
         loaded = false;
     }
 
     /**
      * Performs inference on the provided input and returns the results. The primary interface to a
      * conforming class.
-     *
      */
-    public Object runOn(Map input) throws TIOModelException{
-        if (getInputs().size() != input.size()){
-            throw new TIOModelException("The model has "+getInputs().size()+" input layers but received "+input.size()+ " inputs");
-        }
-        if (!input.keySet().equals(getBundle().getNamedInputInterfaces().keySet())){
-            for (TIOLayerInterface layer: getInputs()){
-                if (!input.containsKey(layer.getName())){
-                    throw new TIOModelException("The model recieved no input for layer \""+layer.getName()+"\"");
+    public Object runOn(Object input) throws TIOModelException {
+
+        if (input instanceof Map) {
+            Map<String, Object> inputMap = (Map<String, Object>) input;
+            if (getInputs().size() != inputMap.size()) {
+                throw new TIOModelException("The model has " + getInputs().size() + " input layers but received " + inputMap.size() + " inputs");
+            }
+            if (!inputMap.keySet().equals(getBundle().getNamedInputInterfaces().keySet())) {
+                for (TIOLayerInterface layer : getInputs()) {
+                    if (!inputMap.containsKey(layer.getName())) {
+                        throw new TIOModelException("The model received no input for layer \"" + layer.getName() + "\"");
+                    }
                 }
             }
+        } else {
+            if (getInputs().size() != 1) {
+                throw new TIOModelException("The model has " + getInputs().size() + " input layers but only received one input");
+            }
         }
-        return null;
-    }
 
-    public Object runOn(Object input) throws TIOModelException {
-        if (getInputs().size() != 1){
-            throw new TIOModelException("The model has "+getInputs().size()+" input layers but only received one input");
-        }
         return null;
     }
 
@@ -204,7 +204,7 @@ public abstract class TIOModel {
      * inputs provided to the `runOn:` method prior to performing inference. See TIOModelBundleJSONSchema.h
      * for more information about this json file.
      */
-    public TIOLayerDescription descriptionOfInputAtIndex(int index){
+    public TIOLayerDescription descriptionOfInputAtIndex(int index) {
         return this.bundle.getIndexedInputInterfaces().get(index).getDataDescription();
     }
 
@@ -219,7 +219,7 @@ public abstract class TIOModel {
      * inputs provided to the `runOn:` method prior to performing inference. See TIOModelBundleJSONSchema.h
      * for more information about this json file.
      */
-    public TIOLayerDescription descriptionOfInputWithName(String name){
+    public TIOLayerDescription descriptionOfInputWithName(String name) {
         return this.bundle.getNamedInputInterfaces().get(name).getDataDescription();
     }
 
@@ -235,7 +235,7 @@ public abstract class TIOModel {
      * of performing inference and returned from the `runOn:` method. See TIOModelBundleJSONSchema.h
      * for more information about this json file.
      */
-    public TIOLayerDescription descriptionOfOutputAtIndex(int index){
+    public TIOLayerDescription descriptionOfOutputAtIndex(int index) {
         return this.bundle.getIndexedOutputInterfaces().get(index).getDataDescription();
     }
 
@@ -250,7 +250,7 @@ public abstract class TIOModel {
      * of performing inference and returned from the `runOn:` method. See TIOModelBundleJSONSchema.h
      * for more information about this json file.
      */
-    public TIOLayerDescription descriptionOfOutputWithName(String name){
+    public TIOLayerDescription descriptionOfOutputWithName(String name) {
         return this.bundle.getNamedOutputInterfaces().get(name).getDataDescription();
     }
 

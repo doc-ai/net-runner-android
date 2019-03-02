@@ -5,7 +5,7 @@
     <data>
         <variable
             name="fragment"
-            type="ai.doc.netrunner_android.view.BulkInferenceFragment"/>
+            type="ai.doc.netrunner_android.view.SingleImageClassificationFragment"/>
     </data>
 
     <LinearLayout
@@ -13,7 +13,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:layout_margin="25dp"
-        tools:context=".view.BulkInferenceFragment">
+        tools:context=".view.SingleImageClassificationFragment">
 
         <ImageView
             android:layout_width="match_parent"

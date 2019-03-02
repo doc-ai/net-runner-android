@@ -56,13 +56,11 @@ public class IntegrationTests {
             Map<String, float[]> input_dict = new HashMap<>();
             input_dict.put("input_x", new float[]{2});
             output = model.runOn(input_dict);
-            assertTrue(output instanceof Map);
-            Map<String, float[]> result_dict = (Map<String, float[]>) output;
+            assertTrue(output instanceof float[]);
+            result = (float[]) output;
 
-            assertTrue(result_dict.containsKey("output_z"));
-            assertEquals(1, result_dict.size());
-            assertEquals(1, result_dict.get("output_z").length);
-            assertEquals(25f, result_dict.get("output_z")[0], epsilon);
+            assertEquals(1, result.length);
+            assertEquals(25f, result[0], epsilon);
 
             // try running on input of of the wrong length, should throw IllegalArgumentException
             try {
@@ -110,13 +108,11 @@ public class IntegrationTests {
             Map<String, float[]> input_dict = new HashMap<>();
             input_dict.put("input_x", input);
             output = model.runOn(input_dict);
-            assertTrue(output instanceof Map);
-            Map<String, float[]> result_dict = (Map<String, float[]>) output;
+            assertTrue(output instanceof float[]);
+            result = (float[]) output;
 
-            assertTrue(result_dict.containsKey("output_z"));
-            assertEquals(1, result_dict.size());
-            assertEquals(4, result_dict.get("output_z").length);
-            assertTrue(Arrays.equals(expected, result_dict.get("output_z")));
+            assertEquals(4, result.length);
+            assertTrue(Arrays.equals(expected, result));
 
             // try running on input of of the wrong length, should throw IllegalArgumentException
             try {

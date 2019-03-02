@@ -60,6 +60,10 @@ public class LiveCameraFragment extends Fragment implements ActivityCompat.OnReq
     private boolean checkedPermissions = false;
 
 
+    protected int getCameraFacing(){
+        return CameraCharacteristics.LENS_FACING_BACK;
+    }
+
     /**
      * Max preview width and height that is guaranteed by Camera2 API
      */
@@ -338,7 +342,7 @@ public class LiveCameraFragment extends Fragment implements ActivityCompat.OnReq
 
                 // We don't use a front facing camera in this sample.
                 Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
-                if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                if (facing != null && facing != getCameraFacing()) {
                     continue;
                 }
 

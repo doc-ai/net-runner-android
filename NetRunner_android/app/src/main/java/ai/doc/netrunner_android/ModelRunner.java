@@ -4,25 +4,19 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
-import android.text.style.RelativeSizeSpan;
 import android.util.Log;
-
-import java.util.AbstractMap;
-import java.util.Map;
-import java.util.PriorityQueue;
+import android.view.Display;
 
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
 import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
 import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
 import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 
 
 public class ModelRunner {
-    private static final String TAG = "TfLiteCameraDemo";
+    private static final String TAG = "ModelRunner";
 
     private String[] labels;
     private int inputWidth;
@@ -37,30 +31,18 @@ public class ModelRunner {
 
     private TIOTFLiteModel classifier;
 
-    private HandlerThread backgroundThread;
     private Handler backgroundHandler;
-    private static final String HANDLE_THREAD_NAME = "CameraBackground";
+    private static final String HANDLE_THREAD_NAME = "ClassificationThread";
 
     private final Object lock = new Object();
     private boolean runClassifier = false;
-    private float[][] filterLabelProbArray = null;
-
-    private static final int FILTER_STAGES = 3;
-    private static final float FILTER_FACTOR = 0.4f;
-
-    private static final int RESULTS_TO_SHOW = 3;
-    private PriorityQueue<Map.Entry<String, Float>> sortedLabels =
-            new PriorityQueue<>(
-                    RESULTS_TO_SHOW,
-                    (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
-
 
     public interface ModelRunnerDataSource {
         Bitmap getNextInput(int size_x, int size_y);
     }
 
     public interface ClassificationResultListener {
-        void classificationResult(int requestId, String prediction, String latency);
+        void classificationResult(int requestId, Object prediction, long latency);
     }
 
     public class UnsupportedConfigurationException extends RuntimeException {
@@ -75,14 +57,14 @@ public class ModelRunner {
 
     public ModelRunner(TIOTFLiteModel classifier) {
         this.classifier = classifier;
-        this.labels = ((TIOVectorLayerDescription)classifier.getOutputs().get(0).getDataDescription()).getLabels();
-        this.inputWidth = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().width;
-        this.inputHeight = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().height;
 
-        filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+        this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
+        this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
+        this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
 
-        backgroundThread = new HandlerThread(HANDLE_THREAD_NAME);
+        HandlerThread backgroundThread = new HandlerThread(HANDLE_THREAD_NAME);
         backgroundThread.start();
+
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
 
@@ -96,98 +78,34 @@ public class ModelRunner {
                                 Log.e(TAG, "Uninitialized Classifier or invalid context.");
                                 return;
                             }
-                            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
-                            SpannableStringBuilder latencyBuilder = new SpannableStringBuilder();
 
                             Bitmap bitmap = dataSource.getNextInput(inputWidth, inputHeight);
                             if (bitmap != null) {
                                 try {
-
                                     // run inference
                                     long startTime = SystemClock.uptimeMillis();
-                                    float[] resultArray;
                                     Object result = classifier.runOn(bitmap);
                                     long endTime = SystemClock.uptimeMillis();
-                                    resultArray = (float[])result;
 
-
-                                    // Smooth the results across frames.
-                                    applyFilter(resultArray);
-
-                                    // Show the prediction
-                                    printTopKLabels(predictionsBuilder,resultArray);
-
-                                    // Show the latency
-                                    long duration = endTime - startTime;
-                                    latencyBuilder.append(new SpannableString(duration + " ms"));
+                                    listener.classificationResult(-1, result, endTime - startTime);
 
                                 } catch (TIOModelException e) {
                                     e.printStackTrace();
                                 }
                                 bitmap.recycle();
-
-                                listener.classificationResult(-1, predictionsBuilder.toString(), latencyBuilder.toString());
                             }
                         }
-                    }
-                    try {
-                        if (backgroundThread.isAlive()) {
+                        try {
                             backgroundHandler.post(periodicClassify);
+                        } catch (IllegalStateException e) {
+                            Log.i(TAG, e.getLocalizedMessage());
                         }
-                    } catch (IllegalStateException e) {
-                        Log.i(TAG, e.getLocalizedMessage());
                     }
-
                 }
             };
 
-    private void applyFilter(float[] result) {
-        int numLabels = getNumLabels();
-
-        // Low pass filter `labelProbArray` into the first stage of the filter.
-        for (int j = 0; j < numLabels; ++j) {
-            filterLabelProbArray[0][j] +=
-                    FILTER_FACTOR * (result[j] - filterLabelProbArray[0][j]);
-        }
-        // Low pass filter each stage into the next.
-        for (int i = 1; i < FILTER_STAGES; ++i) {
-            for (int j = 0; j < numLabels; ++j) {
-                filterLabelProbArray[i][j] +=
-                        FILTER_FACTOR * (filterLabelProbArray[i - 1][j] - filterLabelProbArray[i][j]);
-            }
-        }
-
-        // Copy the last stage filter output back to `labelProbArray`.
-        System.arraycopy(filterLabelProbArray[FILTER_STAGES - 1], 0, result, 0, numLabels);
-    }
-
-    private void printTopKLabels(SpannableStringBuilder builder, float[] result) {
-        // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
-        for (int i = 0; i < getNumLabels(); ++i) {
-            sortedLabels.add(new AbstractMap.SimpleEntry<>(labels[i], result[i]));
-            if (sortedLabels.size() > RESULTS_TO_SHOW) {
-                sortedLabels.poll();
-            }
-        }
-
-        final int size = sortedLabels.size();
-
-        for (int i = 0; i < size; i++) {
-            Map.Entry<String, Float> label = sortedLabels.poll();
-            SpannableString span =
-                    new SpannableString(String.format("%s: %4.2f\n", label.getKey(), label.getValue()));
-
-            // Make first item bigger.
-            if (i == size - 1) {
-                float sizeScale = (i == size - 1) ? 1.25f : 0.8f;
-                span.setSpan(new RelativeSizeSpan(sizeScale), 0, span.length(), 0);
-            }
-            builder.insert(0, span);
-        }
-    }
-
-    private int getNumLabels() {
-        return this.labels.length;
+    public String[] getLabels() {
+        return labels;
     }
 
 
@@ -198,17 +116,10 @@ public class ModelRunner {
 
             try {
                 long startTime = SystemClock.uptimeMillis();
-                float[] result = (float[])classifier.runOn(frame);
+                float[] result = (float[]) classifier.runOn(frame);
                 long endTime = SystemClock.uptimeMillis();
 
-                // Show the prediction
-                printTopKLabels(predictionsBuilder,result);
-
-                // Show the latency
-                long duration = endTime - startTime;
-                latencyBuilder.append(new SpannableString(duration + " ms"));
-
-                listener.classificationResult(requestId, predictionsBuilder.toString(), latencyBuilder.toString());
+                listener.classificationResult(requestId, result, endTime - startTime);
             } catch (TIOModelException e) {
                 e.printStackTrace();
             }
@@ -216,41 +127,52 @@ public class ModelRunner {
     }
 
     public void startStreamClassification(ModelRunnerDataSource dataSource, ClassificationResultListener listener) {
-        this.dataSource = dataSource;
-        this.listener = listener;
+        synchronized (lock){
+            backgroundHandler.removeCallbacksAndMessages(null);
 
-        synchronized (lock) {
+            ModelRunner.this.dataSource = dataSource;
+            ModelRunner.this.listener = listener;
+
             runClassifier = true;
-        }
 
-        backgroundHandler.post(periodicClassify);
+            backgroundHandler.post(periodicClassify);
+        }
     }
 
     public void stopStreamClassification() {
-        backgroundHandler.postAtFrontOfQueue(new Runnable() {
-            @Override
-            public void run() {
-                backgroundHandler.removeCallbacksAndMessages(null);
-                ModelRunner.this.dataSource = null;
-                ModelRunner.this.listener = null;
-            }
-        });
+        synchronized (lock) {
+            runClassifier = false;
+            backgroundHandler.removeCallbacksAndMessages(null);
+        }
     }
 
     public void switchModel(TIOTFLiteModel newModel) throws TIOModelException {
-        backgroundHandler.post(() -> {
+        switchModel(newModel, this.device == Device.GPU, this.device == Device.NNAPI, this.numThreads, this.use16Bit);
+    }
+
+    public void switchModel(TIOTFLiteModel newModel, boolean useGPU, boolean useNNAPI, int numThreads, boolean use16Bit){
+        synchronized (lock){
             classifier.unload();
             classifier = newModel;
 
-            ModelRunner.this.labels = ((TIOVectorLayerDescription)classifier.getOutputs().get(0).getDataDescription()).getLabels();
-            ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().width;
-            ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription)classifier.getInputs().get(0).getDataDescription()).getShape().height;
+            ModelRunner.this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
+            ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
+            ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
 
-            filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+            ModelRunner.this.use16Bit = use16Bit;
 
-            classifier.setOptions(use16Bit, this.device == Device.GPU, this.device == Device.NNAPI, this.numThreads);
-        });
+            ModelRunner.this.device = Device.CPU;
+            if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()){
+                ModelRunner.this.device = Device.GPU;
+            }
+            else if (useNNAPI){
+                ModelRunner.this.device = Device.NNAPI;
+            }
 
+            ModelRunner.this.numThreads = numThreads;
+
+            classifier.setOptions(use16Bit, useGPU, useNNAPI, numThreads);
+        }
     }
 
     public void useGPU() {
@@ -302,13 +224,6 @@ public class ModelRunner {
                 this.use16Bit = use16Bit;
             });
         }
-    }
-
-    public void close() {
-        backgroundHandler.removeCallbacksAndMessages(null);
-        backgroundHandler.post(() -> {
-            classifier.unload();
-        });
     }
 
     public int getInputWidth() {

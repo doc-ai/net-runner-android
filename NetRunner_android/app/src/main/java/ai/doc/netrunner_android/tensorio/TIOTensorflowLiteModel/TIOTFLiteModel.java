@@ -62,8 +62,8 @@ public class TIOTFLiteModel extends TIOModel {
         super.unload();
     }
 
-    @Override
-    public Object runOn(Map input) throws TIOModelException {
+
+    private Map<String, Object> runMultipleInputMultipleOutput(Map input) throws TIOModelException {
         super.runOn(input);
 
         Object[] inputs = new Object[getInputs().size()];
@@ -101,8 +101,8 @@ public class TIOTFLiteModel extends TIOModel {
         return outputMap;
     }
 
-    @Override
-    public Object runOn(Object input) throws TIOModelException {
+
+    private Object runSingleInputSingleOutput(Object input) throws TIOModelException {
         super.runOn(input);
 
         // Fetch the input and output layer descriptions from the model
@@ -121,6 +121,43 @@ public class TIOTFLiteModel extends TIOModel {
 
         // Ask the outputlayer to convert the outputbuffer back to an object to return to the user
         return outputLayer.fromByteBuffer(outputBuffer);
+    }
+
+    @Override
+    public Object runOn(Object input) throws TIOModelException{
+        super.runOn(input);
+
+        int numInputs = getInputs().size();
+        int numOutputs = getOutputs().size();
+
+        if (numInputs > 1){
+            Map<String, Object>  output = runMultipleInputMultipleOutput((Map<String, Object>)input);
+
+            if (numOutputs == 1){
+                return output.values().iterator().next();
+            }
+            return output;
+        }
+        else{
+            if (input instanceof Map){
+                Map<String, Object>  output = runMultipleInputMultipleOutput((Map<String, Object>)input);
+                if (numOutputs == 1){
+                    return output.values().iterator().next();
+                }
+                return output;
+            }
+            else{
+                if (numOutputs == 1) {
+                    return runSingleInputSingleOutput(input);
+                }
+                else{
+                    Map<String, Object> inputMap = new HashMap<>();
+                    TIOLayerInterface inputLayer = getBundle().getIndexedInputInterfaces().get(0);
+                    inputMap.put(inputLayer.getName(), input);
+                    return runMultipleInputMultipleOutput(inputMap);
+                }
+            }
+        }
     }
 
     private MappedByteBuffer loadModelFile(Context context, String path) throws IOException {

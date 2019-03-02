@@ -18,12 +18,19 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
+import android.text.style.RelativeSizeSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
+
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.PriorityQueue;
 
 import ai.doc.netrunner_android.ModelRunner;
 import ai.doc.netrunner_android.R;
@@ -32,15 +39,17 @@ import ai.doc.netrunner_android.databinding.FragmentBulkInferenceBinding;
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.app.Activity.RESULT_OK;
 
-public class BulkInferenceFragment extends Fragment {
+public class SingleImageClassificationFragment extends Fragment {
     private static final int READ_EXTERNAL_STORAGE_REQUEST_CODE = 123;
+    private static final int RESULTS_TO_SHOW = 3;
+
     private ImageView imageView;
     private Bitmap selected;
     private Button btnClassify;
     private MutableLiveData<String> latency = new MutableLiveData<>();
     private MutableLiveData<String> predictions = new MutableLiveData<>();
 
-    public BulkInferenceFragment() {
+    public SingleImageClassificationFragment() {
     }
 
     @Override
@@ -83,9 +92,18 @@ public class BulkInferenceFragment extends Fragment {
         ModelRunner modelRunner = vm.getModelRunner();
 
         Bitmap small = Bitmap.createScaledBitmap(selected, modelRunner.getInputWidth(), modelRunner.getInputHeight(), false);
-        modelRunner.classifyFrame(0, small, (requestId, prediction, latency) -> {
-            BulkInferenceFragment.this.predictions.postValue(prediction);
-            BulkInferenceFragment.this.latency.postValue(latency);
+        modelRunner.classifyFrame(0, small, (requestId, prediction, l) -> {
+            float[] resultArray= (float[])prediction;
+            String[] labels = vm.getModelRunner().getLabels();
+
+            // Show the prediction
+            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
+            printTopKLabels(predictionsBuilder, resultArray, labels);
+
+            predictions.postValue(predictionsBuilder.toString());
+            latency.postValue(l+" ms");
+           // SingleImageClassificationFragment.this.predictions.postValue(prediction);
+            //SingleImageClassificationFragment.this.latency.postValue(latency);
         });
     }
 
@@ -119,6 +137,36 @@ public class BulkInferenceFragment extends Fragment {
             if (ActivityCompat.checkSelfPermission(getActivity(), READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
                 pickImage();
             }
+        }
+    }
+
+    private void printTopKLabels(SpannableStringBuilder builder, float[] result, String[] labels) {
+        // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
+        PriorityQueue<Map.Entry<String, Float>> sortedLabels =
+                new PriorityQueue<>(
+                        RESULTS_TO_SHOW,
+                        (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
+
+        for (int i = 0; i < labels.length; ++i) {
+            sortedLabels.add(new AbstractMap.SimpleEntry<>(labels[i], result[i]));
+            if (sortedLabels.size() > RESULTS_TO_SHOW) {
+                sortedLabels.poll();
+            }
+        }
+
+        final int size = sortedLabels.size();
+
+        for (int i = 0; i < size; i++) {
+            Map.Entry<String, Float> label = sortedLabels.poll();
+            SpannableString span =
+                    new SpannableString(String.format("%s: %4.2f\n", label.getKey(), label.getValue()));
+
+            // Make first item bigger.
+            if (i == size - 1) {
+                float sizeScale = (i == size - 1) ? 1.25f : 0.8f;
+                span.setSpan(new RelativeSizeSpan(sizeScale), 0, span.length(), 0);
+            }
+            builder.insert(0, span);
         }
     }
 
