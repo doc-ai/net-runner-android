@@ -3,7 +3,7 @@ package ai.doc.netrunner_android.view;
 import android.arch.lifecycle.ViewModel;
 
 import ai.doc.netrunner_android.ModelRunner;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleManager;
+import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
 
 public class ClassificationViewModel extends ViewModel {
     private int currentTab = -1;

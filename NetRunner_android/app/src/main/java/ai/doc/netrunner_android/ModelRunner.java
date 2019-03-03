@@ -5,14 +5,12 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
-import android.util.Log;
-import android.view.Display;
 
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
-import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
-import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
+import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
+import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
+import ai.doc.tensorio.TIOModel.TIOModelException;
+import ai.doc.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
+import ai.doc.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 
 
 public class ModelRunner {

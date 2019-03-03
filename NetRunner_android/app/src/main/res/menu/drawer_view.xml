@@ -10,10 +10,10 @@
             android:checked="true"
             android:title="@string/live_camera_menu_item_title" />
         <item
-            android:id="@+id/bulk_inference_fragment_menu_item"
+            android:id="@+id/single_image_fragment_menu_item"
             android:title="@string/single_image_menu_item_title" />
         <item
-            android:id="@+id/benchmark_fragment_menu_item"
+            android:id="@+id/phenomenal_face_menu_item"
             android:title="@string/benchmark_menu_item_title" />
     </group>
 

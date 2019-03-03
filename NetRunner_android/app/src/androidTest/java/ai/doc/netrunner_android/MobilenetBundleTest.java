@@ -5,14 +5,14 @@ import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
 
-import ai.doc.netrunner_android.tensorio.TIOData.TIOPixelNormalizer;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOLayerInterface;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleException;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelOptions;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat;
+import ai.doc.tensorio.TIOData.TIOPixelNormalizer;
+import ai.doc.tensorio.TIOLayerInterface.TIOLayerInterface;
+import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
+import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
+import ai.doc.tensorio.TIOModel.TIOModelBundle;
+import ai.doc.tensorio.TIOModel.TIOModelBundleException;
+import ai.doc.tensorio.TIOModel.TIOModelOptions;
+import ai.doc.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

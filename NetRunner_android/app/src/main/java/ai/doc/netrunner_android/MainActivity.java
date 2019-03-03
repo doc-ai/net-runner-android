@@ -3,7 +3,6 @@ package ai.doc.netrunner_android;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -13,7 +12,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -26,17 +24,17 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModel;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundle;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleException;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelBundleManager;
-import ai.doc.netrunner_android.tensorio.TIOModel.TIOModelException;
-import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
-import ai.doc.netrunner_android.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
-import ai.doc.netrunner_android.view.PhenomenalFaceFragment;
-import ai.doc.netrunner_android.view.SingleImageClassificationFragment;
+import ai.doc.tensorio.TIOModel.TIOModel;
+import ai.doc.tensorio.TIOModel.TIOModelBundle;
+import ai.doc.tensorio.TIOModel.TIOModelBundleException;
+import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
+import ai.doc.tensorio.TIOModel.TIOModelException;
+import ai.doc.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
+import ai.doc.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 import ai.doc.netrunner_android.view.ClassificationViewModel;
 import ai.doc.netrunner_android.view.LiveCameraClassificationFragment;
+import ai.doc.netrunner_android.view.PhenomenalFaceFragment;
+import ai.doc.netrunner_android.view.SingleImageClassificationFragment;
 
 public class MainActivity extends AppCompatActivity {
     private Integer[] numThreadsOptions = new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -101,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void loadFaceModel(){
+    private void loadFaceModel() {
         ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
 
         modelSpinner.setSelection(modelStrings.indexOf(FACE_MODEL_ID), false);
@@ -123,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         faceModelLoaded = true;
     }
 
-    private void loadDefaultModel(){
+    private void loadDefaultModel() {
         ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
 
@@ -197,12 +195,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void OnUserSelectedItem(AdapterView<?> parent, View view, int position, long id) {
                 String model = modelStrings.get(position);
-                if (model.equals(FACE_MODEL_ID)){
-                    nav.setCheckedItem(R.id.benchmark_fragment_menu_item);
+                if (model.equals(FACE_MODEL_ID)) {
+                    nav.setCheckedItem(R.id.phenomenal_face_menu_item);
                     loadFaceModel();
                     getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
-                }
-                else{
+                } else {
                     ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
                     TIOModelBundleManager manager = vm.getManager();
                     TIOModelBundle bundle = manager.bundleWithId(model);
@@ -275,25 +272,26 @@ public class MainActivity extends AppCompatActivity {
         ClassificationViewModel vm = ViewModelProviders.of(this).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
 
-        switch (selectedTabMenuId) {
-            case R.id.live_camera_fragment_menu_item:
-                if (faceModelLoaded){
-                    loadDefaultModel();
-                }
-                getSupportFragmentManager().beginTransaction().replace(R.id.container, new LiveCameraClassificationFragment(), getString(R.string.active_fragment_tag)).commit();
-                break;
-            case R.id.bulk_inference_fragment_menu_item:
-                if (faceModelLoaded){
-                    loadDefaultModel();
-                }
+        if (selectedTabMenuId == R.id.live_camera_fragment_menu_item) {
+            if (faceModelLoaded) {
+                loadDefaultModel();
+            }
+            getSupportFragmentManager().beginTransaction().replace(R.id.container, new LiveCameraClassificationFragment(), getString(R.string.active_fragment_tag)).commit();
 
-                getSupportFragmentManager().beginTransaction().replace(R.id.container, new SingleImageClassificationFragment()).commit();
-                break;
-            case R.id.benchmark_fragment_menu_item:
-                loadFaceModel();
-                getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
-                break;
+        } else if (selectedTabMenuId == R.id.single_image_fragment_menu_item) {
+            if (faceModelLoaded) {
+                loadDefaultModel();
+            }
+
+            getSupportFragmentManager().beginTransaction().replace(R.id.container, new SingleImageClassificationFragment()).commit();
+
+        } else if (selectedTabMenuId == R.id.phenomenal_face_menu_item) {
+            loadFaceModel();
+            getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
+
         }
+
+
     }
 
     private abstract class SpinnerListener implements AdapterView.OnItemSelectedListener {
