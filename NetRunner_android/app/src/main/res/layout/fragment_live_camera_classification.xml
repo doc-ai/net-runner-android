@@ -26,6 +26,7 @@
             android:layout_marginLeft="25dp"
             android:layout_marginRight="25dp"
             android:layout_marginBottom="25dp"
+            android:padding="15dp"
             android:layout_height="wrap_content"
             android:background="@drawable/rounded_rectangle"
             android:orientation="horizontal"

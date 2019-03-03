@@ -12,7 +12,6 @@ import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -21,7 +20,6 @@ import android.support.v4.app.Fragment;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.style.RelativeSizeSpan;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,7 +32,7 @@ import java.util.PriorityQueue;
 
 import ai.doc.netrunner_android.ModelRunner;
 import ai.doc.netrunner_android.R;
-import ai.doc.netrunner_android.databinding.FragmentBulkInferenceBinding;
+import ai.doc.netrunner_android.databinding.FragmentSingleImageBinding;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.app.Activity.RESULT_OK;
@@ -61,7 +59,7 @@ public class SingleImageClassificationFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        FragmentBulkInferenceBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_bulk_inference, container, false);
+        FragmentSingleImageBinding binding = DataBindingUtil.inflate(inflater, R.layout.fragment_single_image, container, false);
         binding.setFragment(this);
         binding.setLifecycleOwner(this);
         View root = binding.getRoot();
