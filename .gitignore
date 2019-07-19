@@ -78,3 +78,6 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+phenomenal-face-mobilenet-v2-100-224-101.tfbundle
+PhenomenalFaceTests.java
+PhenomenalFaceFragment.java
