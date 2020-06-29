@@ -6,7 +6,6 @@
     <string name="cpu">CPU</string>
     <string name="live_camera_menu_item_title">Live camera</string>
     <string name="single_image_menu_item_title">Single image</string>
-    <string name="benchmark_menu_item_title">Phenomenal Face</string>
     <string name="model_menu_item_title">Model</string>
     <string name="device_menu_item_title">Accelerator</string>
     <string name="threads_menu_item_title">Threads</string>

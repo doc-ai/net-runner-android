@@ -33,7 +33,6 @@ import ai.doc.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
 import ai.doc.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
 import ai.doc.netrunner_android.view.ClassificationViewModel;
 import ai.doc.netrunner_android.view.LiveCameraClassificationFragment;
-import ai.doc.netrunner_android.view.PhenomenalFaceFragment;
 import ai.doc.netrunner_android.view.SingleImageClassificationFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -195,23 +194,18 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void OnUserSelectedItem(AdapterView<?> parent, View view, int position, long id) {
                 String model = modelStrings.get(position);
-                if (model.equals(FACE_MODEL_ID)) {
-                    nav.setCheckedItem(R.id.phenomenal_face_menu_item);
-                    loadFaceModel();
-                    getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
-                } else {
-                    ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
-                    TIOModelBundleManager manager = vm.getManager();
-                    TIOModelBundle bundle = manager.bundleWithId(model);
-                    try {
-                        TIOTFLiteModel newModel = (TIOTFLiteModel) bundle.newModel();
-                        vm.getModelRunner().switchModel(newModel);
-                        Toast.makeText(MainActivity.this, "Loading " + model, Toast.LENGTH_SHORT).show();
-                    } catch (TIOModelBundleException e) {
-                        e.printStackTrace();
-                    } catch (TIOModelException e) {
-                        e.printStackTrace();
-                    }
+
+                ClassificationViewModel vm = ViewModelProviders.of(MainActivity.this).get(ClassificationViewModel.class);
+                TIOModelBundleManager manager = vm.getManager();
+                TIOModelBundle bundle = manager.bundleWithId(model);
+                try {
+                    TIOTFLiteModel newModel = (TIOTFLiteModel) bundle.newModel();
+                    vm.getModelRunner().switchModel(newModel);
+                    Toast.makeText(MainActivity.this, "Loading " + model, Toast.LENGTH_SHORT).show();
+                } catch (TIOModelBundleException e) {
+                    e.printStackTrace();
+                } catch (TIOModelException e) {
+                    e.printStackTrace();
                 }
             }
         });
@@ -285,12 +279,7 @@ public class MainActivity extends AppCompatActivity {
 
             getSupportFragmentManager().beginTransaction().replace(R.id.container, new SingleImageClassificationFragment()).commit();
 
-        } else if (selectedTabMenuId == R.id.phenomenal_face_menu_item) {
-            loadFaceModel();
-            getSupportFragmentManager().beginTransaction().replace(R.id.container, new PhenomenalFaceFragment()).commit();
-
         }
-
 
     }
 
