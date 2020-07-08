@@ -3,6 +3,7 @@ package ai.doc.netrunner_android;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -29,8 +30,8 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle;
 import ai.doc.tensorio.TIOModel.TIOModelBundleException;
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
 import ai.doc.tensorio.TIOModel.TIOModelException;
-import ai.doc.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
-import ai.doc.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
+import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper;
+import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel;
 import ai.doc.netrunner_android.view.ClassificationViewModel;
 import ai.doc.netrunner_android.view.LiveCameraClassificationFragment;
 import ai.doc.netrunner_android.view.SingleImageClassificationFragment;
@@ -301,5 +302,26 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    // For Later
+
+    private boolean isEmulator() {
+        return (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
+                || Build.FINGERPRINT.startsWith("generic")
+                || Build.FINGERPRINT.startsWith("unknown")
+                || Build.HARDWARE.contains("goldfish")
+                || Build.HARDWARE.contains("ranchu")
+                || Build.MODEL.contains("google_sdk")
+                || Build.MODEL.contains("Emulator")
+                || Build.MODEL.contains("Android SDK built for x86")
+                || Build.MANUFACTURER.contains("Genymotion")
+                || Build.PRODUCT.contains("sdk_google")
+                || Build.PRODUCT.contains("google_sdk")
+                || Build.PRODUCT.contains("sdk")
+                || Build.PRODUCT.contains("sdk_x86")
+                || Build.PRODUCT.contains("vbox86p")
+                || Build.PRODUCT.contains("emulator")
+                || Build.PRODUCT.contains("simulator");
     }
 }

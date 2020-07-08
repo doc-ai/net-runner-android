@@ -17,22 +17,19 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.style.RelativeSizeSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 import ai.doc.netrunner_android.ModelRunner;
 import ai.doc.netrunner_android.R;
 import ai.doc.netrunner_android.databinding.FragmentSingleImageBinding;
+import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.app.Activity.RESULT_OK;
@@ -90,15 +87,13 @@ public class SingleImageClassificationFragment extends Fragment {
         ModelRunner modelRunner = vm.getModelRunner();
 
         Bitmap small = Bitmap.createScaledBitmap(selected, modelRunner.getInputWidth(), modelRunner.getInputHeight(), false);
-        modelRunner.classifyFrame(0, small, (requestId, prediction, l) -> {
-            float[] resultArray= (float[])prediction;
-            String[] labels = vm.getModelRunner().getLabels();
 
-            // Show the prediction
-            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
-            printTopKLabels(predictionsBuilder, resultArray, labels);
+        modelRunner.classifyFrame(0, small, (requestId, output, l) -> {
+            Map<String, Float> classification = (Map<String, Float>)((Map<String,Object>)output).get("classification");
+            List<Map.Entry<String, Float>> top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW);
+            String top5formatted = formattedResults(top5);
 
-            predictions.postValue(predictionsBuilder.toString());
+            predictions.postValue(top5formatted);
             latency.postValue(l+" ms");
         });
     }
@@ -136,36 +131,19 @@ public class SingleImageClassificationFragment extends Fragment {
         }
     }
 
-    // TODO: Move topN to TensorIO (tensorio-android #27)
+    private String formattedResults(List<Map.Entry<String, Float>> results) {
+        StringBuilder b = new StringBuilder();
 
-    private void printTopKLabels(SpannableStringBuilder builder, float[] result, String[] labels) {
-        // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
-        PriorityQueue<Map.Entry<String, Float>> sortedLabels =
-                new PriorityQueue<>(
-                        RESULTS_TO_SHOW,
-                        (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
-
-        for (int i = 0; i < labels.length; ++i) {
-            sortedLabels.add(new AbstractMap.SimpleEntry<>(labels[i], result[i]));
-            if (sortedLabels.size() > RESULTS_TO_SHOW) {
-                sortedLabels.poll();
-            }
+        for (Map.Entry<String, Float> entry : results) {
+            b.append(entry.getKey());
+            b.append(": ");
+            b.append(String.format("%.2f", entry.getValue()));
+            b.append("\n");
         }
 
-        final int size = sortedLabels.size();
+        b.setLength(b.length() - 1);
 
-        for (int i = 0; i < size; i++) {
-            Map.Entry<String, Float> label = sortedLabels.poll();
-            SpannableString span =
-                    new SpannableString(String.format("%s: %4.2f\n", label.getKey(), label.getValue()));
-
-            // Make first item bigger.
-            if (i == size - 1) {
-                float sizeScale = (i == size - 1) ? 1.25f : 0.8f;
-                span.setSpan(new RelativeSizeSpan(sizeScale), 0, span.length(), 0);
-            }
-            builder.insert(0, span);
-        }
+        return b.toString();
     }
 
     public LiveData<String> getLatency() {
