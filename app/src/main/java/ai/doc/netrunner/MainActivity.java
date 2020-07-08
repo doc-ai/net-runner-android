@@ -47,7 +47,9 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean faceModelLoaded = false;
 
-    private static final String DEFAULT_MODEL_ID = "mobilenet-v1-100-224-quantized";
+    private static final String DEFAULT_MODEL_ID = "Mobilenet_V1_1.0_224";
+
+    // TODO: Remove reference to face model
     private static final String FACE_MODEL_ID = "phenomenal-face-mobilenet-v2-100-224-v101";
 
     @Override
