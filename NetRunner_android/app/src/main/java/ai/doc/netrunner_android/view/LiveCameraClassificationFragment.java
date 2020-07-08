@@ -8,25 +8,23 @@ import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
-import android.text.style.RelativeSizeSpan;
 import android.view.LayoutInflater;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.AbstractMap;
+import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 import ai.doc.netrunner_android.ModelRunner;
 import ai.doc.netrunner_android.R;
 import ai.doc.netrunner_android.databinding.FragmentLiveCameraClassificationBinding;
+import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper;
 
 /**
  * A simple {@link Fragment} subclass.
  */
+
 public class LiveCameraClassificationFragment extends LiveCameraFragment implements ModelRunner.ModelRunnerDataSource {
     private static final int RESULTS_TO_SHOW = 3;
     private static final int FILTER_STAGES = 3;
@@ -41,7 +39,6 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
         // Required empty public constructor
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -52,7 +49,6 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
 
         return binding.getRoot();
     }
-
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
@@ -80,20 +76,16 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
 
     public void startClassification() {
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
-        vm.getModelRunner().startStreamClassification(this, (requestId, prediction, l) -> {
-            float[] resultArray = (float[]) prediction;
-            String[] labels = vm.getModelRunner().getLabels();
 
-            // Smooth the results across frames.
-            applyFilter(resultArray, labels.length);
+        vm.getModelRunner().startStreamClassification(this, (requestId, output, l) -> {
+            Map<String, Float> classification = (Map<String, Float>)((Map<String,Object>)output).get("classification");
+            List<Map.Entry<String, Float>> top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW);
+            String top5formatted = formattedResults(top5);
 
-            // Show the prediction
-            SpannableStringBuilder predictionsBuilder = new SpannableStringBuilder();
-            printTopKLabels(predictionsBuilder, resultArray, labels);
+            // TODO: Apply smoothing filter
 
-            predictions.postValue(predictionsBuilder.toString());
+            predictions.postValue(top5formatted);
             latency.postValue(l + " ms");
-
         });
     }
 
@@ -101,7 +93,6 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
         ClassificationViewModel vm = ViewModelProviders.of(getActivity()).get(ClassificationViewModel.class);
         vm.getModelRunner().stopStreamClassification();
     }
-
 
     public LiveData<String> getLatency() {
         return latency;
@@ -111,36 +102,19 @@ public class LiveCameraClassificationFragment extends LiveCameraFragment impleme
         return predictions;
     }
 
-    // TODO: Move topN to TensorIO (tensorio-android #27)
+    private String formattedResults(List<Map.Entry<String, Float>> results) {
+        StringBuilder b = new StringBuilder();
 
-    private void printTopKLabels(SpannableStringBuilder builder, float[] result, String[] labels) {
-        // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
-        PriorityQueue<Map.Entry<String, Float>> sortedLabels =
-                new PriorityQueue<>(
-                        RESULTS_TO_SHOW,
-                        (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
-
-        for (int i = 0; i < labels.length; ++i) {
-            sortedLabels.add(new AbstractMap.SimpleEntry<>(labels[i], result[i]));
-            if (sortedLabels.size() > RESULTS_TO_SHOW) {
-                sortedLabels.poll();
-            }
+        for (Map.Entry<String, Float> entry : results) {
+            b.append(entry.getKey());
+            b.append(": ");
+            b.append(String.format("%.2f", entry.getValue()));
+            b.append("\n");
         }
 
-        final int size = sortedLabels.size();
+        b.setLength(b.length() - 1);
 
-        for (int i = 0; i < size; i++) {
-            Map.Entry<String, Float> label = sortedLabels.poll();
-            SpannableString span =
-                    new SpannableString(String.format("%s: %4.2f\n", label.getKey(), label.getValue()));
-
-            // Make first item bigger.
-            if (i == size - 1) {
-                float sizeScale = (i == size - 1) ? 1.25f : 0.8f;
-                span.setSpan(new RelativeSizeSpan(sizeScale), 0, span.length(), 0);
-            }
-            builder.insert(0, span);
-        }
+        return b.toString();
     }
 
     private void applyFilter(float[] result, int numLabels) {

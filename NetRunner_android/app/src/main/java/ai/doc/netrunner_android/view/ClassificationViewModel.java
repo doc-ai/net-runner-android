@@ -10,7 +10,6 @@ public class ClassificationViewModel extends ViewModel {
     private ModelRunner modelRunner;
     private TIOModelBundleManager manager;
 
-
     public ModelRunner getModelRunner() {
         return modelRunner;
     }

@@ -6,12 +6,13 @@ import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
 
+import java.util.Map;
+
 import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
 import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription;
 import ai.doc.tensorio.TIOModel.TIOModelException;
-import ai.doc.tensorio.TIOTensorflowLiteModel.GpuDelegateHelper;
-import ai.doc.tensorio.TIOTensorflowLiteModel.TIOTFLiteModel;
-
+import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper;
+import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel;
 
 public class ModelRunner {
     private static final String TAG = "ModelRunner";
@@ -27,13 +28,13 @@ public class ModelRunner {
     private ModelRunnerDataSource dataSource;
     private ClassificationResultListener listener;
 
-    private TIOTFLiteModel classifier;
+    private TIOTFLiteModel model;
 
     private Handler backgroundHandler;
     private static final String HANDLE_THREAD_NAME = "ClassificationThread";
 
     private final Object lock = new Object();
-    private boolean runClassifier = false;
+    private boolean running = false;
 
     public interface ModelRunnerDataSource {
         Bitmap getNextInput(int size_x, int size_y);
@@ -53,14 +54,12 @@ public class ModelRunner {
         CPU, GPU, NNAPI
     }
 
-    // TODO: Vector output labeling should take place within TensorIO (tensorio-android #26)
+    public ModelRunner(TIOTFLiteModel model) {
+        this.model = model;
 
-    public ModelRunner(TIOTFLiteModel classifier) {
-        this.classifier = classifier;
-
-        this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
-        this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
-        this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
+        this.labels = ((TIOVectorLayerDescription) this.model.getIO().getOutputs().get(0).getLayerDescription()).getLabels();
+        this.inputWidth = ((TIOPixelBufferLayerDescription) this.model.getIO().getInputs().get(0).getLayerDescription()).getShape().width;
+        this.inputHeight = ((TIOPixelBufferLayerDescription) this.model.getIO().getInputs().get(0).getLayerDescription()).getShape().height;
 
         HandlerThread backgroundThread = new HandlerThread(HANDLE_THREAD_NAME);
         backgroundThread.start();
@@ -69,7 +68,7 @@ public class ModelRunner {
 
         backgroundHandler.post(() -> {
             try {
-                ModelRunner.this.classifier.load();
+                ModelRunner.this.model.load();
             } catch (TIOModelException e) {
                 e.printStackTrace();
             }
@@ -81,13 +80,13 @@ public class ModelRunner {
                 @Override
                 public void run() {
                     synchronized (lock) {
-                        if (runClassifier) {
+                        if (running) {
                             Bitmap bitmap = dataSource.getNextInput(inputWidth, inputHeight);
                             if (bitmap != null) {
                                 try {
                                     // run inference
                                     long startTime = SystemClock.uptimeMillis();
-                                    Object result = classifier.runOn(bitmap);
+                                    Object result = model.runOn(bitmap);
                                     long endTime = SystemClock.uptimeMillis();
 
                                     listener.classificationResult(-1, result, endTime - startTime);
@@ -107,6 +106,8 @@ public class ModelRunner {
         return labels;
     }
 
+    // TODO: Classify frame assumes we are running a classification model
+    // This whole class assumes we are running a classification model, generalize it
 
     public void classifyFrame(int requestId, Bitmap frame, ClassificationResultListener listener) {
         backgroundHandler.post(() -> {
@@ -115,10 +116,9 @@ public class ModelRunner {
 
             try {
                 long startTime = SystemClock.uptimeMillis();
-                float[] result = (float[]) classifier.runOn(frame);
+                Map<String,Object> output = model.runOn(frame);
                 long endTime = SystemClock.uptimeMillis();
-
-                listener.classificationResult(requestId, result, endTime - startTime);
+                listener.classificationResult(requestId, output, endTime - startTime);
             } catch (TIOModelException e) {
                 e.printStackTrace();
             }
@@ -130,7 +130,7 @@ public class ModelRunner {
             ModelRunner.this.dataSource = dataSource;
             ModelRunner.this.listener = listener;
 
-            runClassifier = true;
+            running = true;
 
             backgroundHandler.post(periodicClassify);
         }
@@ -138,7 +138,7 @@ public class ModelRunner {
 
     public void stopStreamClassification() {
         synchronized (lock) {
-            runClassifier = false;
+            running = false;
             listener = null;
             dataSource = null;
         }
@@ -148,21 +148,21 @@ public class ModelRunner {
         switchModel(newModel, this.device == Device.GPU, this.device == Device.NNAPI, this.numThreads, this.use16Bit);
     }
 
-    public void switchModel(TIOTFLiteModel newModel, boolean useGPU, boolean useNNAPI, int numThreads, boolean use16Bit){
+    public void switchModel(TIOTFLiteModel model, boolean useGPU, boolean useNNAPI, int numThreads, boolean use16Bit){
         backgroundHandler.post(() -> {
             synchronized (lock){
-                classifier.unload();
-                classifier = newModel;
+                this.model.unload();
+                this.model = model;
 
                 try {
-                    classifier.load();
+                    this.model.load();
                 } catch (TIOModelException e) {
                     e.printStackTrace();
                 }
 
-                ModelRunner.this.labels = ((TIOVectorLayerDescription) classifier.getOutputs().get(0).getDataDescription()).getLabels();
-                ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().width;
-                ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription) classifier.getInputs().get(0).getDataDescription()).getShape().height;
+                ModelRunner.this.labels = ((TIOVectorLayerDescription) this.model.getIO().getOutputs().get(0).getLayerDescription()).getLabels();
+                ModelRunner.this.inputWidth = ((TIOPixelBufferLayerDescription) this.model.getIO().getInputs().get(0).getLayerDescription()).getShape().width;
+                ModelRunner.this.inputHeight = ((TIOPixelBufferLayerDescription) this.model.getIO().getInputs().get(0).getLayerDescription()).getShape().height;
 
                 ModelRunner.this.use16Bit = use16Bit;
 
@@ -176,7 +176,7 @@ public class ModelRunner {
 
                 ModelRunner.this.numThreads = numThreads;
 
-                classifier.setOptions(use16Bit, useGPU, useNNAPI, numThreads);
+                this.model.setOptions(use16Bit, useGPU, useNNAPI, numThreads);
             }
         });
     }
@@ -188,7 +188,7 @@ public class ModelRunner {
                     this.device = Device.CPU;
                     throw new UnsupportedConfigurationException("GPU not supported in this build");
                 } else {
-                    classifier.useGPU();
+                    model.useGPU();
                     this.device = Device.GPU;
                 }
             });
@@ -198,7 +198,7 @@ public class ModelRunner {
     public void useCPU() {
         if (this.device != Device.CPU) {
             backgroundHandler.post(() -> {
-                classifier.useCPU();
+                model.useCPU();
                 this.device = Device.CPU;
             });
         }
@@ -208,7 +208,7 @@ public class ModelRunner {
     public void useNNAPI() {
         if (this.device != Device.NNAPI) {
             backgroundHandler.post(() -> {
-                classifier.useNNAPI();
+                model.useNNAPI();
                 this.device = Device.NNAPI;
             });
         }
@@ -217,7 +217,7 @@ public class ModelRunner {
     public void setNumThreads(int numThreads) {
         if (this.numThreads != numThreads) {
             backgroundHandler.post(() -> {
-                classifier.setNumThreads(numThreads);
+                model.setNumThreads(numThreads);
                 this.numThreads = numThreads;
             });
         }
@@ -226,7 +226,7 @@ public class ModelRunner {
     public void setUse16bit(boolean use16Bit) {
         if (this.use16Bit != use16Bit) {
             backgroundHandler.post(() -> {
-                classifier.setAllow16BitPrecision(use16Bit);
+                model.setAllow16BitPrecision(use16Bit);
                 this.use16Bit = use16Bit;
             });
         }
