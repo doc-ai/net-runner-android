@@ -136,6 +136,8 @@ public class SingleImageClassificationFragment extends Fragment {
         }
     }
 
+    // TODO: Move topN to TensorIO (tensorio-android #27)
+
     private void printTopKLabels(SpannableStringBuilder builder, float[] result, String[] labels) {
         // Keep a PriorityQueue with the top RESULTS_TO_SHOW predictions
         PriorityQueue<Map.Entry<String, Float>> sortedLabels =

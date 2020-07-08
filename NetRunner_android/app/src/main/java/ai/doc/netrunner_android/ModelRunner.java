@@ -53,6 +53,8 @@ public class ModelRunner {
         CPU, GPU, NNAPI
     }
 
+    // TODO: Vector output labeling should take place within TensorIO (tensorio-android #26)
+
     public ModelRunner(TIOTFLiteModel classifier) {
         this.classifier = classifier;
 
