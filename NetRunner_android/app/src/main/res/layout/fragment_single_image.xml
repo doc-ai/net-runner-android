@@ -5,7 +5,7 @@
     <data>
         <variable
             name="fragment"
-            type="ai.doc.netrunner_android.view.SingleImageClassificationFragment"/>
+            type="ai.doc.netrunner.view.SingleImageClassificationFragment"/>
     </data>
 
     <LinearLayout

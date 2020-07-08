@@ -1,4 +1,4 @@
-package ai.doc.netrunner_android.view;
+package ai.doc.netrunner.view;
 
 
 import android.Manifest;
@@ -47,8 +47,8 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import ai.doc.netrunner_android.R;
-import ai.doc.netrunner_android.databinding.FragmentLiveCameraBinding;
+import ai.doc.netrunner.R;
+import ai.doc.netrunner.databinding.FragmentLiveCameraBinding;
 
 public class LiveCameraFragment extends Fragment implements ActivityCompat.OnRequestPermissionsResultCallback {
 

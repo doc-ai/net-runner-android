@@ -1,4 +1,4 @@
-package ai.doc.netrunner_android.view;
+package ai.doc.netrunner.view;
 
 import android.Manifest;
 import android.arch.lifecycle.LiveData;
@@ -25,9 +25,9 @@ import android.widget.ImageView;
 import java.util.List;
 import java.util.Map;
 
-import ai.doc.netrunner_android.ModelRunner;
-import ai.doc.netrunner_android.R;
-import ai.doc.netrunner_android.databinding.FragmentSingleImageBinding;
+import ai.doc.netrunner.ModelRunner;
+import ai.doc.netrunner.R;
+import ai.doc.netrunner.databinding.FragmentSingleImageBinding;
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper;
 
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;

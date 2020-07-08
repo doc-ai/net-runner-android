@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">NetRunner android</string>
+    <string name="app_name">Net Runner</string>
     <string name="doc_ai_logo">Doc.ai logo</string>
     <string name="nnapi">NNAPI</string>
     <string name="gpu">GPU</string>

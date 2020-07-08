@@ -1,11 +1,10 @@
-package ai.doc.netrunner_android;
+package ai.doc.netrunner;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
 
 import org.junit.Test;
 
-import ai.doc.tensorio.TIOData.TIOPixelNormalizer;
 import ai.doc.tensorio.TIOLayerInterface.TIOLayerInterface;
 import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription;
 import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription;

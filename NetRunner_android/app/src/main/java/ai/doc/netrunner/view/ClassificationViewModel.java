@@ -1,8 +1,8 @@
-package ai.doc.netrunner_android.view;
+package ai.doc.netrunner.view;
 
 import android.arch.lifecycle.ViewModel;
 
-import ai.doc.netrunner_android.ModelRunner;
+import ai.doc.netrunner.ModelRunner;
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
 
 public class ClassificationViewModel extends ViewModel {

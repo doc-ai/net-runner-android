@@ -1,4 +1,4 @@
-package ai.doc.netrunner_android;
+package ai.doc.netrunner;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
@@ -31,9 +31,9 @@ import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
 import ai.doc.tensorio.TIOModel.TIOModelException;
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper;
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel;
-import ai.doc.netrunner_android.view.ClassificationViewModel;
-import ai.doc.netrunner_android.view.LiveCameraClassificationFragment;
-import ai.doc.netrunner_android.view.SingleImageClassificationFragment;
+import ai.doc.netrunner.view.ClassificationViewModel;
+import ai.doc.netrunner.view.LiveCameraClassificationFragment;
+import ai.doc.netrunner.view.SingleImageClassificationFragment;
 
 public class MainActivity extends AppCompatActivity {
     private Integer[] numThreadsOptions = new Integer[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};

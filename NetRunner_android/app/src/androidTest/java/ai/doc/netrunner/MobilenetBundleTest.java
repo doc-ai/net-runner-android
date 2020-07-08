@@ -1,4 +1,4 @@
-package ai.doc.netrunner_android;
+package ai.doc.netrunner;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

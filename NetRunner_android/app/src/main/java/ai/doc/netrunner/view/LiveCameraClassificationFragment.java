@@ -1,4 +1,4 @@
-package ai.doc.netrunner_android.view;
+package ai.doc.netrunner.view;
 
 
 import android.arch.lifecycle.LiveData;
@@ -16,9 +16,9 @@ import android.view.ViewGroup;
 import java.util.List;
 import java.util.Map;
 
-import ai.doc.netrunner_android.ModelRunner;
-import ai.doc.netrunner_android.R;
-import ai.doc.netrunner_android.databinding.FragmentLiveCameraClassificationBinding;
+import ai.doc.netrunner.ModelRunner;
+import ai.doc.netrunner.R;
+import ai.doc.netrunner.databinding.FragmentLiveCameraClassificationBinding;
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper;
 
 /**

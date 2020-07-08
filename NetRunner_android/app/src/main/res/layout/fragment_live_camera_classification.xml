@@ -4,7 +4,7 @@
     <data>
         <variable
             name="fragment"
-            type="ai.doc.netrunner_android.view.LiveCameraClassificationFragment" />
+            type="ai.doc.netrunner.view.LiveCameraClassificationFragment" />
     </data>
 
 
