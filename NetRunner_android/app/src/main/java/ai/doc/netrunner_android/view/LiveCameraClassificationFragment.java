@@ -24,6 +24,7 @@ import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper;
 /**
  * A simple {@link Fragment} subclass.
  */
+
 public class LiveCameraClassificationFragment extends LiveCameraFragment implements ModelRunner.ModelRunnerDataSource {
     private static final int RESULTS_TO_SHOW = 3;
     private static final int FILTER_STAGES = 3;

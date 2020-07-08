@@ -1,6 +1,5 @@
 package ai.doc.netrunner_android;
 
-
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Build;
@@ -143,7 +142,6 @@ public class MainActivity extends AppCompatActivity {
 
         faceModelLoaded = false;
     }
-
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

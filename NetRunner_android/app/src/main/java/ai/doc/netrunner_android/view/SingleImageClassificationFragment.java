@@ -1,6 +1,5 @@
 package ai.doc.netrunner_android.view;
 
-
 import android.Manifest;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
