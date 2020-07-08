@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "ai.doc.netrunner_android"
+        applicationId "ai.doc.netrunner"
         minSdkVersion 22
         targetSdkVersion 28
         versionCode 1
