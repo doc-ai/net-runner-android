@@ -38,11 +38,16 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     var inputHeight: Int
         private set
 
+    var dataSource: ModelRunnerDataSource? = null
+    // var listener: ClassificationResultListener? = null
+    lateinit var listener: ((Int, Any, Long) -> Unit)
+
     private var numThreads = 1
     private var use16Bit = false
     private var device: Device? = null
-    private var dataSource: ModelRunnerDataSource? = null
-    private var listener: ClassificationResultListener? = null
+
+    // So the background handler is a kind of queue that will receive requests to call functions (post)
+
     private val backgroundHandler: Handler
     private val lock = Any()
     private var running = false
@@ -79,7 +84,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
                 val startTime = SystemClock.uptimeMillis()
                 val result: Any = model.runOn(bitmap)
                 val endTime = SystemClock.uptimeMillis()
-                listener!!.classificationResult(-1, result, endTime - startTime)
+                listener(-1, result, endTime - startTime)
             } catch (e: TIOModelException) {
                 e.printStackTrace()
             }
@@ -90,6 +95,10 @@ class ModelRunner(private var model: TIOTFLiteModel) {
 
     // TODO: Classify frame assumes we are running a classification model
     // This whole class assumes we are running a classification model, generalize it
+
+    // classifyFrame is called from the SingleImage Fragment whereas the startStreamClassification is called from the LiveCamera Fragmenet
+    // oof
+
     fun classifyFrame(requestId: Int, frame: Bitmap?, listener: (Int, Any, Long) -> Unit) {
         backgroundHandler.post {
             val predictionsBuilder = SpannableStringBuilder()
@@ -105,7 +114,10 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         }
     }
 
-    fun startStreamClassification(dataSource: ModelRunnerDataSource?, listener: ClassificationResultListener?) {
+    // TODO: why periodically classify from the background handler...
+    // Ah, listener should be the confirming instance rather than a lambda. can we store lambdas rather than conforming instances?
+
+    fun startStreamClassification(dataSource: ModelRunnerDataSource?, listener: (Int, Any, Long) -> Unit) {
         synchronized(lock) {
             this@ModelRunner.dataSource = dataSource
             this@ModelRunner.listener = listener
@@ -117,7 +129,6 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     fun stopStreamClassification() {
         synchronized(lock) {
             running = false
-            listener = null
             dataSource = null
         }
     }
