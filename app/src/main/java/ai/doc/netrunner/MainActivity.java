@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
             if (vm.getCurrentTab() != -1) {
                 nav.getMenu().findItem(vm.getCurrentTab()).setChecked(true);
             } else {
-                vm.setCurrentTab(R.id.live_camera_fragment_menu_item);
+                vm.setCurrentTab( R.id.live_camera_fragment_menu_item);
             }
 
             setupFragment(vm.getCurrentTab());
