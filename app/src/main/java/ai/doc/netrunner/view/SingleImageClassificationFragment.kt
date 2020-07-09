@@ -63,6 +63,7 @@ class SingleImageClassificationFragment : Fragment() {
         val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
         val modelRunner = vm.modelRunner
         val small = Bitmap.createScaledBitmap(selected, modelRunner!!.inputWidth, modelRunner.inputHeight, false)
+
         modelRunner.classifyFrame(0, small) { requestId: Int, output: Any, l: Long ->
             val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
