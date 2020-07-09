@@ -1,6 +1,5 @@
 package ai.doc.netrunner.view
 
-import ai.doc.netrunner.ModelRunner
 import ai.doc.netrunner.ModelRunner.ModelRunnerDataSource
 import ai.doc.netrunner.ModelRunner.ClassificationResultListener
 import ai.doc.netrunner.R
@@ -48,11 +47,9 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         textureView = view.findViewById(R.id.texture)
     }
 
-    override fun getNextInput(size_x: Int, size_y: Int): Bitmap? {
-        return textureView!!.getBitmap(size_x, size_y)
+    override fun getNextInput(): Bitmap? {
+        return textureView!!.getBitmap()
     }
-
-    // TODO: why a listener callback as well as a listener lambda in startClassification
 
     override fun classificationResult(requestId: Int, output: Any?, l: Long) {
         val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?

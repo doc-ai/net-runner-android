@@ -46,33 +46,6 @@ class SingleImageClassificationFragment : Fragment() {
         return root
     }
 
-    fun pickImage() {
-        if (ActivityCompat.checkSelfPermission(activity!!, permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    activity!!, arrayOf(permission.READ_EXTERNAL_STORAGE),
-                    READ_EXTERNAL_STORAGE_REQUEST_CODE
-            )
-        } else {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, 1)
-        }
-    }
-
-    fun classify() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-        val modelRunner = vm.modelRunner
-        val small = Bitmap.createScaledBitmap(selected, modelRunner!!.inputWidth, modelRunner.inputHeight, false)
-
-        modelRunner.classifyFrame(0, small) { requestId: Int, output: Any, l: Long ->
-            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
-            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-            val top5formatted = formattedResults(top5)
-            predictions.postValue(top5formatted)
-            latency.postValue("$l ms")
-        }
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) {
             return
@@ -98,6 +71,32 @@ class SingleImageClassificationFragment : Fragment() {
             if (ActivityCompat.checkSelfPermission(activity!!, permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                 pickImage()
             }
+        }
+    }
+
+    fun pickImage() {
+        if (ActivityCompat.checkSelfPermission(activity!!, permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    activity!!, arrayOf(permission.READ_EXTERNAL_STORAGE),
+                    READ_EXTERNAL_STORAGE_REQUEST_CODE
+            )
+        } else {
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            startActivityForResult(intent, 1)
+        }
+    }
+
+    fun classify() {
+        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
+        val modelRunner = vm.modelRunner
+
+        modelRunner?.classifyFrame(0, selected) { requestId: Int, output: Any, l: Long ->
+            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
+            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
+            val top5formatted = formattedResults(top5)
+            predictions.postValue(top5formatted)
+            latency.postValue("$l ms")
         }
     }
 

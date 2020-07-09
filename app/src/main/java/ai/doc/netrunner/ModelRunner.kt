@@ -1,7 +1,5 @@
 package ai.doc.netrunner
 
-import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription
-import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription
 import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
@@ -17,7 +15,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     }
 
     interface ModelRunnerDataSource {
-        fun getNextInput(size_x: Int, size_y: Int): Bitmap?
+        fun getNextInput(): Bitmap?
     }
 
     interface ClassificationResultListener {
@@ -31,15 +29,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         private const val HANDLE_THREAD_NAME = "ClassificationThread"
     }
 
-    var labels: Array<String>
-        private set
-    var inputWidth: Int
-        private set
-    var inputHeight: Int
-        private set
-
     var dataSource: ModelRunnerDataSource? = null
-    // var listener: ClassificationResultListener? = null
     lateinit var listener: ((Int, Any, Long) -> Unit)
 
     private var numThreads = 1
@@ -53,9 +43,6 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     private var running = false
 
     init {
-        labels = (model.io.outputs[0].layerDescription as TIOVectorLayerDescription).labels
-        inputWidth = (model.io.inputs[0].layerDescription as TIOPixelBufferLayerDescription).shape.width
-        inputHeight = (model.io.inputs[0].layerDescription as TIOPixelBufferLayerDescription).shape.height
         val backgroundThread = HandlerThread(HANDLE_THREAD_NAME)
         backgroundThread.start()
         backgroundHandler = Handler(backgroundThread.looper)
@@ -77,7 +64,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     }
 
     private fun runInference() {
-        val bitmap = dataSource!!.getNextInput(inputWidth, inputHeight)
+        val bitmap = dataSource!!.getNextInput()
         if (bitmap != null) {
             try {
                 // run inference
@@ -114,9 +101,6 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         }
     }
 
-    // TODO: why periodically classify from the background handler...
-    // Ah, listener should be the confirming instance rather than a lambda. can we store lambdas rather than conforming instances?
-
     fun startStreamClassification(dataSource: ModelRunnerDataSource?, listener: (Int, Any, Long) -> Unit) {
         synchronized(lock) {
             this@ModelRunner.dataSource = dataSource
@@ -148,9 +132,6 @@ class ModelRunner(private var model: TIOTFLiteModel) {
                 } catch (e: TIOModelException) {
                     e.printStackTrace()
                 }
-                labels = (this.model.io.outputs[0].layerDescription as TIOVectorLayerDescription).labels
-                inputWidth = (this.model.io.inputs[0].layerDescription as TIOPixelBufferLayerDescription).shape.width
-                inputHeight = (this.model.io.inputs[0].layerDescription as TIOPixelBufferLayerDescription).shape.height
                 this@ModelRunner.use16Bit = use16Bit
                 device = Device.CPU
                 if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()) {
