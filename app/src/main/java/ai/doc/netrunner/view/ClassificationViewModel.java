@@ -1,6 +1,6 @@
 package ai.doc.netrunner.view;
 
-import android.arch.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModel;
 
 import ai.doc.netrunner.ModelRunner;
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager;
