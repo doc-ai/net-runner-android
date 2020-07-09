@@ -73,12 +73,12 @@ class SingleImageClassificationFragment : Fragment() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) {
             return
         }
         if (requestCode == 1) {
-            val pickedImage = data.data
+            val pickedImage = data?.data
             // Let's read picked image path using content resolver
             val filePath = arrayOf(MediaStore.Images.Media.DATA)
             val cursor = activity!!.contentResolver.query(pickedImage, filePath, null, null, null)
