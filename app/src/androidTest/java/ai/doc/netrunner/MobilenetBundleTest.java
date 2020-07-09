@@ -1,7 +1,7 @@
 package ai.doc.netrunner;
 
 import android.content.Context;
-import android.support.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.junit.Test;
 
@@ -21,10 +21,11 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class MobilenetBundleTest {
+
+    private static Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
     @Test
     public void test() {
-        Context appContext = InstrumentationRegistry.getTargetContext();
-
         try {
             TIOModelBundle bundle = new TIOModelBundle(appContext, "mobilenet_v2_1.4_224.tfbundle");
             assertEquals(bundle.getName(), "MobileNet V2 1.0 224");
