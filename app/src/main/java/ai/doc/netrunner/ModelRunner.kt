@@ -3,6 +3,8 @@ package ai.doc.netrunner
 import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
+import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel.HardwareBacking.*
+
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
@@ -22,8 +24,6 @@ private typealias BitmapProvider = () -> Bitmap?
 class ModelRunner(private var model: TIOTFLiteModel) {
     inner class UnsupportedConfigurationException(message: String?) : RuntimeException(message)
 
-    // TODO: Move Device to TIOTFliteModel
-
     enum class Device {
         CPU,
         GPU,
@@ -41,7 +41,8 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     var numThreads = 1
         set(value) {
             backgroundHandler.post {
-                model.setNumThreads(value)
+                model.numThreads = value
+                model.reload()
                 field = value
             }
         }
@@ -49,7 +50,8 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     var use16Bit = false
         set(value) {
             backgroundHandler.post {
-                model.setAllow16BitPrecision(value)
+                model.setUse16bitPrecision(value)
+                model.reload()
                 field = value
             }
         }
@@ -59,25 +61,25 @@ class ModelRunner(private var model: TIOTFLiteModel) {
             backgroundHandler.post {
                 when (value) {
                     Device.CPU -> {
-                        model.useCPU()
+                        model.hardwareBacking = CPU
                         field = value
                     }
                     Device.NNAPI -> {
-                        model.useNNAPI()
+                        model.hardwareBacking = NNAPI
                         field = value
                     }
                     Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                        model.hardwareBacking = CPU
                         field = Device.CPU
                         throw UnsupportedConfigurationException("GPU not supported in this build")
                     } else {
-                        model.useGPU()
+                        model.hardwareBacking = GPU
                         field = Device.GPU
                     }
                 }
+                model.reload()
             }
         }
-
-    // TODO: Switching model currently recreates interpreter multiple times, see TIOTFLiteModel
 
     @Throws(TIOModelException::class)
     fun switchModel(model: TIOTFLiteModel) {
@@ -85,16 +87,16 @@ class ModelRunner(private var model: TIOTFLiteModel) {
             this.model.unload()
             this.model = model
 
-            model.load()
-
-            model.setNumThreads(numThreads)
-            model.setAllow16BitPrecision(use16Bit)
+            model.numThreads = numThreads
+            model.setUse16bitPrecision(use16Bit)
 
             when(device) {
-                Device.CPU -> model.useCPU()
-                Device.GPU -> model.useGPU()
-                Device.NNAPI -> model.useNNAPI()
+                Device.CPU -> model.hardwareBacking = CPU
+                Device.GPU -> model.hardwareBacking = GPU
+                Device.NNAPI -> model.hardwareBacking = NNAPI
             }
+
+            model.load()
         }
     }
 
