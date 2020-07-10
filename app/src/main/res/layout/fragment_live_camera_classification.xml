@@ -40,7 +40,7 @@
                 android:layout_margin="2dp"
                 android:textColor="@color/black"
                 android:bufferType="spannable"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:text="@{fragment.predictions}" />
 
             <TextView

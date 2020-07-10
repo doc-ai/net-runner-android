@@ -29,7 +29,11 @@ private const val FILTER_FACTOR = 0.4f
 
 class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSource, ClassificationResultListener {
 
+    // UI
+
     private lateinit var textureView: TextureView
+
+    // Live Data Variables
 
     private val _latency = MutableLiveData<String>()
     val latency: LiveData<String> = _latency
@@ -37,7 +41,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     private val _predictions = MutableLiveData<String>()
     val predictions: LiveData<String> = _predictions
 
-    private var filterLabelProbArray: Array<FloatArray>? = null
+    // View Model
 
     // requires fragment-ktx dependency
     // val viewModel: ClassificationViewModel by activityViewModels()
@@ -45,6 +49,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     private val viewModel: ClassificationViewModel by lazy {
         ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
     }
+
+    private var filterLabelProbArray: Array<FloatArray>? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {

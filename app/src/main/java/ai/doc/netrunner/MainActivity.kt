@@ -31,11 +31,14 @@ import java.util.*
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
 
+// TODO: Close drawer after selection
+// TODO: Select image before showing single image fragment
+
 class MainActivity : AppCompatActivity() {
 
     private abstract inner class SpinnerListener : OnItemSelectedListener {
         override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
-            view?.let { OnUserSelectedItem(parent, it, position, id) }
+            view.let { OnUserSelectedItem(parent, it, position, id) }
         }
 
         abstract fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
