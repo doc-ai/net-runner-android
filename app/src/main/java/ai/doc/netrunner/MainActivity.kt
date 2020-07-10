@@ -30,8 +30,6 @@ import java.io.IOException
 import java.util.*
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
-// TODO: Remove reference to face model
-private const val FACE_MODEL_ID = "phenomenal-face-mobilenet-v2-100-224-v101"
 
 class MainActivity : AppCompatActivity() {
 
@@ -50,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     private var threadsSpinner: Spinner? = null
     private var modelSpinner: Spinner? = null
     private var precisionSwitch: SwitchCompat? = null
-    private var faceModelLoaded = false
 
     private val viewModel: ClassificationViewModel by lazy {
         ViewModelProvider(this).get(ClassificationViewModel::class.java)
@@ -128,28 +125,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }
-
-        faceModelLoaded = false
-    }
-
-    private fun loadFaceModel() {
-        modelSpinner!!.setSelection(viewModel.modelIds.indexOf(FACE_MODEL_ID), false)
-        modelSpinner!!.isEnabled = false
-
-        deviceSpinner!!.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
-        deviceSpinner!!.isEnabled = false
-
-        val bundle = viewModel.manager.bundleWithId(FACE_MODEL_ID)
-
-        try {
-            val newModel = bundle.newModel() as TIOTFLiteModel
-            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
-            Toast.makeText(this@MainActivity, "Loading $FACE_MODEL_ID", Toast.LENGTH_SHORT).show()
-        } catch (e: TIOModelBundleException) {
-            e.printStackTrace()
-        }
-
-        faceModelLoaded = true
     }
 
     private fun setupDrawer() {
@@ -251,14 +226,8 @@ class MainActivity : AppCompatActivity() {
         viewModel.modelRunner.stopStreamClassification()
 
         if (selectedTabMenuId == R.id.live_camera_fragment_menu_item) {
-            if (faceModelLoaded) {
-                loadDefaultModel()
-            }
             supportFragmentManager.beginTransaction().replace(R.id.container, LiveCameraClassificationFragment(), getString(R.string.active_fragment_tag)).commit()
         } else if (selectedTabMenuId == R.id.single_image_fragment_menu_item) {
-            if (faceModelLoaded) {
-                loadDefaultModel()
-            }
             supportFragmentManager.beginTransaction().replace(R.id.container, SingleImageClassificationFragment()).commit()
         }
     }
