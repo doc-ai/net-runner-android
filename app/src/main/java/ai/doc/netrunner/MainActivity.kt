@@ -44,10 +44,11 @@ class MainActivity : AppCompatActivity() {
 
     private val numThreadsOptions = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     private val deviceOptions = ArrayList<String>()
-    private var deviceSpinner: Spinner? = null
-    private var threadsSpinner: Spinner? = null
-    private var modelSpinner: Spinner? = null
-    private var precisionSwitch: SwitchCompat? = null
+
+    private lateinit var deviceSpinner: Spinner
+    private lateinit var threadsSpinner: Spinner
+    private lateinit var modelSpinner: Spinner
+    private lateinit var precisionSwitch: SwitchCompat
 
     private val viewModel: ClassificationViewModel by lazy {
         ViewModelProvider(this).get(ClassificationViewModel::class.java)
@@ -110,17 +111,17 @@ class MainActivity : AppCompatActivity() {
     private fun loadDefaultModel() {
         viewModel.modelRunner.stopStreamClassification()
 
-        modelSpinner!!.setSelection(viewModel.modelIds.indexOf(DEFAULT_MODEL_ID), false)
-        modelSpinner!!.isEnabled = true
+        modelSpinner.setSelection(viewModel.modelIds.indexOf(DEFAULT_MODEL_ID), false)
+        modelSpinner.isEnabled = true
 
-        deviceSpinner!!.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
+        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
 
-        deviceSpinner!!.isEnabled = true
+        deviceSpinner.isEnabled = true
         val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
 
         try {
             val newModel = bundle.newModel() as TIOTFLiteModel
-            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
+            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner.selectedItemPosition], precisionSwitch.isChecked)
             Toast.makeText(this@MainActivity, "Loading $DEFAULT_MODEL_ID", Toast.LENGTH_SHORT).show()
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
@@ -140,10 +141,10 @@ class MainActivity : AppCompatActivity() {
         val nav = findViewById<NavigationView>(R.id.nav_view)
         (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
 
-        deviceSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
-        deviceSpinner!!.setSelection(0, false)
+        deviceSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
+        deviceSpinner.setSelection(0, false)
 
-        deviceSpinner!!.onItemSelectedListener = object : SpinnerListener() {
+        deviceSpinner.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
                 if (device == getString(R.string.cpu)) {
@@ -161,10 +162,10 @@ class MainActivity : AppCompatActivity() {
 
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
 
-        modelSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
-        modelSpinner!!.setSelection(0, false)
+        modelSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
+        modelSpinner.setSelection(0, false)
 
-        modelSpinner!!.onItemSelectedListener = object : SpinnerListener() {
+        modelSpinner.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val model = viewModel.modelIds[position]
                 val bundle = viewModel.manager.bundleWithId(model)
@@ -182,10 +183,10 @@ class MainActivity : AppCompatActivity() {
 
         (nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.threads_menu_item_title)
 
-        threadsSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions)
-        threadsSpinner!!.setSelection(0, false)
+        threadsSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions)
+        threadsSpinner.setSelection(0, false)
 
-        threadsSpinner!!.onItemSelectedListener = object : SpinnerListener() {
+        threadsSpinner.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
                 viewModel.modelRunner.setNumThreads(threads)
@@ -194,11 +195,11 @@ class MainActivity : AppCompatActivity() {
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
                 viewModel.modelRunner.setNumThreads(1)
-                threadsSpinner!!.setSelection(0)
+                threadsSpinner.setSelection(0)
             }
         }
 
-        precisionSwitch!!.setOnCheckedChangeListener { buttonView, isChecked ->
+        precisionSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
             viewModel.modelRunner.setUse16bit(isChecked)
         }
 
