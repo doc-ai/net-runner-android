@@ -30,6 +30,13 @@ class SingleImageClassificationFragment : Fragment() {
     private val latency = MutableLiveData<String>()
     private val predictions = MutableLiveData<String>()
 
+    // requires fragment-ktx dependency
+    // val viewModel: ClassificationViewModel by activityViewModels()
+
+    private val viewModel: ClassificationViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
@@ -88,10 +95,7 @@ class SingleImageClassificationFragment : Fragment() {
     }
 
     fun classify() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-        val modelRunner = vm.modelRunner
-
-        modelRunner?.classifyFrame(0, selected) { requestId: Int, output: Any, l: Long ->
+        viewModel.modelRunner.classifyFrame(0, selected) { requestId: Int, output: Any, l: Long ->
             val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)

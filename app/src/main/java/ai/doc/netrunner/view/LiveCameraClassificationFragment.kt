@@ -33,6 +33,13 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     private var textureView: TextureView? = null
     private var filterLabelProbArray: Array<FloatArray>? = null
 
+    // requires fragment-ktx dependency
+    // val viewModel: ClassificationViewModel by activityViewModels()
+
+    private val viewModel: ClassificationViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
@@ -73,12 +80,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     }
 
     fun startClassification() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-
-        // vm.modelRunner!!.dataSource = this
-        // vm.modelRunner!!.listener = this
-
-        vm.modelRunner!!.startStreamClassification(this) { requestId: Int, output: Any, l: Long ->
+        viewModel.modelRunner.startStreamClassification(this) { requestId: Int, output: Any, l: Long ->
             val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)
@@ -90,8 +92,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     }
 
     fun stopClassification() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-        vm.modelRunner!!.stopStreamClassification()
+        viewModel.modelRunner.stopStreamClassification()
     }
 
     fun getLatency(): LiveData<String> {

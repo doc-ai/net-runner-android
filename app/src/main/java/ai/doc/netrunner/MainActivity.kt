@@ -3,11 +3,13 @@ package ai.doc.netrunner
 import ai.doc.netrunner.view.ClassificationViewModel
 import ai.doc.netrunner.view.LiveCameraClassificationFragment
 import ai.doc.netrunner.view.SingleImageClassificationFragment
+
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
+
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -20,10 +22,16 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
+
 import com.google.android.material.navigation.NavigationView
+
 import java.io.IOException
 import java.util.*
+
+private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
+// TODO: Remove reference to face model
+private const val FACE_MODEL_ID = "phenomenal-face-mobilenet-v2-100-224-v101"
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,53 +44,38 @@ class MainActivity : AppCompatActivity() {
         override fun onNothingSelected(parent: AdapterView<*>?) {}
     }
 
-    companion object {
-        private const val DEFAULT_MODEL_ID = "Mobilenet_V1_1.0_224"
-
-        // TODO: Remove reference to face model
-        private const val FACE_MODEL_ID = "phenomenal-face-mobilenet-v2-100-224-v101"
-    }
-
     private val numThreadsOptions = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
     private val deviceOptions = ArrayList<String>()
-    private val modelStrings = ArrayList<String>()
     private var deviceSpinner: Spinner? = null
     private var threadsSpinner: Spinner? = null
     private var modelSpinner: Spinner? = null
     private var precisionSwitch: SwitchCompat? = null
     private var faceModelLoaded = false
 
+    private val viewModel: ClassificationViewModel by lazy {
+        ViewModelProvider(this).get(ClassificationViewModel::class.java)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
         val nav = findViewById<NavigationView>(R.id.nav_view)
+
         deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner)
         precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
         modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner)
         threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner)
+
+        viewModel.manager = TIOModelBundleManager(applicationContext, "")
+
         try {
-            val vm = ViewModelProviders.of(this).get(ClassificationViewModel::class.java)
-            if (vm.manager == null) {
-                val manager = TIOModelBundleManager(applicationContext, "")
-                vm.manager = manager
-            }
-            val manager = vm.manager
-            modelStrings.addAll(manager!!.bundleIds)
-            setupDevices()
-            setupDrawer()
-            if (vm.modelRunner == null) {
-                val bundle = manager.bundleWithId(DEFAULT_MODEL_ID)
-                val model = bundle.newModel()
-                model.load()
-                val modelRunner = ModelRunner((model as TIOTFLiteModel))
-                vm.modelRunner = modelRunner
-            }
-            if (vm.currentTab != -1) {
-                nav.menu.findItem(vm.currentTab).isChecked = true
-            } else {
-                vm.currentTab = R.id.live_camera_fragment_menu_item
-            }
-            setupFragment(vm.currentTab)
+            val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
+            val model = bundle.newModel()
+            model.load()
+
+            val modelRunner = ModelRunner((model as TIOTFLiteModel))
+            viewModel.modelRunner = modelRunner
         } catch (e: IOException) {
             e.printStackTrace()
         } catch (e: TIOModelException) {
@@ -90,6 +83,17 @@ class MainActivity : AppCompatActivity() {
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }
+
+        setupDevices()
+        setupDrawer()
+
+        if (viewModel.currentTab != -1) {
+            nav.menu.findItem(viewModel.currentTab).isChecked = true
+        } else {
+            viewModel.currentTab = R.id.live_camera_fragment_menu_item
+        }
+
+        setupFragment(viewModel.currentTab)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -106,83 +110,92 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun loadFaceModel() {
-        val vm = ViewModelProviders.of(this).get(ClassificationViewModel::class.java)
-        modelSpinner!!.setSelection(modelStrings.indexOf(FACE_MODEL_ID), false)
-        modelSpinner!!.isEnabled = false
-        deviceSpinner!!.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
-        deviceSpinner!!.isEnabled = false
-        val manager = vm.manager
-        val bundle = manager!!.bundleWithId(FACE_MODEL_ID)
-        try {
-            val newModel = bundle.newModel() as TIOTFLiteModel
-            vm.modelRunner!!.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
-            Toast.makeText(this@MainActivity, "Loading $FACE_MODEL_ID", Toast.LENGTH_SHORT).show()
-        } catch (e: TIOModelBundleException) {
-            e.printStackTrace()
-        }
-        faceModelLoaded = true
-    }
-
     private fun loadDefaultModel() {
-        val vm = ViewModelProviders.of(this).get(ClassificationViewModel::class.java)
-        vm.modelRunner!!.stopStreamClassification()
-        modelSpinner!!.setSelection(modelStrings.indexOf(DEFAULT_MODEL_ID), false)
+        viewModel.modelRunner.stopStreamClassification()
+
+        modelSpinner!!.setSelection(viewModel.modelIds.indexOf(DEFAULT_MODEL_ID), false)
         modelSpinner!!.isEnabled = true
+
         deviceSpinner!!.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
+
         deviceSpinner!!.isEnabled = true
-        val manager = vm.manager
-        val bundle = manager!!.bundleWithId(DEFAULT_MODEL_ID)
+        val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
+
         try {
             val newModel = bundle.newModel() as TIOTFLiteModel
-            vm.modelRunner!!.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
+            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
             Toast.makeText(this@MainActivity, "Loading $DEFAULT_MODEL_ID", Toast.LENGTH_SHORT).show()
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }
+
         faceModelLoaded = false
+    }
+
+    private fun loadFaceModel() {
+        modelSpinner!!.setSelection(viewModel.modelIds.indexOf(FACE_MODEL_ID), false)
+        modelSpinner!!.isEnabled = false
+
+        deviceSpinner!!.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
+        deviceSpinner!!.isEnabled = false
+
+        val bundle = viewModel.manager.bundleWithId(FACE_MODEL_ID)
+
+        try {
+            val newModel = bundle.newModel() as TIOTFLiteModel
+            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner!!.selectedItemPosition], precisionSwitch!!.isChecked)
+            Toast.makeText(this@MainActivity, "Loading $FACE_MODEL_ID", Toast.LENGTH_SHORT).show()
+        } catch (e: TIOModelBundleException) {
+            e.printStackTrace()
+        }
+
+        faceModelLoaded = true
     }
 
     private fun setupDrawer() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+
         val actionbar = supportActionBar
         if (actionbar != null) {
             actionbar.setDisplayHomeAsUpEnabled(true)
             actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp)
         }
+
         val nav = findViewById<NavigationView>(R.id.nav_view)
         (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
+
         deviceSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
         deviceSpinner!!.setSelection(0, false)
+
         deviceSpinner!!.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
-                val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
                 if (device == getString(R.string.cpu)) {
-                    vm.modelRunner!!.useCPU()
+                    viewModel.modelRunner.useCPU()
                     Toast.makeText(this@MainActivity, "using the CPU", Toast.LENGTH_SHORT).show()
                 } else if (device == getString(R.string.gpu)) {
-                    vm.modelRunner!!.useGPU()
+                    viewModel.modelRunner.useGPU()
                     Toast.makeText(this@MainActivity, "using the GPU", Toast.LENGTH_SHORT).show()
                 } else {
-                    vm.modelRunner!!.useNNAPI()
+                    viewModel.modelRunner.useNNAPI()
                     Toast.makeText(this@MainActivity, "using NNAPI", Toast.LENGTH_SHORT).show()
                 }
             }
         }
+
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
-        modelSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, modelStrings)
+
+        modelSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
         modelSpinner!!.setSelection(0, false)
+
         modelSpinner!!.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val model = modelStrings[position]
-                val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
-                val manager = vm.manager
-                val bundle = manager!!.bundleWithId(model)
+                val model = viewModel.modelIds[position]
+                val bundle = viewModel.manager.bundleWithId(model)
                 try {
                     val newModel = bundle.newModel() as TIOTFLiteModel
-                    vm.modelRunner!!.switchModel(newModel)
+                    viewModel.modelRunner.switchModel(newModel)
                     Toast.makeText(this@MainActivity, "Loading $model", Toast.LENGTH_SHORT).show()
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
@@ -191,32 +204,33 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
         (nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.threads_menu_item_title)
+
         threadsSpinner!!.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions)
         threadsSpinner!!.setSelection(0, false)
+
         threadsSpinner!!.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
                 val threads = numThreadsOptions[position]
-                vm.modelRunner!!.setNumThreads(threads)
+                viewModel.modelRunner.setNumThreads(threads)
                 Toast.makeText(this@MainActivity, "using $threads threads", Toast.LENGTH_SHORT).show()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
-                vm.modelRunner!!.setNumThreads(1)
+                viewModel.modelRunner.setNumThreads(1)
                 threadsSpinner!!.setSelection(0)
             }
         }
+
         precisionSwitch!!.setOnCheckedChangeListener { buttonView, isChecked ->
-            val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
-            vm.modelRunner!!.setUse16bit(isChecked)
+            viewModel.modelRunner.setUse16bit(isChecked)
         }
+
         nav.setNavigationItemSelectedListener { menuItem: MenuItem ->
             if (!menuItem.isChecked) {
                 val selectedTabMenuId = menuItem.itemId
-                val vm = ViewModelProviders.of(this@MainActivity).get(ClassificationViewModel::class.java)
-                vm.currentTab = selectedTabMenuId
+                viewModel.currentTab = selectedTabMenuId
                 menuItem.isChecked = true
                 setupFragment(selectedTabMenuId)
                 return@setNavigationItemSelectedListener true
@@ -234,8 +248,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFragment(selectedTabMenuId: Int) {
-        val vm = ViewModelProviders.of(this).get(ClassificationViewModel::class.java)
-        vm.modelRunner!!.stopStreamClassification()
+        viewModel.modelRunner.stopStreamClassification()
+
         if (selectedTabMenuId == R.id.live_camera_fragment_menu_item) {
             if (faceModelLoaded) {
                 loadDefaultModel()
