@@ -4,17 +4,24 @@ import ai.doc.netrunner.ModelRunner.ModelRunnerDataSource
 import ai.doc.netrunner.ModelRunner.ClassificationResultListener
 import ai.doc.netrunner.R
 import ai.doc.netrunner.databinding.FragmentLiveCameraClassificationBinding
+
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
+
+private const val RESULTS_TO_SHOW = 3
+private const val FILTER_STAGES = 3
+private const val FILTER_FACTOR = 0.4f
 
 /**
  * A simple [Fragment] subclass.
@@ -22,15 +29,27 @@ import androidx.lifecycle.ViewModelProviders
 
 class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSource, ClassificationResultListener {
 
-    companion object {
-        private const val RESULTS_TO_SHOW = 3
-        private const val FILTER_STAGES = 3
-        private const val FILTER_FACTOR = 0.4f
+    // UI
+
+    private lateinit var textureView: TextureView
+
+    // Live Data Variables
+
+    private val _latency = MutableLiveData<String>()
+    val latency: LiveData<String> = _latency
+
+    private val _predictions = MutableLiveData<String>()
+    val predictions: LiveData<String> = _predictions
+
+    // View Model
+
+    // requires fragment-ktx dependency
+    // val viewModel: ClassificationViewModel by activityViewModels()
+
+    private val viewModel: ClassificationViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
     }
 
-    private val latency = MutableLiveData<String>()
-    private val predictions = MutableLiveData<String>()
-    private var textureView: TextureView? = null
     private var filterLabelProbArray: Array<FloatArray>? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
@@ -48,7 +67,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     }
 
     override fun getNextInput(): Bitmap? {
-        return textureView!!.getBitmap()
+        return textureView.bitmap
     }
 
     override fun classificationResult(requestId: Int, output: Any?, l: Long) {
@@ -57,9 +76,11 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         val top5formatted = formattedResults(top5)
 
         // TODO: Apply smoothing filter
-        predictions.postValue(top5formatted)
-        latency.postValue("$l ms")
+        _predictions.postValue(top5formatted)
+        _latency.postValue("$l ms")
     }
+
+    // TODO: why are onResume and onPause here
 
     override fun onResume() {
         super.onResume()
@@ -73,33 +94,19 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     }
 
     fun startClassification() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-
-        // vm.modelRunner!!.dataSource = this
-        // vm.modelRunner!!.listener = this
-
-        vm.modelRunner!!.startStreamClassification(this) { requestId: Int, output: Any, l: Long ->
+        viewModel.modelRunner.startStreamClassification(this) { requestId: Int, output: Any, l: Long ->
             val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)
 
             // TODO: Apply smoothing filter
-            predictions.postValue(top5formatted)
-            latency.postValue("$l ms")
+            _predictions.postValue(top5formatted)
+            _latency.postValue("$l ms")
         }
     }
 
     fun stopClassification() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-        vm.modelRunner!!.stopStreamClassification()
-    }
-
-    fun getLatency(): LiveData<String> {
-        return latency
-    }
-
-    fun getPredictions(): LiveData<String> {
-        return predictions
+        viewModel.modelRunner.stopStreamClassification()
     }
 
     private fun formattedResults(results: List<Map.Entry<String, Float>>): String {

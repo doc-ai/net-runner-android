@@ -2,7 +2,9 @@ package ai.doc.netrunner.view
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.databinding.FragmentSingleImageBinding
+
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+
 import android.Manifest.permission
 import android.app.Activity
 import android.content.Intent
@@ -16,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
+
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
@@ -23,26 +26,49 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
 
+private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
+private const val RESULTS_TO_SHOW = 3
+
+// TODO: Use selects image and *then* this fragment is shown
+
 class SingleImageClassificationFragment : Fragment() {
-    private var imageView: ImageView? = null
+
+    // UI
+
+    private lateinit var imageView: ImageView
+
+    // Live Data Variables
+
+    private val _latency = MutableLiveData<String>()
+    val latency: LiveData<String> = _latency
+
+    private val _predictions = MutableLiveData<String>()
+    val predictions: LiveData<String> = _predictions
+
+    // View Model
+
+    // requires fragment-ktx dependency
+    // val viewModel: ClassificationViewModel by activityViewModels()
+
+    private val viewModel: ClassificationViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    }
+
     private var selected: Bitmap? = null
-    private var btnClassify: Button? = null
-    private val latency = MutableLiveData<String>()
-    private val predictions = MutableLiveData<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         val binding: FragmentSingleImageBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_single_image, container, false)
         binding.fragment = this
         binding.lifecycleOwner = this
+
         val root = binding.root
         imageView = root.findViewById(R.id.imageview)
-        btnClassify = root.findViewById(R.id.btn_classify)
+
         return root
     }
 
@@ -50,18 +76,30 @@ class SingleImageClassificationFragment : Fragment() {
         if (resultCode != Activity.RESULT_OK) {
             return
         }
-        if (requestCode == 1) {
-            val pickedImage = data?.data
-            // Let's read picked image path using content resolver
-            val filePath = arrayOf(MediaStore.Images.Media.DATA)
-            val cursor = activity!!.contentResolver.query(pickedImage, filePath, null, null, null)
-            cursor.moveToFirst()
-            val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
-            val options = BitmapFactory.Options()
-            options.inPreferredConfig = Bitmap.Config.ARGB_8888
-            selected = BitmapFactory.decodeFile(imagePath, options)
-            imageView!!.setImageBitmap(selected)
-            btnClassify!!.isEnabled = true
+        if (requestCode != 1) {
+            return
+        }
+
+        val pickedImage = data?.data
+        // Let's read picked image path using content resolver
+        val filePath = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = activity!!.contentResolver.query(pickedImage, filePath, null, null, null)
+        cursor.moveToFirst()
+
+        val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
+        val options = BitmapFactory.Options().apply {
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+
+        val bitmap = BitmapFactory.decodeFile(imagePath, options)
+        imageView.setImageBitmap(bitmap)
+
+        viewModel.modelRunner.classifyFrame(0, bitmap) { requestId: Int, output: Any, l: Long ->
+            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
+            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
+            val top5formatted = formattedResults(top5)
+            _predictions.postValue(top5formatted)
+            _latency.postValue("$l ms")
         }
     }
 
@@ -87,19 +125,6 @@ class SingleImageClassificationFragment : Fragment() {
         }
     }
 
-    fun classify() {
-        val vm = ViewModelProviders.of(activity!!).get(ClassificationViewModel::class.java)
-        val modelRunner = vm.modelRunner
-
-        modelRunner?.classifyFrame(0, selected) { requestId: Int, output: Any, l: Long ->
-            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
-            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-            val top5formatted = formattedResults(top5)
-            predictions.postValue(top5formatted)
-            latency.postValue("$l ms")
-        }
-    }
-
     private fun formattedResults(results: List<Map.Entry<String, Float>>): String {
         val b = StringBuilder()
         for ((key, value) in results) {
@@ -110,18 +135,5 @@ class SingleImageClassificationFragment : Fragment() {
         }
         b.setLength(b.length - 1)
         return b.toString()
-    }
-
-    fun getLatency(): LiveData<String> {
-        return latency
-    }
-
-    fun getPredictions(): LiveData<String> {
-        return predictions
-    }
-
-    companion object {
-        private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
-        private const val RESULTS_TO_SHOW = 3
     }
 }

@@ -10,4 +10,5 @@
     <string name="device_menu_item_title">Accelerator</string>
     <string name="threads_menu_item_title">Threads</string>
     <string name="active_fragment_tag">active_fragment</string>
+    <string name="select_picture">Select picture</string>
 </resources>
