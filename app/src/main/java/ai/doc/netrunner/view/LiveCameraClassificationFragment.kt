@@ -80,6 +80,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         _latency.postValue("$l ms")
     }
 
+    // TODO: why are onResume and onPause here
+
     override fun onResume() {
         super.onResume()
         startClassification()
