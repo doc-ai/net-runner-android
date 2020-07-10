@@ -7,45 +7,130 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
-import android.text.SpannableStringBuilder
+
+private const val TAG = "ModelRunner"
+private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
+
+private typealias Listener = (Map<String,Any>, Long) -> Unit
+private typealias BitmapProvider = () -> Bitmap?
+
+/**
+ * The ModelRunner is used to configure a model and to perform continuous or one-off inference
+ * with a model.
+ */
 
 class ModelRunner(private var model: TIOTFLiteModel) {
-    enum class Device {
-        CPU, GPU, NNAPI
-    }
-
-    interface ModelRunnerDataSource {
-        fun getNextInput(): Bitmap?
-    }
-
-    interface ClassificationResultListener {
-        fun classificationResult(requestId: Int, prediction: Any?, latency: Long)
-    }
-
     inner class UnsupportedConfigurationException(message: String?) : RuntimeException(message)
 
-    companion object {
-        private const val TAG = "ModelRunner"
-        private const val HANDLE_THREAD_NAME = "ClassificationThread"
+    // TODO: Move Device to TIOTFliteModel
+
+    enum class Device {
+        CPU,
+        GPU,
+        NNAPI
     }
 
-    var dataSource: ModelRunnerDataSource? = null
-    lateinit var listener: ((Int, Any, Long) -> Unit)
+    /** The bitmap provider provides a bitmap to one step of inference */
 
-    private var numThreads = 1
-    private var use16Bit = false
-    private var device: Device? = null
+    lateinit var bitmapProvider: BitmapProvider
 
-    // So the background handler is a kind of queue that will receive requests to call functions (post)
+    /** The listener is informed when one step of inference is completed */
 
-    private val backgroundHandler: Handler
-    private val lock = Any()
+    lateinit var listener: Listener
+
+    var numThreads = 1
+        set(value) {
+            backgroundHandler.post {
+                model.setNumThreads(value)
+                field = value
+            }
+        }
+
+    var use16Bit = false
+        set(value) {
+            backgroundHandler.post {
+                model.setAllow16BitPrecision(value)
+                field = value
+            }
+        }
+
+    var device: Device = Device.CPU
+        set(value) {
+            backgroundHandler.post {
+                when (value) {
+                    Device.CPU -> {
+                        model.useCPU()
+                        field = value
+                    }
+                    Device.NNAPI -> {
+                        model.useNNAPI()
+                        field = value
+                    }
+                    Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                        throw UnsupportedConfigurationException("GPU not supported in this build")
+                    } else {
+                        model.useGPU()
+                        field = Device.CPU
+                    }
+                }
+            }
+        }
+
+    // TODO: Switching model currently recreates interpreter multiple times, see TIOTFLiteModel
+
+    @Throws(TIOModelException::class)
+    fun switchModel(model: TIOTFLiteModel) {
+        backgroundHandler.post {
+            this.model.unload()
+            this.model = model
+
+            model.load()
+
+            model.setNumThreads(numThreads)
+            model.setAllow16BitPrecision(use16Bit)
+
+            when(device) {
+                Device.CPU -> model.useCPU()
+                Device.GPU -> model.useGPU()
+                Device.NNAPI -> model.useNNAPI()
+            }
+        }
+    }
+
+    //beginRegion Background Tasks
+
+    /** Background thread that processes requests on the background handler */
+
+    private val backgroundThread: HandlerThread by lazy {
+        HandlerThread(HANDLE_THREAD_NAME).apply {
+            start()
+        }
+    }
+
+    /** Background queue that receives request to interact with the model */
+
+    private val backgroundHandler: Handler by lazy {
+        Handler(backgroundThread.looper)
+    }
+
+    /** A continuous runnable that will repeatedly call itself until running is set to false */
+
+    private val periodicRunner = object: Runnable {
+        override fun run() {
+            if (running) {
+                runInference()
+                backgroundHandler.post(this)
+            }
+        }
+    }
+
+    /** Determines if the periodic runner will continue to call itself */
+
     private var running = false
 
+    //endRegion
+
     init {
-        val backgroundThread = HandlerThread(HANDLE_THREAD_NAME)
-        backgroundThread.start()
-        backgroundHandler = Handler(backgroundThread.looper)
         backgroundHandler.post {
             try {
                 model.load()
@@ -55,143 +140,47 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         }
     }
 
-    private val periodicClassify = Runnable {
-        synchronized(lock) {
-            if (running) {
-                runInference()
-            }
-        }
-    }
+    /** Executes a single step of inference */
 
     private fun runInference() {
-        val bitmap = dataSource!!.getNextInput()
-        if (bitmap != null) {
-            try {
-                // run inference
-                val startTime = SystemClock.uptimeMillis()
-                val result: Any = model.runOn(bitmap)
-                val endTime = SystemClock.uptimeMillis()
-                listener(-1, result, endTime - startTime)
-            } catch (e: TIOModelException) {
-                e.printStackTrace()
-            }
-            bitmap.recycle()
+        val bitmap = bitmapProvider() ?: return
+
+        try {
+            val startTime = SystemClock.uptimeMillis()
+            val result = model.runOn(bitmap)
+            val endTime = SystemClock.uptimeMillis()
+            listener(result, endTime - startTime)
+        } catch (e: TIOModelException) {
+            e.printStackTrace()
         }
-        backgroundHandler.post(periodicClassify)
     }
 
-    // TODO: Classify frame assumes we are running a classification model
-    // This whole class assumes we are running a classification model, generalize it
+    /** Executes inference on a single frame (non-continuous) */
 
-    // classifyFrame is called from the SingleImage Fragment whereas the startStreamClassification is called from the LiveCamera Fragmenet
-    // oof
-
-    fun classifyFrame(requestId: Int, frame: Bitmap?, listener: (Int, Any, Long) -> Unit) {
+    fun runInferenceOnFrame(bitmapProvider: BitmapProvider, listener: Listener) {
         backgroundHandler.post {
-            val predictionsBuilder = SpannableStringBuilder()
-            val latencyBuilder = SpannableStringBuilder()
-            try {
-                val startTime = SystemClock.uptimeMillis()
-                val output = model.runOn(frame)
-                val endTime = SystemClock.uptimeMillis()
-                listener(requestId, output, endTime - startTime)
-            } catch (e: TIOModelException) {
-                e.printStackTrace()
-            }
+            this.bitmapProvider = bitmapProvider
+            this.listener = listener
+            runInference()
         }
     }
 
-    fun startStreamClassification(dataSource: ModelRunnerDataSource?, listener: (Int, Any, Long) -> Unit) {
-        synchronized(lock) {
-            this@ModelRunner.dataSource = dataSource
-            this@ModelRunner.listener = listener
+    /** Start continuous inference */
+
+    fun startStreamingInference(bitmapProvider: BitmapProvider, listener: Listener) {
+        backgroundHandler.post {
+            this.bitmapProvider = bitmapProvider
+            this.listener = listener
             running = true
-            backgroundHandler.post(periodicClassify)
         }
+        backgroundHandler.post(periodicRunner)
     }
 
-    fun stopStreamClassification() {
-        synchronized(lock) {
-            running = false
-            dataSource = null
-        }
-    }
+    /** Stop continuous inference */
 
-    @Throws(TIOModelException::class)
-    fun switchModel(newModel: TIOTFLiteModel) {
-        switchModel(newModel, device == Device.GPU, device == Device.NNAPI, numThreads, use16Bit)
-    }
-
-    fun switchModel(model: TIOTFLiteModel, useGPU: Boolean, useNNAPI: Boolean, numThreads: Int, use16Bit: Boolean) {
+    fun stopStreamingInference() {
         backgroundHandler.post {
-            synchronized(lock) {
-                this.model.unload()
-                this.model = model
-                try {
-                    this.model.load()
-                } catch (e: TIOModelException) {
-                    e.printStackTrace()
-                }
-                this@ModelRunner.use16Bit = use16Bit
-                device = Device.CPU
-                if (useGPU && GpuDelegateHelper.isGpuDelegateAvailable()) {
-                    device = Device.GPU
-                } else if (useNNAPI) {
-                    device = Device.NNAPI
-                }
-                this@ModelRunner.numThreads = numThreads
-                this.model.setOptions(use16Bit, useGPU, useNNAPI, numThreads)
-            }
-        }
-    }
-
-    fun useGPU() {
-        if (device != Device.GPU) {
-            backgroundHandler.post {
-                if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
-                    device = Device.CPU
-                    throw UnsupportedConfigurationException("GPU not supported in this build")
-                } else {
-                    model.useGPU()
-                    device = Device.GPU
-                }
-            }
-        }
-    }
-
-    fun useCPU() {
-        if (device != Device.CPU) {
-            backgroundHandler.post {
-                model.useCPU()
-                device = Device.CPU
-            }
-        }
-    }
-
-    fun useNNAPI() {
-        if (device != Device.NNAPI) {
-            backgroundHandler.post {
-                model.useNNAPI()
-                device = Device.NNAPI
-            }
-        }
-    }
-
-    fun setNumThreads(numThreads: Int) {
-        if (this.numThreads != numThreads) {
-            backgroundHandler.post {
-                model.setNumThreads(numThreads)
-                this.numThreads = numThreads
-            }
-        }
-    }
-
-    fun setUse16bit(use16Bit: Boolean) {
-        if (this.use16Bit != use16Bit) {
-            backgroundHandler.post {
-                model.setAllow16BitPrecision(use16Bit)
-                this.use16Bit = use16Bit
-            }
+            running = false
         }
     }
 }
