@@ -4,17 +4,24 @@ import ai.doc.netrunner.ModelRunner.ModelRunnerDataSource
 import ai.doc.netrunner.ModelRunner.ClassificationResultListener
 import ai.doc.netrunner.R
 import ai.doc.netrunner.databinding.FragmentLiveCameraClassificationBinding
+
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
+
+private const val RESULTS_TO_SHOW = 3
+private const val FILTER_STAGES = 3
+private const val FILTER_FACTOR = 0.4f
 
 /**
  * A simple [Fragment] subclass.
@@ -22,15 +29,14 @@ import androidx.lifecycle.ViewModelProviders
 
 class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSource, ClassificationResultListener {
 
-    companion object {
-        private const val RESULTS_TO_SHOW = 3
-        private const val FILTER_STAGES = 3
-        private const val FILTER_FACTOR = 0.4f
-    }
+    private lateinit var textureView: TextureView
 
-    private val latency = MutableLiveData<String>()
-    private val predictions = MutableLiveData<String>()
-    private var textureView: TextureView? = null
+    private val _latency = MutableLiveData<String>()
+    val latency: LiveData<String> = _latency
+
+    private val _predictions = MutableLiveData<String>()
+    val predictions: LiveData<String> = _predictions
+
     private var filterLabelProbArray: Array<FloatArray>? = null
 
     // requires fragment-ktx dependency
@@ -55,7 +61,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
     }
 
     override fun getNextInput(): Bitmap? {
-        return textureView!!.getBitmap()
+        return textureView.bitmap
     }
 
     override fun classificationResult(requestId: Int, output: Any?, l: Long) {
@@ -64,8 +70,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         val top5formatted = formattedResults(top5)
 
         // TODO: Apply smoothing filter
-        predictions.postValue(top5formatted)
-        latency.postValue("$l ms")
+        _predictions.postValue(top5formatted)
+        _latency.postValue("$l ms")
     }
 
     override fun onResume() {
@@ -86,21 +92,13 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
             val top5formatted = formattedResults(top5)
 
             // TODO: Apply smoothing filter
-            predictions.postValue(top5formatted)
-            latency.postValue("$l ms")
+            _predictions.postValue(top5formatted)
+            _latency.postValue("$l ms")
         }
     }
 
     fun stopClassification() {
         viewModel.modelRunner.stopStreamClassification()
-    }
-
-    fun getLatency(): LiveData<String> {
-        return latency
-    }
-
-    fun getPredictions(): LiveData<String> {
-        return predictions
     }
 
     private fun formattedResults(results: List<Map.Entry<String, Float>>): String {
