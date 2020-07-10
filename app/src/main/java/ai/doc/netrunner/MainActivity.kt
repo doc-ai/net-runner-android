@@ -7,7 +7,6 @@ import ai.doc.netrunner.view.SingleImageClassificationFragment
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOModel.TIOModelException
-import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 
 import android.content.Intent
@@ -200,7 +199,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupDevices() {
         deviceOptions.add(getString(R.string.cpu))
-        if (GpuDelegateHelper.isGpuDelegateAvailable()) {
+        if (!isEmulator && viewModel.modelRunner.canRunOnGPU) {
             deviceOptions.add(getString(R.string.gpu))
         }
         deviceOptions.add(getString(R.string.nnapi))

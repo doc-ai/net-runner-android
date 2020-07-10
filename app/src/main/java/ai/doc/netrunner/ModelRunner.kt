@@ -30,6 +30,8 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         NNAPI
     }
 
+    val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
+
     /** The bitmap provider provides a bitmap to one step of inference */
 
     lateinit var bitmapProvider: BitmapProvider
