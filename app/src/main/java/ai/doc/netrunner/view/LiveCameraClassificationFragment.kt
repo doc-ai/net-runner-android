@@ -1,13 +1,10 @@
 package ai.doc.netrunner.view
 
-import ai.doc.netrunner.ModelRunner.ModelRunnerDataSource
-import ai.doc.netrunner.ModelRunner.ClassificationResultListener
 import ai.doc.netrunner.R
 import ai.doc.netrunner.databinding.FragmentLiveCameraClassificationBinding
 
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.TextureView
@@ -27,7 +24,7 @@ private const val FILTER_FACTOR = 0.4f
  * A simple [Fragment] subclass.
  */
 
-class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSource, ClassificationResultListener {
+class LiveCameraClassificationFragment : LiveCameraFragment() {
 
     // UI
 
@@ -66,21 +63,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         textureView = view.findViewById(R.id.texture)
     }
 
-    override fun getNextInput(): Bitmap? {
-        return textureView.bitmap
-    }
-
-    override fun classificationResult(requestId: Int, output: Any?, l: Long) {
-        val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
-        val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-        val top5formatted = formattedResults(top5)
-
-        // TODO: Apply smoothing filter
-        _predictions.postValue(top5formatted)
-        _latency.postValue("$l ms")
-    }
-
-    // TODO: why are onResume and onPause here
+    //beginRegion Lifecycle
 
     override fun onResume() {
         super.onResume()
@@ -93,20 +76,24 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerDataSo
         super.onPause()
     }
 
-    fun startClassification() {
-        viewModel.modelRunner.startStreamClassification(this) { requestId: Int, output: Any, l: Long ->
-            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
+    //endRegion
+
+    private fun startClassification() {
+        viewModel.modelRunner.startStreamingInference( {
+            textureView.bitmap
+        }, { output: Map<String,Any>, l: Long ->
+            val classification = output["classification"] as? Map<String, Float>
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)
 
             // TODO: Apply smoothing filter
             _predictions.postValue(top5formatted)
             _latency.postValue("$l ms")
-        }
+        })
     }
 
     fun stopClassification() {
-        viewModel.modelRunner.stopStreamClassification()
+        viewModel.modelRunner.stopStreamingInference()
     }
 
     private fun formattedResults(results: List<Map.Entry<String, Float>>): String {

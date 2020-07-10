@@ -16,7 +16,6 @@ import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 
 import androidx.core.app.ActivityCompat
@@ -94,13 +93,16 @@ class SingleImageClassificationFragment : Fragment() {
         val bitmap = BitmapFactory.decodeFile(imagePath, options)
         imageView.setImageBitmap(bitmap)
 
-        viewModel.modelRunner.classifyFrame(0, bitmap) { requestId: Int, output: Any, l: Long ->
-            val classification = (output as Map<String?, Any?>)["classification"] as Map<String, Float>?
+        viewModel.modelRunner.runInferenceOnFrame( {
+            bitmap
+        }, { output: Map<String,Any>, l: Long ->
+            val classification = output["classification"] as? Map<String, Float>
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)
+
             _predictions.postValue(top5formatted)
             _latency.postValue("$l ms")
-        }
+        })
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {

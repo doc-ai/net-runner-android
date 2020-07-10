@@ -131,13 +131,13 @@ class MainActivity : AppCompatActivity() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
                 if (device == getString(R.string.cpu)) {
-                    viewModel.modelRunner.useCPU()
+                    viewModel.modelRunner.device = ModelRunner.Device.CPU
                     Toast.makeText(this@MainActivity, "using the CPU", Toast.LENGTH_SHORT).show()
                 } else if (device == getString(R.string.gpu)) {
-                    viewModel.modelRunner.useGPU()
+                    viewModel.modelRunner.device = ModelRunner.Device.GPU
                     Toast.makeText(this@MainActivity, "using the GPU", Toast.LENGTH_SHORT).show()
                 } else {
-                    viewModel.modelRunner.useNNAPI()
+                    viewModel.modelRunner.device = ModelRunner.Device.NNAPI
                     Toast.makeText(this@MainActivity, "using NNAPI", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -172,18 +172,18 @@ class MainActivity : AppCompatActivity() {
         threadsSpinner.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
-                viewModel.modelRunner.setNumThreads(threads)
+                viewModel.modelRunner.numThreads = threads
                 Toast.makeText(this@MainActivity, "using $threads threads", Toast.LENGTH_SHORT).show()
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
-                viewModel.modelRunner.setNumThreads(1)
+                viewModel.modelRunner.numThreads = 1
                 threadsSpinner.setSelection(0)
             }
         }
 
         precisionSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
-            viewModel.modelRunner.setUse16bit(isChecked)
+            viewModel.modelRunner.use16Bit = isChecked
         }
 
         nav.setNavigationItemSelectedListener { menuItem: MenuItem ->
@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFragment(selectedTabMenuId: Int) {
-        viewModel.modelRunner.stopStreamClassification()
+        viewModel.modelRunner.stopStreamingInference()
 
         if (selectedTabMenuId == R.id.live_camera_fragment_menu_item) {
             supportFragmentManager.beginTransaction().replace(R.id.container, LiveCameraClassificationFragment(), getString(R.string.active_fragment_tag)).commit()

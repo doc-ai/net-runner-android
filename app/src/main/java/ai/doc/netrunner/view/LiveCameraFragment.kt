@@ -263,7 +263,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         textureView = view.findViewById(R.id.texture)
     }
 
-    // TODO: when are onResume and onPause called?
+    //beginRegion Lifecycle
 
     override fun onResume() {
         super.onResume()
@@ -285,12 +285,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         super.onPause()
     }
 
-    override fun onDestroy() { /*
-        if (classifier != null) {
-            classifier.close();
-        }*/
-        super.onDestroy()
-    }
+    //endRegion
 
     /**
      * Sets up member variables related to camera.
