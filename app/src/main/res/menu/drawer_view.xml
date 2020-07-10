@@ -14,7 +14,7 @@
             android:title="@string/single_image_menu_item_title" />
     </group>
 
-    <item android:title="Configuration">
+    <item android:title="@string/configuration_menu_item_title">
         <menu>
             <item
                 tools:ignore="MenuTitle"
@@ -30,7 +30,7 @@
                 app:actionLayout="@layout/menu_item_spinner" />
             <item
                 tools:ignore="MenuTitle,icon"
-                android:title="Use 16 bit precision"
+                android:title="@string/use_16_bit_precision_menu_item_title"
                 android:id="@+id/nav_switch_precision"
                 app:actionLayout="@layout/menu_item_switch" />
         </menu>

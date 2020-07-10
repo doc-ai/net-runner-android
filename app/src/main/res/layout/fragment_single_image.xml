@@ -25,10 +25,10 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_marginLeft="24dp"
-            android:layout_marginRight="24dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="@dimen/margin_extra"
+            android:layout_marginRight="@dimen/margin_extra"
+            android:layout_marginTop="@dimen/margin_minimum"
+            android:layout_marginBottom="@dimen/margin_minimum"
             android:background="@color/white"
             android:orientation="horizontal">
 
@@ -36,34 +36,33 @@
                 android:id="@+id/predictions"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_margin="2dp"
+                android:layout_margin="@dimen/margin_tiny"
                 android:layout_weight="1"
                 android:bufferType="spannable"
-                android:padding="12dp"
+                android:padding="@dimen/padding_extra"
                 android:text="@{fragment.predictions}"
                 android:textColor="@color/black"
-                android:textSize="16sp" />
+                android:textSize="@dimen/font_size_l" />
 
             <TextView
                 android:id="@+id/latency"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="2dp"
-                android:padding="12dp"
+                android:layout_marginEnd="@dimen/margin_tiny"
+                android:padding="@dimen/padding_extra"
                 android:text="@{fragment.latency}"
                 android:textColor="@color/black"
-                android:textSize="14sp" />
+                android:textSize="@dimen/font_size_default" />
 
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="24dp"
-            android:layout_marginRight="24dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            >
+            android:layout_marginLeft="@dimen/margin_extra"
+            android:layout_marginRight="@dimen/margin_extra"
+            android:layout_marginTop="@dimen/margin_minimum"
+            android:layout_marginBottom="@dimen/margin_minimum">
 
             <Button
                 android:layout_width="0dp"
@@ -72,6 +71,5 @@
                 android:onClick="@{(e) -> fragment.pickImage()}"
                 android:text="@string/select_picture" />
         </LinearLayout>
-
     </LinearLayout>
 </layout>
