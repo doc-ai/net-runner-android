@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Margins Values -->
+    <!-- Margin Values -->
     <dimen name="margin_tiny">2dp</dimen>
     <dimen name="margin_minimum">4dp</dimen>
     <dimen name="margin_default">8dp</dimen>
