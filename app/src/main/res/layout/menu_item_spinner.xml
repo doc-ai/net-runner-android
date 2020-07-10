@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
         android:textColor="@color/black"
-        android:textSize="14sp"
+        android:textSize="@dimen/font_size_default"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <Spinner

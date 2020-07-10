@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Margin Values -->
+    <dimen name="margin_tiny">2dp</dimen>
+    <dimen name="margin_minimum">4dp</dimen>
+    <dimen name="margin_default">8dp</dimen>
+    <dimen name="margin_l">10dp</dimen>
+    <dimen name="margin_maximum">16dp</dimen>
+    <dimen name="margin_big">20dp</dimen>
+    <dimen name="margin_extra">24dp</dimen>
+
+    <!-- Padding Values -->
+    <dimen name="padding_minimum">4dp</dimen>
+    <dimen name="padding_default">8dp</dimen>
+    <dimen name="padding_extra">12dp</dimen>
+    <dimen name="padding_maximum">16dp</dimen>
+
+    <!-- Font Sizes -->
+    <dimen name="font_size_small">8sp</dimen>
+    <dimen name="font_size_big">12sp</dimen>
+    <dimen name="font_size_default">14sp</dimen>
+    <dimen name="font_size_l">16sp</dimen>
+    <dimen name="font_size_xl">20sp</dimen>
+
+    <!-- NetRunner Specific Margins -->
+    <dimen name="margin_predictions_layout">25dp</dimen>
+
+    <!-- NetRunner Specific Paddings -->
+    <dimen name="padding_predictions_layout">15dp</dimen>
+    <dimen name="padding_nav_header">25dp</dimen>
+
+    <!-- NetRunner Specific Heights -->
+    <dimen name="height_nav_header">90dp</dimen>
+</resources>
