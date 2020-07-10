@@ -27,6 +27,7 @@ import com.google.android.material.navigation.NavigationView
 
 import java.io.IOException
 import java.util.*
+import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
 
@@ -45,7 +46,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val numThreadsOptions = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-    private val deviceOptions = ArrayList<String>()
+
+    private val deviceOptions: ArrayList<String> by lazy {
+        arrayListOf(
+                getString(R.string.cpu),
+                getString(R.string.gpu),
+                getString(R.string.nnapi)
+        ).apply {
+            if (isEmulator || !viewModel.modelRunner.canRunOnGPU) {
+                remove(getString(R.string.gpu))
+            }
+        }
+    }
 
     private lateinit var deviceSpinner: Spinner
     private lateinit var threadsSpinner: Spinner
@@ -84,7 +96,6 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
 
-        setupDevices()
         setupDrawer()
 
         if (viewModel.currentTab != -1) {
@@ -195,14 +206,6 @@ class MainActivity : AppCompatActivity() {
             }
             false
         }
-    }
-
-    private fun setupDevices() {
-        deviceOptions.add(getString(R.string.cpu))
-        if (!isEmulator && viewModel.modelRunner.canRunOnGPU) {
-            deviceOptions.add(getString(R.string.gpu))
-        }
-        deviceOptions.add(getString(R.string.nnapi))
     }
 
     private fun setupFragment(selectedTabMenuId: Int) {
