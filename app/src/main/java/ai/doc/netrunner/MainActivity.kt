@@ -108,26 +108,6 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    private fun loadDefaultModel() {
-        viewModel.modelRunner.stopStreamClassification()
-
-        modelSpinner.setSelection(viewModel.modelIds.indexOf(DEFAULT_MODEL_ID), false)
-        modelSpinner.isEnabled = true
-
-        deviceSpinner.setSelection(deviceOptions.indexOf(getString(R.string.cpu)), false)
-
-        deviceSpinner.isEnabled = true
-        val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
-
-        try {
-            val newModel = bundle.newModel() as TIOTFLiteModel
-            viewModel.modelRunner.switchModel(newModel, false, false, numThreadsOptions[threadsSpinner.selectedItemPosition], precisionSwitch.isChecked)
-            Toast.makeText(this@MainActivity, "Loading $DEFAULT_MODEL_ID", Toast.LENGTH_SHORT).show()
-        } catch (e: TIOModelBundleException) {
-            e.printStackTrace()
-        }
-    }
-
     private fun setupDrawer() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
