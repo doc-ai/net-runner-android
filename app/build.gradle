@@ -68,7 +68,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.1.0'
 
     // Tensor/IO Dependency
-    implementation 'com.github.doc-ai:tensorio-android:5c832bd9b36b5a8c1853d248f65d38440ef029c7'
+    implementation 'com.github.doc-ai:tensorio-android:0.9.4'
 
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
