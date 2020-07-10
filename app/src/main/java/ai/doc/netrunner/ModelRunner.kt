@@ -67,10 +67,11 @@ class ModelRunner(private var model: TIOTFLiteModel) {
                         field = value
                     }
                     Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                        field = Device.CPU
                         throw UnsupportedConfigurationException("GPU not supported in this build")
                     } else {
                         model.useGPU()
-                        field = Device.CPU
+                        field = Device.GPU
                     }
                 }
             }
@@ -113,7 +114,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         Handler(backgroundThread.looper)
     }
 
-    /** A continuous runnable that will repeatedly call itself until running is set to false */
+    /** A continuous runnable that will repeatedly execute inference on the model until running is set to false */
 
     private val periodicRunner = object: Runnable {
         override fun run() {
