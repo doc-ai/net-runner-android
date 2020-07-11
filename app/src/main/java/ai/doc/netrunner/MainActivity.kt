@@ -218,9 +218,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // For Later
     private val isEmulator: Boolean
-        private get() = (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
+        get() = (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
                 || Build.HARDWARE.contains("goldfish")
