@@ -78,12 +78,11 @@ class MainActivity : AppCompatActivity() {
 
         setupDrawer()
 
-        if (viewModel.currentTab != -1) {
-            nav.menu.findItem(viewModel.currentTab).isChecked = true
-        } else {
+        if (viewModel.currentTab == -1) {
             viewModel.currentTab = R.id.live_camera_fragment_menu_item
         }
 
+        nav.menu.findItem(viewModel.currentTab).isChecked = true
         setupFragment(viewModel.currentTab)
     }
 
@@ -155,12 +154,12 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val model = viewModel.modelIds[position]
-                val bundle = viewModel.manager.bundleWithId(model)
+                val modelId = viewModel.modelIds[position]
+                val bundle = viewModel.manager.bundleWithId(modelId)
                 try {
-                    val newModel = bundle.newModel() as TIOTFLiteModel
-                    viewModel.modelRunner.switchModel(newModel)
-                    Toast.makeText(this@MainActivity, "Loading $model", Toast.LENGTH_SHORT).show()
+                    val model = bundle.newModel() as TIOTFLiteModel
+                    viewModel.modelRunner.switchModel(model)
+                    Toast.makeText(this@MainActivity, "Loading $modelId", Toast.LENGTH_SHORT).show()
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
                 } catch (e: TIOModelException) {
@@ -182,13 +181,13 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
                 viewModel.modelRunner.numThreads = threads
-                Toast.makeText(this@MainActivity, "using $threads threads", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "Using $threads threads", Toast.LENGTH_SHORT).show()
             }
         }
 
         // 16 Bit Checkbox
 
-        precisionSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
+        precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
             viewModel.modelRunner.use16Bit = isChecked
         }
 
