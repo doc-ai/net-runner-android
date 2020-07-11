@@ -140,16 +140,17 @@ class MainActivity : AppCompatActivity() {
         deviceSpinner.onItemSelectedListener = object : SpinnerListener() {
             override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
-                if (device == getString(R.string.cpu)) {
-                    viewModel.modelRunner.device = ModelRunner.Device.CPU
-                    Toast.makeText(this@MainActivity, "using the CPU", Toast.LENGTH_SHORT).show()
-                } else if (device == getString(R.string.gpu)) {
-                    viewModel.modelRunner.device = ModelRunner.Device.GPU
-                    Toast.makeText(this@MainActivity, "using the GPU", Toast.LENGTH_SHORT).show()
-                } else {
-                    viewModel.modelRunner.device = ModelRunner.Device.NNAPI
-                    Toast.makeText(this@MainActivity, "using NNAPI", Toast.LENGTH_SHORT).show()
+
+                when (device) {
+                    getString(R.string.cpu) ->
+                        viewModel.modelRunner.device = ModelRunner.Device.CPU
+                    getString(R.string.gpu) ->
+                        viewModel.modelRunner.device = ModelRunner.Device.GPU
+                    else ->
+                        viewModel.modelRunner.device = ModelRunner.Device.NNAPI
                 }
+
+                Toast.makeText(this@MainActivity, "Using $device", Toast.LENGTH_SHORT).show()
             }
         }
 
