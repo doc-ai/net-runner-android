@@ -72,15 +72,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val nav = findViewById<NavigationView>(R.id.nav_view)
-
-        deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner)
-        precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
-        modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner)
-        threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner)
-
-        viewModel.manager = TIOModelBundleManager(applicationContext, "")
-
         try {
             val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
             val model = bundle.newModel()
@@ -95,6 +86,15 @@ class MainActivity : AppCompatActivity() {
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }
+
+        val nav = findViewById<NavigationView>(R.id.nav_view)
+
+        deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner)
+        precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
+        modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner)
+        threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner)
+
+        viewModel.manager = TIOModelBundleManager(applicationContext, "")
 
         setupDrawer()
 
