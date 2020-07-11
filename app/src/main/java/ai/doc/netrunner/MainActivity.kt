@@ -26,7 +26,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.navigation.NavigationView
 
 import java.io.IOException
-import java.util.*
 import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
@@ -35,15 +34,6 @@ private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
 // TODO: Select image before showing single image fragment
 
 class MainActivity : AppCompatActivity() {
-
-    private abstract inner class SpinnerListener : OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View, position: Int, id: Long) {
-            view.let { OnUserSelectedItem(parent, it, position, id) }
-        }
-
-        abstract fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long)
-        override fun onNothingSelected(parent: AdapterView<*>?) {}
-    }
 
     private val numThreadsOptions = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
@@ -58,11 +48,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    private lateinit var deviceSpinner: Spinner
-    private lateinit var threadsSpinner: Spinner
-    private lateinit var modelSpinner: Spinner
-    private lateinit var precisionSwitch: SwitchCompat
 
     private val viewModel: ClassificationViewModel by lazy {
         ViewModelProvider(this).get(ClassificationViewModel::class.java)
@@ -90,11 +75,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         val nav = findViewById<NavigationView>(R.id.nav_view)
-
-        deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner)
-        precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
-        modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner)
-        threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner)
 
         setupDrawer()
 
@@ -132,13 +112,23 @@ class MainActivity : AppCompatActivity() {
         }
 
         val nav = findViewById<NavigationView>(R.id.nav_view)
+
+        val deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner) as Spinner
+        val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
+        val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
+        val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
+
+        // Device Selection
+
         (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
 
         deviceSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
         deviceSpinner.setSelection(0, false)
 
-        deviceSpinner.onItemSelectedListener = object : SpinnerListener() {
-            override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        deviceSpinner.onItemSelectedListener = object: OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
 
                 when (device) {
@@ -154,13 +144,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Model Selection
+
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
 
         modelSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
         modelSpinner.setSelection(0, false)
 
-        modelSpinner.onItemSelectedListener = object : SpinnerListener() {
-            override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        modelSpinner.onItemSelectedListener = object: OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val model = viewModel.modelIds[position]
                 val bundle = viewModel.manager.bundleWithId(model)
                 try {
@@ -175,23 +169,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Thread Count Selection
+
         (nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.threads_menu_item_title)
 
         threadsSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions)
         threadsSpinner.setSelection(0, false)
 
-        threadsSpinner.onItemSelectedListener = object : SpinnerListener() {
-            override fun OnUserSelectedItem(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+        threadsSpinner.onItemSelectedListener = object: OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
                 viewModel.modelRunner.numThreads = threads
                 Toast.makeText(this@MainActivity, "using $threads threads", Toast.LENGTH_SHORT).show()
             }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                viewModel.modelRunner.numThreads = 1
-                threadsSpinner.setSelection(0)
-            }
         }
+
+        // 16 Bit Checkbox
 
         precisionSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
             viewModel.modelRunner.use16Bit = isChecked
