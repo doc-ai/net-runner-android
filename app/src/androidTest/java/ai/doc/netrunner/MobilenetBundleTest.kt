@@ -1,19 +1,21 @@
 package ai.doc.netrunner
 
 import ai.doc.tensorio.TIOLayerInterface.TIOLayerInterface
-import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription
-import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelException
-import ai.doc.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat
+import ai.doc.tensorio.TIOModel.TIOPixelFormat
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+
 import androidx.test.platform.app.InstrumentationRegistry
+
 import org.junit.Assert
 import org.junit.Test
+
 import java.io.IOException
 
 class MobilenetBundleTest {
@@ -52,12 +54,15 @@ class MobilenetBundleTest {
 
     @Test
     fun testModelBundle() {
+        val epsilon = 0.01f
+
         try {
 
             // TODO: Move to tensor/io JSON parsing integration test
             val bundle = TIOModelBundle(appContext, "mobilenet_v2_1.4_224.tfbundle")
 
             // Basic Properties
+
             Assert.assertEquals(bundle.name, "MobileNet V2 1.0 224")
             Assert.assertEquals(bundle.details, "MobileNet V2 with a width multiplier of 1.0 and an input resolution of 224x224. \n\nMobileNets are based on a streamlined architecture that have depth-wise separable convolutions to build light weight deep neural networks. Trained on ImageNet with categories such as trees, animals, food, vehicles, person etc. MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications.")
             Assert.assertEquals(bundle.identifier, "mobilenet-v2-100-224-unquantized")
@@ -76,27 +81,29 @@ class MobilenetBundleTest {
             val input = bundle.io.inputs[0]
             Assert.assertEquals(input.name, "image")
             Assert.assertSame(input.mode, TIOLayerInterface.Mode.Input)
-            Assert.assertTrue(input.layerDescription is TIOPixelBufferLayerDescription)
 
-            val layerDescription = input.layerDescription as TIOPixelBufferLayerDescription
-            Assert.assertFalse(layerDescription.isQuantized)
-            Assert.assertSame(layerDescription.pixelFormat, TIOPixelFormat.RGB)
-            Assert.assertEquals(layerDescription.shape.channels.toLong(), 3)
-            Assert.assertEquals(layerDescription.shape.height.toLong(), 224)
-            Assert.assertEquals(layerDescription.shape.width.toLong(), 224)
+            input.doCase({ _ ->
+                Assert.fail()
+            }, { pixelLayer ->
+                Assert.assertFalse(pixelLayer.isQuantized)
+                Assert.assertSame(pixelLayer.pixelFormat, TIOPixelFormat.RGB)
 
-            val normalizer = layerDescription.normalizer
-            val epsilon = 0.01f
-            Assert.assertEquals(normalizer.normalize(0, 0).toDouble(), -1.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(0, 1).toDouble(), -1.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(0, 2).toDouble(), -1.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(127, 0).toDouble(), 0.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(127, 1).toDouble(), 0.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(127, 2).toDouble(), 0.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(255, 0).toDouble(), 1.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(255, 1).toDouble(), 1.0, epsilon.toDouble())
-            Assert.assertEquals(normalizer.normalize(255, 2).toDouble(), 1.0, epsilon.toDouble())
-            Assert.assertNull(layerDescription.denormalizer)
+                Assert.assertEquals(pixelLayer.shape.channels.toLong(), 3)
+                Assert.assertEquals(pixelLayer.shape.height.toLong(), 224)
+                Assert.assertEquals(pixelLayer.shape.width.toLong(), 224)
+
+                Assert.assertEquals(pixelLayer.normalizer.normalize(0, 0).toDouble(), -1.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(0, 1).toDouble(), -1.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(0, 2).toDouble(), -1.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(127, 0).toDouble(), 0.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(127, 1).toDouble(), 0.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(127, 2).toDouble(), 0.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(255, 0).toDouble(), 1.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(255, 1).toDouble(), 1.0, epsilon.toDouble())
+                Assert.assertEquals(pixelLayer.normalizer.normalize(255, 2).toDouble(), 1.0, epsilon.toDouble())
+
+                Assert.assertNull(pixelLayer.denormalizer)
+            })
 
             // Outputs
             Assert.assertEquals(bundle.io.outputs.size().toLong(), 1)
@@ -106,17 +113,21 @@ class MobilenetBundleTest {
             val output = bundle.io.outputs[0]
             Assert.assertEquals(output.name, "classification")
             Assert.assertSame(output.mode, TIOLayerInterface.Mode.Output)
-            Assert.assertTrue(output.layerDescription is TIOVectorLayerDescription)
 
-            val outputLayerDescription = output.layerDescription as TIOVectorLayerDescription
-            Assert.assertFalse(outputLayerDescription.isQuantized)
-            Assert.assertEquals(outputLayerDescription.length.toLong(), 1001)
-            Assert.assertTrue(outputLayerDescription.isLabeled)
-            Assert.assertEquals(outputLayerDescription.labels.size.toLong(), 1001)
-            Assert.assertEquals(outputLayerDescription.labels[0], "background")
-            Assert.assertEquals(outputLayerDescription.labels[outputLayerDescription.labels.size - 1], "toilet tissue")
-            Assert.assertNull(outputLayerDescription.quantizer)
-            Assert.assertNull(outputLayerDescription.dequantizer)
+            output.doCase({ vectorLayer ->
+                Assert.assertFalse(vectorLayer.isQuantized)
+                Assert.assertEquals(vectorLayer.length.toLong(), 1001)
+                Assert.assertTrue(vectorLayer.isLabeled)
+                Assert.assertEquals(vectorLayer.labels.size.toLong(), 1001)
+                Assert.assertEquals(vectorLayer.labels[0], "background")
+                Assert.assertEquals(vectorLayer.labels[vectorLayer.labels.size - 1], "toilet tissue")
+                Assert.assertNull(vectorLayer.quantizer)
+                Assert.assertNull(vectorLayer.dequantizer)
+
+            }, { _ ->
+                Assert.fail()
+            })
+
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }

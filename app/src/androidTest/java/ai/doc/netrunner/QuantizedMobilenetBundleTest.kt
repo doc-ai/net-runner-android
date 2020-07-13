@@ -1,19 +1,21 @@
 package ai.doc.netrunner
 
 import ai.doc.tensorio.TIOLayerInterface.TIOLayerInterface
-import ai.doc.tensorio.TIOLayerInterface.TIOPixelBufferLayerDescription
-import ai.doc.tensorio.TIOLayerInterface.TIOVectorLayerDescription
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelException
-import ai.doc.tensorio.TIOModel.TIOVisionModel.TIOPixelFormat
+import ai.doc.tensorio.TIOModel.TIOPixelFormat
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+
 import androidx.test.platform.app.InstrumentationRegistry
+
 import org.junit.Assert
 import org.junit.Test
+
 import java.io.IOException
 
 class QuantizedMobilenetBundleTest {
@@ -63,44 +65,52 @@ class QuantizedMobilenetBundleTest {
             Assert.assertEquals(bundle.version, "1")
             Assert.assertEquals(bundle.author, "Andrew G. Howard, Menglong Zhu, Bo Chen, Dmitry Kalenichenko, Weijun Wang, Tobias Weyand, Marco Andreetto, Hartwig Adam")
             Assert.assertEquals(bundle.license, "Apache License. Version 2.0 http://www.apache.org/licenses/LICENSE-2.0")
+
             val options = bundle.options
             Assert.assertEquals(options.devicePosition, "0")
 
             // Inputs
             Assert.assertEquals(bundle.io.inputs.size().toLong(), 1)
             Assert.assertTrue(bundle.io.inputs.keys().contains("image"))
+
             val input = bundle.io.inputs[0]
             Assert.assertEquals(input.name, "image")
             Assert.assertSame(input.mode, TIOLayerInterface.Mode.Input)
-            Assert.assertTrue(input.layerDescription is TIOPixelBufferLayerDescription)
-            val layerDescription = input.layerDescription as TIOPixelBufferLayerDescription
-            Assert.assertTrue(layerDescription.isQuantized)
-            Assert.assertSame(layerDescription.pixelFormat, TIOPixelFormat.RGB)
-            Assert.assertEquals(layerDescription.shape.channels.toLong(), 3)
-            Assert.assertEquals(layerDescription.shape.height.toLong(), 224)
-            Assert.assertEquals(layerDescription.shape.width.toLong(), 224)
-            Assert.assertNull(layerDescription.normalizer)
-            Assert.assertNull(layerDescription.denormalizer)
+
+            input.doCase({ _ ->
+                Assert.fail()
+            },{ pixelLayer ->
+                Assert.assertTrue(pixelLayer.isQuantized)
+                Assert.assertSame(pixelLayer.pixelFormat, TIOPixelFormat.RGB)
+                Assert.assertEquals(pixelLayer.shape.channels.toLong(), 3)
+                Assert.assertEquals(pixelLayer.shape.height.toLong(), 224)
+                Assert.assertEquals(pixelLayer.shape.width.toLong(), 224)
+                Assert.assertNull(pixelLayer.normalizer)
+                Assert.assertNull(pixelLayer.denormalizer)
+            })
 
             // Outputs
             Assert.assertEquals(bundle.io.outputs.size().toLong(), 1)
             Assert.assertEquals(bundle.io.outputs.size().toLong(), 1)
             Assert.assertTrue(bundle.io.outputs.keys().contains("classification"))
+
             val output = bundle.io.outputs[0]
             Assert.assertEquals(output.name, "classification")
             Assert.assertSame(output.mode, TIOLayerInterface.Mode.Output)
-            Assert.assertTrue(output.layerDescription is TIOVectorLayerDescription)
-            val outputLayerDescription = output.layerDescription as TIOVectorLayerDescription
-            Assert.assertTrue(outputLayerDescription.isQuantized)
-            Assert.assertEquals(outputLayerDescription.length.toLong(), 1001)
-            Assert.assertTrue(outputLayerDescription.isLabeled)
-            Assert.assertEquals(outputLayerDescription.labels.size.toLong(), 1001)
-            Assert.assertEquals(outputLayerDescription.labels[0], "background")
-            Assert.assertEquals(outputLayerDescription.labels[outputLayerDescription.labels.size - 1], "toilet tissue")
-            Assert.assertNull(outputLayerDescription.quantizer)
-            Assert.assertNotNull(outputLayerDescription.dequantizer)
 
-            // Run Model
+            input.doCase({ vectorLayer ->
+                Assert.assertTrue(vectorLayer.isQuantized)
+                Assert.assertEquals(vectorLayer.length.toLong(), 1001)
+                Assert.assertTrue(vectorLayer.isLabeled)
+                Assert.assertEquals(vectorLayer.labels.size.toLong(), 1001)
+                Assert.assertEquals(vectorLayer.labels[0], "background")
+                Assert.assertEquals(vectorLayer.labels[vectorLayer.labels.size - 1], "toilet tissue")
+                Assert.assertNull(vectorLayer.quantizer)
+                Assert.assertNotNull(vectorLayer.dequantizer)
+            }, { _ ->
+                Assert.fail()
+            })
+
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }

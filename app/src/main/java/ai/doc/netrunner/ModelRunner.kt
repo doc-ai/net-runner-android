@@ -21,7 +21,7 @@ private typealias BitmapProvider = () -> Bitmap?
  * with a model.
  */
 
-class ModelRunner(private var model: TIOTFLiteModel) {
+class ModelRunner(model: TIOTFLiteModel) {
     inner class UnsupportedConfigurationException(message: String?) : RuntimeException(message)
 
     enum class Device {
@@ -29,6 +29,9 @@ class ModelRunner(private var model: TIOTFLiteModel) {
         GPU,
         NNAPI
     }
+
+    var model: TIOTFLiteModel = model
+        private set
 
     val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
 
