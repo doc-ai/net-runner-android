@@ -16,14 +16,14 @@ import org.junit.Test
 
 import java.io.IOException
 
-class MobilenetBundleTest {
+class QuantizedMobileNetTests {
 
-    private val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+    private var appContext = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test
     fun testModel() {
         try {
-            val bundle = TIOModelBundle(appContext, "mobilenet_v2_1.4_224.tfbundle")
+            val bundle = TIOModelBundle(appContext, "mobilenet_v1_1.0_224_quant.tfbundle")
             val model = bundle.newModel() as TIOTFLiteModel
             Assert.assertNotNull(model)
             model.load()
@@ -32,11 +32,11 @@ class MobilenetBundleTest {
             val bitmap = BitmapFactory.decodeStream(stream)
             val resizedBitmap = Bitmap.createScaledBitmap(bitmap, 224, 224, true)
             val output = model.runOn(resizedBitmap)
+
             Assert.assertNotNull(output)
-
             val classification = output["classification"] as Map<String, Float>?
-            Assert.assertNotNull(classification)
 
+            Assert.assertNotNull(classification)
             val top5 = TIOClassificationHelper.topN(classification, 1)
             val top = top5[0]
             val label = top.key
