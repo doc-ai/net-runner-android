@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelProviders
 private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val RESULTS_TO_SHOW = 3
 
+// TODO: Assumes classification model (#24)
 // TODO: Use selects image and *then* this fragment is shown
 
 class SingleImageClassificationFragment : Fragment() {
