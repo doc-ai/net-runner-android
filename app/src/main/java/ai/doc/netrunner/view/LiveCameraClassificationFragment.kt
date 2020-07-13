@@ -96,7 +96,6 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
             _latency.postValue("$l ms")
 
             previousTop5 = top5smoothed as ArrayList<Map.Entry<String, Float>>
-
         })
     }
 
