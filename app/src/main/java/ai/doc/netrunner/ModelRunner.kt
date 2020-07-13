@@ -52,7 +52,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
     var use16Bit = false
         set(value) {
             backgroundHandler.post {
-                model.setUse16bitPrecision(value)
+                model.setUse16BitPrecision(value)
                 model.reload()
                 field = value
             }
@@ -90,7 +90,7 @@ class ModelRunner(private var model: TIOTFLiteModel) {
             this.model = model
 
             model.numThreads = numThreads
-            model.setUse16bitPrecision(use16Bit)
+            model.setUse16BitPrecision(use16Bit)
 
             when(device) {
                 Device.CPU -> model.hardwareBacking = CPU
