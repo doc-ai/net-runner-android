@@ -20,6 +20,8 @@ private const val RESULTS_TO_SHOW = 3
 private const val FILTER_STAGES = 3
 private const val FILTER_FACTOR = 0.4f
 
+// TODO: Assumes classification model (#24)
+
 /**
  * A simple [Fragment] subclass.
  */
@@ -79,16 +81,22 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     //endRegion
 
     private fun startClassification() {
+        var previousTop5 = ArrayList<Map.Entry<String,Float>>()
+
         viewModel.modelRunner.startStreamingInference( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
             val classification = output["classification"] as? Map<String, Float>
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-            val top5formatted = formattedResults(top5)
+            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, 0.7f, 0.02f)
+            val top5ordered = top5smoothed.take(5).sortedWith(compareBy { it.value }).reversed()
+            val top5formatted = formattedResults(top5ordered)
 
-            // TODO: Apply smoothing filter
             _predictions.postValue(top5formatted)
             _latency.postValue("$l ms")
+
+            previousTop5 = top5smoothed as ArrayList<Map.Entry<String, Float>>
+
         })
     }
 
@@ -104,29 +112,12 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
             b.append(String.format("%.2f", value))
             b.append("\n")
         }
-        b.setLength(b.length - 1)
+
+        if (b.isNotEmpty()) {
+            b.setLength(b.length - 1)
+        }
+
         return b.toString()
     }
 
-    // TODO: Update exponential decay function
-
-//    private fun applyFilter(result: FloatArray, numLabels: Int) {
-//        if (filterLabelProbArray == null || filterLabelProbArray!![0].length != numLabels) {
-//            filterLabelProbArray = Array(FILTER_STAGES) { FloatArray(numLabels) }
-//        }
-//
-//        // Low pass filter `labelProbArray` into the first stage of the filter.
-//        for (j in 0 until numLabels) {
-//            filterLabelProbArray!![0][j] += FILTER_FACTOR * (result[j] - filterLabelProbArray!![0][j])
-//        }
-//        // Low pass filter each stage into the next.
-//        for (i in 1 until FILTER_STAGES) {
-//            for (j in 0 until numLabels) {
-//                filterLabelProbArray!![i][j] += FILTER_FACTOR * (filterLabelProbArray!![i - 1][j] - filterLabelProbArray!![i][j])
-//            }
-//        }
-//
-//        // Copy the last stage filter output back to `labelProbArray`.
-//        System.arraycopy(filterLabelProbArray!![FILTER_STAGES - 1], 0, result, 0, numLabels)
-//    }
 }
