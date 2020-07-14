@@ -1,7 +1,8 @@
 package ai.doc.netrunner.view
 
+import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-import ai.doc.netrunner.databinding.FragmentSingleImageBinding
+import ai.doc.netrunner.databinding.FragmentSingleImageTabBinding
 
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 
@@ -42,14 +43,14 @@ class SingleImageClassificationFragment : Fragment() {
     // requires fragment-ktx dependency
     // val viewModel: ClassificationViewModel by activityViewModels()
 
-    private val viewModel: ClassificationViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    private val viewModel: MainViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
 
-        val binding: FragmentSingleImageBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_single_image, container, false)
+        val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_single_image_tab, container, false) as FragmentSingleImageTabBinding
         binding.fragment = this
         binding.lifecycleOwner = this
 

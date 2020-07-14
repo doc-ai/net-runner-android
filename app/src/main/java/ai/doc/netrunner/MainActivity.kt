@@ -1,7 +1,7 @@
 package ai.doc.netrunner
 
 import ai.doc.netrunner.view.*
-import ai.doc.netrunner.view.ClassificationViewModel.Tab
+import ai.doc.netrunner.MainViewModel.Tab
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
@@ -66,8 +66,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val viewModel: ClassificationViewModel by lazy {
-        ViewModelProvider(this).get(ClassificationViewModel::class.java)
+    private val viewModel: MainViewModel by lazy {
+        ViewModelProvider(this).get(MainViewModel::class.java)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -261,8 +261,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun pickImage() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE_REQUEST_CODE
-            )
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE_REQUEST_CODE)
         } else {
             val intent = Intent(Intent.ACTION_PICK)
             intent.type = "image/*"
@@ -273,21 +272,21 @@ class MainActivity : AppCompatActivity() {
     private fun showImageResults(data: Intent?) {
         val image = data?.data ?: return
 
-        // Read picked image using content resolver
-
         val filePath = arrayOf(MediaStore.Images.Media.DATA)
-        val cursor = this.contentResolver.query(image, filePath, null, null, null)
 
-        cursor.moveToFirst()
+        this.contentResolver.query(image, filePath, null, null, null)?.let {cursor ->
+            cursor.moveToFirst()
 
-        val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
-        val options = BitmapFactory.Options().apply {
-            inPreferredConfig = Bitmap.Config.ARGB_8888
+            val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
+            val options = BitmapFactory.Options().apply {
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+
+            viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
+
+            changeTab(Tab.SinglePhoto)
+            cursor.close()
         }
-
-        viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
-
-        changeTab(Tab.ChoosePhoto)
     }
 
     //region Take Photo
@@ -337,7 +336,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showTakenPhotoResults() {
         viewModel.bitmap = MediaStore.Images.Media.getBitmap(contentResolver, takePhotoUri)
-        changeTab(Tab.TakePhoto)
+        changeTab(Tab.SinglePhoto)
     }
 
     //endRegion
@@ -358,8 +357,7 @@ class MainActivity : AppCompatActivity() {
 
         val fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraClassificationFragment()
-            Tab.TakePhoto -> SingleImageClassificationFragment()
-            Tab.ChoosePhoto -> SingleImageClassificationFragment()
+            Tab.SinglePhoto -> SingleImageClassificationFragment()
         }
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()

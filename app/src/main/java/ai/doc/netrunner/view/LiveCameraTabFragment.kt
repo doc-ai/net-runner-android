@@ -1,7 +1,8 @@
 package ai.doc.netrunner.view
 
+import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-import ai.doc.netrunner.databinding.FragmentLiveCameraClassificationBinding
+import ai.doc.netrunner.databinding.FragmentLiveCameraTabBinding
 
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 
@@ -12,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 
 import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
@@ -45,16 +47,14 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     // requires fragment-ktx dependency
     // val viewModel: ClassificationViewModel by activityViewModels()
 
-    private val viewModel: ClassificationViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    private val viewModel: MainViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
     }
-
-    private var filterLabelProbArray: Array<FloatArray>? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
-        val binding: FragmentLiveCameraClassificationBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera_classification, container, false)
+        val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera_tab, container, false) as FragmentLiveCameraTabBinding
         binding.fragment = this
         binding.lifecycleOwner = this
         return binding.root

@@ -1,16 +1,14 @@
-package ai.doc.netrunner.view
+package ai.doc.netrunner
 
-import ai.doc.netrunner.ModelRunner
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import java.util.ArrayList
 
-class ClassificationViewModel : ViewModel() {
+class MainViewModel : ViewModel() {
     enum class Tab {
         LiveVideo,
-        TakePhoto,
-        ChoosePhoto
+        SinglePhoto
     }
 
     lateinit var manager: TIOModelBundleManager
