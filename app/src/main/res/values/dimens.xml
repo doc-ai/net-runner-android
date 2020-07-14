@@ -9,6 +9,7 @@
     <dimen name="margin_maximum">16dp</dimen>
     <dimen name="margin_big">20dp</dimen>
     <dimen name="margin_extra">24dp</dimen>
+    <dimen name="actionbar_camera_margin_right">10dp</dimen>
 
     <!-- Padding Values -->
     <dimen name="padding_minimum">4dp</dimen>

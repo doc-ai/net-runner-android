@@ -16,6 +16,8 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
+
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
@@ -77,6 +79,7 @@ class MainActivity : AppCompatActivity() {
         val nav = findViewById<NavigationView>(R.id.nav_view)
 
         setupDrawer()
+        setupInputSourceButton()
 
         if (viewModel.currentTab == -1) {
             viewModel.currentTab = R.id.live_camera_fragment_menu_item
@@ -98,6 +101,35 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun setupInputSourceButton() {
+        var button = findViewById<ImageButton>(R.id.actionbar_camera_button)
+        var items = arrayOf(
+                getString(R.string.input_source_dialog_choice_live_video),
+                getString(R.string.input_source_dialog_take_picture),
+                getString(R.string.input_source_dialog_choose_photo))
+
+        button.setOnClickListener {
+            AlertDialog.Builder(this).apply {
+                setTitle(R.string.input_source_dialog_title)
+                //setIcon(android.R.drawable.ic_menu_camera)
+
+                setNegativeButton(android.R.string.cancel) { dialog, which ->
+                    dialog.cancel()
+                }
+
+                setItems(items) { dialog, which ->
+                    when (which) {
+                        0 -> setupFragment(R.id.live_camera_fragment_menu_item)
+                        // TODO: Take a picture intent
+                        1 -> setupFragment(R.id.live_camera_fragment_menu_item)
+                        2 -> setupFragment(R.id.single_image_fragment_menu_item)
+                    }
+                    dialog.dismiss()
+                }
+            }.show()
+        }
     }
 
     private fun setupDrawer() {
