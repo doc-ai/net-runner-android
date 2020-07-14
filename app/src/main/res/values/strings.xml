@@ -18,5 +18,7 @@
     <string name="input_source_dialog_choice_live_video">Live Video</string>
     <string name="input_source_dialog_take_picture">Take a Picture</string>
     <string name="input_source_dialog_choose_photo">Choose Photo</string>
+    <string name="nav_import_model">Import Model</string>
+    <string name="nav_title_configuration">Configuration</string>
 
 </resources>

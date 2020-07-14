@@ -3,23 +3,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <group
-        android:checkableBehavior="single">
+    <group>
         <item
-            android:id="@+id/live_camera_fragment_menu_item"
-            android:checked="true"
-            android:title="@string/live_camera_menu_item_title" />
+            tools:ignore="MenuTitle"
+            android:id="@+id/nav_select_model"
+            app:actionLayout="@layout/menu_item_spinner" />
+
+        <!--
+        TODO: Import model (#1)
         <item
-            android:id="@+id/single_image_fragment_menu_item"
-            android:title="@string/single_image_menu_item_title" />
+            tools:ignore="MenuTitle,icon"
+            android:id="@+id/nav_import_model"
+            app:actionLayout="@layout/menu_item_import_model" />
+            -->
+
     </group>
 
-    <item android:title="@string/configuration_menu_item_title">
+    <item android:title="@string/nav_title_configuration">
         <menu>
-            <item
-                tools:ignore="MenuTitle"
-                android:id="@+id/nav_select_model"
-                app:actionLayout="@layout/menu_item_spinner" />
             <item
                 tools:ignore="MenuTitle,icon"
                 android:id="@+id/nav_select_accelerator"

@@ -1,6 +1,7 @@
 package ai.doc.netrunner
 
 import ai.doc.netrunner.view.ClassificationViewModel
+import ai.doc.netrunner.view.ClassificationViewModel.CurrentTab
 import ai.doc.netrunner.view.LiveCameraClassificationFragment
 import ai.doc.netrunner.view.SingleImageClassificationFragment
 
@@ -28,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.navigation.NavigationView
 
 import java.io.IOException
+import java.lang.IllegalArgumentException
 import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
@@ -76,16 +78,13 @@ class MainActivity : AppCompatActivity() {
             e.printStackTrace()
         }
 
-        val nav = findViewById<NavigationView>(R.id.nav_view)
-
-        setupDrawer()
         setupInputSourceButton()
+        setupDrawer()
 
-        if (viewModel.currentTab == -1) {
-            viewModel.currentTab = R.id.live_camera_fragment_menu_item
+        if (viewModel.currentTab == CurrentTab.None) {
+            viewModel.currentTab = CurrentTab.LiveVideo
         }
 
-        nav.menu.findItem(viewModel.currentTab).isChecked = true
         setupFragment(viewModel.currentTab)
     }
 
@@ -104,8 +103,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInputSourceButton() {
-        var button = findViewById<ImageButton>(R.id.actionbar_camera_button)
-        var items = arrayOf(
+        val button = findViewById<ImageButton>(R.id.actionbar_camera_button)
+        val items = arrayOf(
                 getString(R.string.input_source_dialog_choice_live_video),
                 getString(R.string.input_source_dialog_take_picture),
                 getString(R.string.input_source_dialog_choose_photo))
@@ -121,10 +120,11 @@ class MainActivity : AppCompatActivity() {
 
                 setItems(items) { dialog, which ->
                     when (which) {
-                        0 -> setupFragment(R.id.live_camera_fragment_menu_item)
+                        0 -> setupFragment(CurrentTab.LiveVideo)
                         // TODO: Take a picture intent
-                        1 -> setupFragment(R.id.live_camera_fragment_menu_item)
-                        2 -> setupFragment(R.id.single_image_fragment_menu_item)
+                        1 -> setupFragment(CurrentTab.TakePhoto)
+                        // TODO: Choose picture first
+                        2 -> setupFragment(CurrentTab.ChoosePhoto)
                     }
                     dialog.dismiss()
                 }
@@ -222,27 +222,19 @@ class MainActivity : AppCompatActivity() {
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
             viewModel.modelRunner.use16Bit = isChecked
         }
-
-        nav.setNavigationItemSelectedListener { menuItem: MenuItem ->
-            if (!menuItem.isChecked) {
-                val selectedTabMenuId = menuItem.itemId
-                viewModel.currentTab = selectedTabMenuId
-                menuItem.isChecked = true
-                setupFragment(selectedTabMenuId)
-                return@setNavigationItemSelectedListener true
-            }
-            false
-        }
     }
 
-    private fun setupFragment(selectedTabMenuId: Int) {
+    private fun setupFragment(tab: CurrentTab) {
         viewModel.modelRunner.stopStreamingInference()
 
-        if (selectedTabMenuId == R.id.live_camera_fragment_menu_item) {
-            supportFragmentManager.beginTransaction().replace(R.id.container, LiveCameraClassificationFragment(), getString(R.string.active_fragment_tag)).commit()
-        } else if (selectedTabMenuId == R.id.single_image_fragment_menu_item) {
-            supportFragmentManager.beginTransaction().replace(R.id.container, SingleImageClassificationFragment()).commit()
+        val fragment = when (tab) {
+            CurrentTab.LiveVideo -> LiveCameraClassificationFragment()
+            CurrentTab.TakePhoto -> SingleImageClassificationFragment()
+            CurrentTab.ChoosePhoto -> SingleImageClassificationFragment()
+            CurrentTab.None -> throw IllegalArgumentException()
         }
+
+        supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
     }
 
     private val isEmulator: Boolean
