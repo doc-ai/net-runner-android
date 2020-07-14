@@ -255,7 +255,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val binding: FragmentLiveCameraBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera, container, false)
+        val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera, container, false) as FragmentLiveCameraBinding
         return binding.root
     }
 

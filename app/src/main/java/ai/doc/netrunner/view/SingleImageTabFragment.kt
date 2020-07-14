@@ -1,60 +1,52 @@
 package ai.doc.netrunner.view
 
+import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-import ai.doc.netrunner.databinding.FragmentSingleImageBinding
 
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
 
 private const val RESULTS_TO_SHOW = 3
 
 // TODO: Assumes classification model (#24)
-// TODO: LiveData is overkill here
 
 class SingleImageClassificationFragment : Fragment() {
 
     // UI
 
     private lateinit var imageView: ImageView
-
-    // Live Data Variables
-
-    private val _latency = MutableLiveData<String>()
-    val latency: LiveData<String> = _latency
-
-    private val _predictions = MutableLiveData<String>()
-    val predictions: LiveData<String> = _predictions
+    private lateinit var predictionTextView: TextView
+    private lateinit var latencyTextView: TextView
 
     // View Model
 
     // requires fragment-ktx dependency
     // val viewModel: ClassificationViewModel by activityViewModels()
 
-    private val viewModel: ClassificationViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
+    private val viewModel: MainViewModel by lazy {
+        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
 
-        val binding: FragmentSingleImageBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_single_image, container, false)
-        binding.fragment = this
-        binding.lifecycleOwner = this
+        val root = inflater.inflate(R.layout.fragment_single_image_tab, container, false)
 
-        val root = binding.root
         imageView = root.findViewById(R.id.imageview)
+        predictionTextView = root.findViewById(R.id.predictions)
+        latencyTextView = root.findViewById(R.id.latency)
 
         // Use any provided bitmap
 
@@ -75,8 +67,10 @@ class SingleImageClassificationFragment : Fragment() {
             val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
             val top5formatted = formattedResults(top5)
 
-            _predictions.postValue(top5formatted)
-            _latency.postValue("$l ms")
+            Handler(Looper.getMainLooper()).post(Runnable {
+                predictionTextView.text = top5formatted
+                latencyTextView.text = "$l ms"
+            })
         })
     }
 
