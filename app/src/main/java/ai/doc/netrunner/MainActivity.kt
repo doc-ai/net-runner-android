@@ -12,8 +12,10 @@ import android.app.Activity
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -27,22 +29,26 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
 
 import com.google.android.material.navigation.NavigationView
+import java.io.File
 
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
 
 private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
+private const val REQUEST_IMAGE_CAPTURE = 2
 
 // TODO: Close drawer after selection
-// TODO: Select image before showing single image fragment
 
 class MainActivity : AppCompatActivity() {
 
@@ -98,8 +104,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (requestCode == REQUEST_CODE_PICK_IMAGE) {
-            showImageResults(data)
+        when (requestCode) {
+            REQUEST_CODE_PICK_IMAGE ->
+                showImageResults(data)
+            REQUEST_IMAGE_CAPTURE -> {
+                revokeCameraActivityPermissions(takePhotoUri)
+                showTakenPhotoResults()
+            }
         }
     }
 
@@ -132,8 +143,7 @@ class MainActivity : AppCompatActivity() {
                 setItems(items) { dialog, which ->
                     when (which) {
                         0 -> changeTab(Tab.LiveVideo)
-                        // TODO: Take a picture intent
-                        1 -> changeTab(Tab.TakePhoto)
+                        1 -> takePhoto()
                         2 -> pickImage()
                     }
                     dialog.dismiss()
@@ -278,6 +288,56 @@ class MainActivity : AppCompatActivity() {
         viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
 
         changeTab(Tab.ChoosePhoto)
+    }
+
+    //region Take Photo
+
+    // Really wish we could wrap this up into one method and lambdas rather than spreading it out
+
+    private var takePhotoUri: Uri? = null
+
+    private fun takePhoto() {
+         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            takePictureIntent.resolveActivity(packageManager)?.also {
+
+                val file: File? = try  {
+                    createTempTakenPhotoFile()
+                } catch (x: IOException) {
+                    // TODO: Show error
+                    null
+                }
+
+                file?.also {
+                    takePhotoUri = FileProvider.getUriForFile(this, "ai.doc.netrunner.fileprovider", file)
+
+                    grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
+                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+                }
+            }
+        }
+    }
+
+    private fun grantCameraActivityPermissions(intent: Intent, photoUri: Uri?) {
+        val cameraActivities: List<ResolveInfo> = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        for (cameraActivity in cameraActivities) {
+            this.grantUriPermission(cameraActivity.activityInfo.packageName, photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+    }
+
+    private fun revokeCameraActivityPermissions(photoUri: Uri?) {
+        revokeUriPermission(photoUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+    }
+
+    @Throws(IOException::class)
+    private fun createTempTakenPhotoFile(): File {
+        val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        return File.createTempFile(timestamp,".jpg", filesDir)
+    }
+
+    private fun showTakenPhotoResults() {
+        viewModel.bitmap = MediaStore.Images.Media.getBitmap(contentResolver, takePhotoUri)
+        changeTab(Tab.TakePhoto)
     }
 
     //endRegion
