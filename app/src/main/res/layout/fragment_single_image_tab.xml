@@ -1,60 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
 
-    <data>
-        <variable
-            name="fragment"
-            type="ai.doc.netrunner.view.SingleImageClassificationFragment"/>
-    </data>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/imageview"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:adjustViewBounds="true"
+        android:background="@android:color/black"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars" />
 
     <LinearLayout
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/black"
-        android:orientation="vertical"
-        tools:context=".view.SingleImageClassificationFragment">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginLeft="@dimen/margin_extra"
+        android:layout_marginRight="@dimen/margin_extra"
+        android:layout_marginTop="@dimen/margin_minimum"
+        android:layout_marginBottom="@dimen/margin_minimum"
+        android:background="@color/white"
+        android:orientation="horizontal">
 
-        <ImageView
-            android:id="@+id/imageview"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="4" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+        <TextView
+            android:id="@+id/predictions"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/margin_tiny"
             android:layout_weight="1"
-            android:layout_marginLeft="@dimen/margin_extra"
-            android:layout_marginRight="@dimen/margin_extra"
-            android:layout_marginTop="@dimen/margin_minimum"
-            android:layout_marginBottom="@dimen/margin_minimum"
-            android:background="@color/white"
-            android:orientation="horizontal">
+            android:bufferType="spannable"
+            android:padding="@dimen/padding_extra"
+            android:textColor="@color/black"
+            android:textSize="@dimen/font_size_l" />
 
-            <TextView
-                android:id="@+id/predictions"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/margin_tiny"
-                android:layout_weight="1"
-                android:bufferType="spannable"
-                android:padding="@dimen/padding_extra"
-                android:text="@{fragment.predictions}"
-                android:textColor="@color/black"
-                android:textSize="@dimen/font_size_l" />
-
-            <TextView
-                android:id="@+id/latency"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/margin_tiny"
-                android:padding="@dimen/padding_extra"
-                android:text="@{fragment.latency}"
-                android:textColor="@color/black"
-                android:textSize="@dimen/font_size_default" />
-
-        </LinearLayout>
+        <TextView
+            android:id="@+id/latency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/margin_tiny"
+            android:padding="@dimen/padding_extra"
+            android:textColor="@color/black"
+            android:textSize="@dimen/font_size_default" />
 
     </LinearLayout>
-</layout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
