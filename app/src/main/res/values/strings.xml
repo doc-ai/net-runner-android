@@ -14,5 +14,11 @@
 
     <string name="use_16_bit_precision_menu_item_title">Use 16 bit precision</string>
     <string name="configuration_menu_item_title">Configuration</string>
+    <string name="input_source_dialog_title">Select an Input Source</string>
+    <string name="input_source_dialog_choice_live_video">Live Video</string>
+    <string name="input_source_dialog_take_picture">Take a Picture</string>
+    <string name="input_source_dialog_choose_photo">Choose Photo</string>
+    <string name="nav_import_model">Import Model</string>
+    <string name="nav_title_configuration">Configuration</string>
 
 </resources>

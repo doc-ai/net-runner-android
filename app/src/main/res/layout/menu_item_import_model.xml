@@ -16,9 +16,12 @@
         android:textSize="@dimen/font_size_default"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <Spinner
-        android:id="@+id/spinner"
+    <Button
+        android:id="@+id/import_model_button"
+        android:title="@string/nav_import_model"
         android:layout_height="wrap_content"
         android:layout_width="0dp"
         android:layout_weight="2" />
 </LinearLayout>
+
+

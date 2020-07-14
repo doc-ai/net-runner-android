@@ -56,20 +56,5 @@
 
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/margin_extra"
-            android:layout_marginRight="@dimen/margin_extra"
-            android:layout_marginTop="@dimen/margin_minimum"
-            android:layout_marginBottom="@dimen/margin_minimum">
-
-            <Button
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="@{(e) -> fragment.pickImage()}"
-                android:text="@string/select_picture" />
-        </LinearLayout>
     </LinearLayout>
 </layout>
