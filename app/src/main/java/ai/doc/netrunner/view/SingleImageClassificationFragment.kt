@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProviders
 private const val RESULTS_TO_SHOW = 3
 
 // TODO: Assumes classification model (#24)
+// TODO: LiveData is overkill here
 
 class SingleImageClassificationFragment : Fragment() {
 
@@ -45,8 +46,6 @@ class SingleImageClassificationFragment : Fragment() {
         ViewModelProviders.of(requireActivity()).get(ClassificationViewModel::class.java)
     }
 
-    private var bitmap: Bitmap? = null
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
 
@@ -59,11 +58,8 @@ class SingleImageClassificationFragment : Fragment() {
 
         // Use any provided bitmap
 
-        val bitmap = this.arguments?.getParcelable("bitmap") as Bitmap?
-
-        if (bitmap != null) {
-            this.bitmap = bitmap
-            doBitmap(bitmap)
+        viewModel.bitmap?.let {
+            doBitmap(it)
         }
 
         return root

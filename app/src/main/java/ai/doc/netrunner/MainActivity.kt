@@ -7,7 +7,6 @@ import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
-import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 import android.Manifest
 import android.app.Activity
 
@@ -276,31 +275,25 @@ class MainActivity : AppCompatActivity() {
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
 
-        val bitmap = BitmapFactory.decodeFile(imagePath, options)
+        viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
 
-        // Load fragment
-
-        val bundle = Bundle(). apply {
-            putParcelable("bitmap", bitmap)
-        }
-
-        changeTab(Tab.ChoosePhoto, bundle)
+        changeTab(Tab.ChoosePhoto)
     }
 
     //endRegion
 
     //region Fragment Management
 
-    private fun changeTab(tab: Tab, bundle: Bundle? = null) {
+    private fun changeTab(tab: Tab) {
         if ( viewModel.currentTab == Tab.LiveVideo && viewModel.currentTab == tab) {
             return
         }
 
         viewModel.currentTab = tab
-        setupFragment(tab, bundle)
+        setupFragment(tab)
     }
 
-    private fun setupFragment(tab: Tab, bundle: Bundle? = null) {
+    private fun setupFragment(tab: Tab) {
         viewModel.modelRunner.stopStreamingInference()
 
         val fragment = when (tab) {
@@ -309,7 +302,6 @@ class MainActivity : AppCompatActivity() {
             Tab.ChoosePhoto -> SingleImageClassificationFragment()
         }
 
-        fragment.arguments = bundle
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
     }
 
