@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <group>
+    <group android:id="@+id/nav_group_model">
         <item
             tools:ignore="MenuTitle"
             android:id="@+id/nav_select_model"
@@ -19,21 +19,21 @@
 
     </group>
 
-    <item android:title="@string/nav_title_configuration">
-        <menu>
-            <item
-                tools:ignore="MenuTitle,icon"
-                android:id="@+id/nav_select_accelerator"
-                app:actionLayout="@layout/menu_item_spinner" />
-            <item
-                tools:ignore="MenuTitle,icon"
-                android:id="@+id/nav_select_threads"
-                app:actionLayout="@layout/menu_item_spinner" />
-            <item
-                tools:ignore="MenuTitle,icon"
-                android:title="@string/use_16_bit_precision_menu_item_title"
-                android:id="@+id/nav_switch_precision"
-                app:actionLayout="@layout/menu_item_switch" />
-        </menu>
-    </item>
+    <group android:id="@+id/nav_group_configuration">
+
+        <item
+            tools:ignore="MenuTitle,icon"
+            android:id="@+id/nav_select_accelerator"
+            app:actionLayout="@layout/menu_item_spinner" />
+        <item
+            tools:ignore="MenuTitle,icon"
+            android:id="@+id/nav_select_threads"
+            app:actionLayout="@layout/menu_item_spinner" />
+        <item
+            tools:ignore="MenuTitle,icon"
+            android:title="@string/use_16_bit_precision_menu_item_title"
+            android:id="@+id/nav_switch_precision"
+            app:actionLayout="@layout/menu_item_switch" />
+
+    </group>
 </menu>

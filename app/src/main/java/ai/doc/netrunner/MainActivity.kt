@@ -1,7 +1,7 @@
 package ai.doc.netrunner
 
 import ai.doc.netrunner.view.ClassificationViewModel
-import ai.doc.netrunner.view.ClassificationViewModel.CurrentTab
+import ai.doc.netrunner.view.ClassificationViewModel.Tab
 import ai.doc.netrunner.view.LiveCameraClassificationFragment
 import ai.doc.netrunner.view.SingleImageClassificationFragment
 
@@ -29,7 +29,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.navigation.NavigationView
 
 import java.io.IOException
-import java.lang.IllegalArgumentException
 import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
@@ -81,10 +80,6 @@ class MainActivity : AppCompatActivity() {
         setupInputSourceButton()
         setupDrawer()
 
-        if (viewModel.currentTab == CurrentTab.None) {
-            viewModel.currentTab = CurrentTab.LiveVideo
-        }
-
         setupFragment(viewModel.currentTab)
     }
 
@@ -120,11 +115,11 @@ class MainActivity : AppCompatActivity() {
 
                 setItems(items) { dialog, which ->
                     when (which) {
-                        0 -> setupFragment(CurrentTab.LiveVideo)
+                        0 -> changeTab(Tab.LiveVideo)
                         // TODO: Take a picture intent
-                        1 -> setupFragment(CurrentTab.TakePhoto)
+                        1 -> changeTab(Tab.TakePhoto)
                         // TODO: Choose picture first
-                        2 -> setupFragment(CurrentTab.ChoosePhoto)
+                        2 -> changeTab(Tab.ChoosePhoto)
                     }
                     dialog.dismiss()
                 }
@@ -224,14 +219,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupFragment(tab: CurrentTab) {
+    private fun changeTab(tab: Tab) {
+        if (viewModel.currentTab == tab) {
+            return
+        }
+
+        viewModel.currentTab = tab
+        setupFragment(tab)
+    }
+
+    private fun setupFragment(tab: Tab) {
         viewModel.modelRunner.stopStreamingInference()
 
         val fragment = when (tab) {
-            CurrentTab.LiveVideo -> LiveCameraClassificationFragment()
-            CurrentTab.TakePhoto -> SingleImageClassificationFragment()
-            CurrentTab.ChoosePhoto -> SingleImageClassificationFragment()
-            CurrentTab.None -> throw IllegalArgumentException()
+            Tab.LiveVideo -> LiveCameraClassificationFragment()
+            Tab.TakePhoto -> SingleImageClassificationFragment()
+            Tab.ChoosePhoto -> SingleImageClassificationFragment()
         }
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()

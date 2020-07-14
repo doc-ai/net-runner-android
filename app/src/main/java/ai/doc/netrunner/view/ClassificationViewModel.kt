@@ -6,8 +6,7 @@ import androidx.lifecycle.ViewModel
 import java.util.ArrayList
 
 class ClassificationViewModel : ViewModel() {
-    enum class CurrentTab {
-        None,
+    enum class Tab {
         LiveVideo,
         TakePhoto,
         ChoosePhoto
@@ -15,7 +14,7 @@ class ClassificationViewModel : ViewModel() {
 
     lateinit var manager: TIOModelBundleManager
     lateinit var modelRunner: ModelRunner
-    var currentTab = CurrentTab.None
+    var currentTab = Tab.LiveVideo
 
     val modelIds: ArrayList<String> by lazy {
         ArrayList<String>(manager.bundleIds)
