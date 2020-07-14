@@ -1,18 +1,23 @@
 package ai.doc.netrunner
 
-import ai.doc.netrunner.view.ClassificationViewModel
+import ai.doc.netrunner.view.*
 import ai.doc.netrunner.view.ClassificationViewModel.Tab
-import ai.doc.netrunner.view.LiveCameraClassificationFragment
-import ai.doc.netrunner.view.SingleImageClassificationFragment
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
+import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+import android.Manifest
+import android.app.Activity
 
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
@@ -22,6 +27,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
@@ -32,6 +38,9 @@ import java.io.IOException
 import kotlin.collections.ArrayList
 
 private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
+
+private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
+private const val REQUEST_CODE_PICK_IMAGE = 1
 
 // TODO: Close drawer after selection
 // TODO: Select image before showing single image fragment
@@ -85,6 +94,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        if (resultCode != Activity.RESULT_OK) {
+            return
+        }
+
+        if (requestCode == REQUEST_CODE_PICK_IMAGE) {
+            showImageResults(data)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -118,8 +135,7 @@ class MainActivity : AppCompatActivity() {
                         0 -> changeTab(Tab.LiveVideo)
                         // TODO: Take a picture intent
                         1 -> changeTab(Tab.TakePhoto)
-                        // TODO: Choose picture first
-                        2 -> changeTab(Tab.ChoosePhoto)
+                        2 -> pickImage()
                     }
                     dialog.dismiss()
                 }
@@ -219,16 +235,72 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun changeTab(tab: Tab) {
-        if (viewModel.currentTab == tab) {
+    //region Permissions
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                pickImage()
+            }
+        }
+    }
+
+    //endRegion
+
+    //region Image Picker
+
+    private fun pickImage() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE_REQUEST_CODE
+            )
+        } else {
+            val intent = Intent(Intent.ACTION_PICK)
+            intent.type = "image/*"
+            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
+        }
+    }
+
+    private fun showImageResults(data: Intent?) {
+        val image = data?.data ?: return
+
+        // Read picked image using content resolver
+
+        val filePath = arrayOf(MediaStore.Images.Media.DATA)
+        val cursor = this.contentResolver.query(image, filePath, null, null, null)
+
+        cursor.moveToFirst()
+
+        val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
+        val options = BitmapFactory.Options().apply {
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+
+        val bitmap = BitmapFactory.decodeFile(imagePath, options)
+
+        // Load fragment
+
+        val bundle = Bundle(). apply {
+            putParcelable("bitmap", bitmap)
+        }
+
+        changeTab(Tab.ChoosePhoto, bundle)
+    }
+
+    //endRegion
+
+    //region Fragment Management
+
+    private fun changeTab(tab: Tab, bundle: Bundle? = null) {
+        if ( viewModel.currentTab == Tab.LiveVideo && viewModel.currentTab == tab) {
             return
         }
 
         viewModel.currentTab = tab
-        setupFragment(tab)
+        setupFragment(tab, bundle)
     }
 
-    private fun setupFragment(tab: Tab) {
+    private fun setupFragment(tab: Tab, bundle: Bundle? = null) {
         viewModel.modelRunner.stopStreamingInference()
 
         val fragment = when (tab) {
@@ -237,8 +309,13 @@ class MainActivity : AppCompatActivity() {
             Tab.ChoosePhoto -> SingleImageClassificationFragment()
         }
 
+        fragment.arguments = bundle
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
     }
+
+    //endRegion
+
+    //region Utilities
 
     private val isEmulator: Boolean
         get() = (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
@@ -258,4 +335,5 @@ class MainActivity : AppCompatActivity() {
                 || Build.PRODUCT.contains("emulator")
                 || Build.PRODUCT.contains("simulator"))
 
+    //endRegion
 }
