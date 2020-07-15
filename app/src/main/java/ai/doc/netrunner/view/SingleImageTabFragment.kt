@@ -17,7 +17,6 @@ import android.widget.TextView
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModelProviders
 
 private const val RESULTS_TO_SHOW = 3
 

@@ -1,55 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <data>
-        <variable
-            name="fragment"
-            type="ai.doc.netrunner.view.LiveCameraClassificationFragment" />
-    </data>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/black">
 
-    <RelativeLayout
+    <TextureView
+        android:id="@+id/texture"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@android:color/black">
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
 
-        <TextureView
-            android:id="@+id/texture"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_centerVertical="true"
-            android:layout_centerHorizontal="true" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_marginLeft="@dimen/margin_predictions_layout"
+        android:layout_marginRight="@dimen/margin_predictions_layout"
+        android:layout_marginBottom="@dimen/margin_predictions_layout"
+        android:padding="@dimen/padding_predictions_layout"
+        android:layout_height="wrap_content"
+        android:background="@drawable/rounded_rectangle"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_marginLeft="@dimen/margin_predictions_layout"
-            android:layout_marginRight="@dimen/margin_predictions_layout"
-            android:layout_marginBottom="@dimen/margin_predictions_layout"
-            android:padding="@dimen/padding_predictions_layout"
+        <TextView
+            android:id="@+id/predictions"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:background="@drawable/rounded_rectangle"
-            android:orientation="horizontal"
-            android:layout_alignParentBottom="true">
+            android:layout_margin="@dimen/margin_tiny"
+            android:textColor="@color/black"
+            android:bufferType="spannable"
+            android:textSize="@dimen/font_size_l" />
 
-            <TextView
-                android:id="@+id/predictions"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:layout_margin="@dimen/margin_tiny"
-                android:textColor="@color/black"
-                android:bufferType="spannable"
-                android:textSize="@dimen/font_size_l"
-                android:text="@{fragment.predictions}" />
-
-            <TextView
-                android:id="@+id/latency"
-                android:layout_marginRight="@dimen/margin_tiny"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:textSize="@dimen/font_size_default"
-                android:text="@{fragment.latency}" />
-        </LinearLayout>
-    </RelativeLayout>
-</layout>
+        <TextView
+            android:id="@+id/latency"
+            android:layout_marginRight="@dimen/margin_tiny"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:textSize="@dimen/font_size_default" />
+    </LinearLayout>
+</RelativeLayout>
