@@ -35,22 +35,24 @@ class SingleImageClassificationFragment : Fragment() {
 
     private val viewModel by activityViewModels<MainViewModel>()
 
+    // Creation
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_single_image_tab, container, false)
+    }
 
-        val root = inflater.inflate(R.layout.fragment_single_image_tab, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        imageView = root.findViewById(R.id.imageview)
-        predictionTextView = root.findViewById(R.id.predictions)
-        latencyTextView = root.findViewById(R.id.latency)
+        imageView = view.findViewById(R.id.imageview)
+        predictionTextView = view.findViewById(R.id.predictions)
+        latencyTextView = view.findViewById(R.id.latency)
 
         // Use any provided bitmap
 
         viewModel.bitmap?.let {
             doBitmap(it)
         }
-
-        return root
     }
 
     private fun doBitmap(bitmap: Bitmap) {

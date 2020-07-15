@@ -46,9 +46,10 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     // View Model
 
     private val viewModel by activityViewModels<MainViewModel>()
-    
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+
+    // Creation
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera_tab, container, false) as FragmentLiveCameraTabBinding
         binding.fragment = this
