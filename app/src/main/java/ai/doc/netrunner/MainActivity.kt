@@ -53,7 +53,7 @@ private const val REQUEST_IMAGE_CAPTURE = 2
 
 class MainActivity : AppCompatActivity() {
 
-    private val numThreadsOptions = arrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+    private val numThreadsOptions = arrayOf(1, 2, 4, 8)
 
     private val deviceOptions: ArrayList<String> by lazy {
         arrayListOf(
