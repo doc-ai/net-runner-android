@@ -14,6 +14,7 @@ import android.view.ViewGroup
 
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModelProviders
@@ -44,13 +45,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
 
     // View Model
 
-    // requires fragment-ktx dependency
-    // val viewModel: ClassificationViewModel by activityViewModels()
-
-    private val viewModel: MainViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
-    }
-
+    private val viewModel by activityViewModels<MainViewModel>()
+    
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
