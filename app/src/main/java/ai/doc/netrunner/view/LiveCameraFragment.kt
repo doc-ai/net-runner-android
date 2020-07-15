@@ -117,7 +117,6 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private var checkedPermissions = false
     protected val cameraFacing: Int
         protected get() = CameraCharacteristics.LENS_FACING_BACK
 
@@ -368,23 +367,8 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private val requiredPermissions: Array<String?>
-        get() {
-            val activity: Activity? = activity
-            return try {
-                val info = activity!!
-                        .getPackageManager()
-                        .getPackageInfo(activity!!.packageName, PackageManager.GET_PERMISSIONS)
-                val ps = info.requestedPermissions
-                if (ps != null && ps.size > 0) {
-                    ps
-                } else {
-                    arrayOfNulls(0)
-                }
-            } catch (e: Exception) {
-                arrayOfNulls(0)
-            }
-        }
+    private val requiredPermissions = arrayOf(Manifest.permission.CAMERA)
+    private var checkedPermissions = false
 
     private fun openCamera(width: Int, height: Int) {
 

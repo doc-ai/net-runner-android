@@ -18,6 +18,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
@@ -141,12 +142,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 setItems(items) { dialog, which ->
+                    dialog.dismiss()
                     when (which) {
                         0 -> changeTab(Tab.LiveVideo)
                         1 -> takePhoto()
                         2 -> pickImage()
                     }
-                    dialog.dismiss()
                 }
             }.show()
         }
@@ -250,7 +251,10 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                pickImage()
+                // Delays is necessary or app freezes with onActivityResult never called
+                Handler().postDelayed({
+                    pickImage()
+                }, 100)
             }
         }
     }
