@@ -2,8 +2,8 @@ package ai.doc.netrunner.view
 
 import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-import ai.doc.netrunner.outputhandler.MobileNetClassificationOutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandler
+import ai.doc.netrunner.outputhandler.OutputHandlerManager
 
 import android.os.Bundle
 import android.os.Handler
@@ -42,7 +42,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         // TODO: Assumes classification model (#24)
-        val outputHandler = MobileNetClassificationOutputHandler()
+        val outputHandler = OutputHandlerManager.handlerForType("image.classification.imagenet").newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
 
         textureView = view.findViewById(R.id.texture)

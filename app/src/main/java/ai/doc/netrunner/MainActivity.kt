@@ -2,6 +2,7 @@ package ai.doc.netrunner
 
 import ai.doc.netrunner.view.*
 import ai.doc.netrunner.MainViewModel.Tab
+import ai.doc.netrunner.outputhandler.OutputHandlerManager
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
@@ -77,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        OutputHandlerManager.registerHandlers()
 
         // Acquire Saved Settings
 

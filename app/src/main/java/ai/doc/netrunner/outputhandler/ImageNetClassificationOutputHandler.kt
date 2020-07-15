@@ -21,6 +21,10 @@ private const val SMOOTHING_TOP_N_COUNT = 5
 
 class MobileNetClassificationOutputHandler : Fragment(), OutputHandler {
 
+    companion object {
+        val type = "image.classification.imagenet"
+    }
+
     private lateinit var predictionTextView: TextView
 
     override var output: Map<String, Any>? = null

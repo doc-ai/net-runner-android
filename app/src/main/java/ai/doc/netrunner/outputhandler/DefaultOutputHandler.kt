@@ -6,42 +6,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import ai.doc.netrunner.R
+import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+import android.widget.TextView
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+private const val CLASSIFICATION_TOP_N_COUNT = 3
+private const val SMOOTHING_DECAY = 0.7f
+private const val SMOOTHING_THRESHOLD = 0.02f
+private const val SMOOTHING_TOP_N_COUNT = 5
 
 /**
  * A simple [Fragment] subclass.
- * Use the [DefaultOutputHandler.newInstance] factory method to
- * create an instance of this fragment.
+ * Default output handler for model outputs, used when no other output handler has been registered
+ * for the type or if no model type has been specified
  */
 
 class DefaultOutputHandler : Fragment(), OutputHandler {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment DefaultOutputHandler.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-                DefaultOutputHandler().apply {
-                    arguments = Bundle().apply {
-                        putString(ARG_PARAM1, param1)
-                        putString(ARG_PARAM2, param2)
-                    }
-                }
+        val type = "NONE"
     }
+
+    private lateinit var predictionTextView: TextView
 
     override var output: Map<String, Any>? = null
         set(value) {
@@ -49,20 +34,49 @@ class DefaultOutputHandler : Fragment(), OutputHandler {
             field = value
         }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
+    // View Management
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_default_output_handler, container, false)
     }
 
-    private fun processOutput(output: Map<String, Any>?) {
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
+        predictionTextView = view.findViewById(R.id.predictions)
+    }
+
+    // Output Processing
+
+    var previousTop5 = ArrayList<Map.Entry<String,Float>>()
+
+    private fun processOutput(output: Map<String, Any>?) {
+        output?.let {
+            val classification = it["classification"] as? Map<String, Float>
+            val top5 = TIOClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
+            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
+            val top5ordered = top5smoothed.take(SMOOTHING_TOP_N_COUNT).sortedWith(compareBy { it.value }).reversed()
+            val top5formatted = formattedResults(top5ordered)
+
+            predictionTextView.text = top5formatted
+            previousTop5 = top5smoothed as ArrayList<Map.Entry<String, Float>>
+        }
+    }
+
+    private fun formattedResults(results: List<Map.Entry<String, Float>>): String {
+        val b = StringBuilder()
+        for ((key, value) in results) {
+            b.append(key)
+            b.append(": ")
+            b.append(String.format("%.2f", value))
+            b.append("\n")
+        }
+
+        if (b.isNotEmpty()) {
+            b.setLength(b.length - 1)
+        }
+
+        return b.toString()
     }
 }
