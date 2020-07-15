@@ -80,8 +80,8 @@ class MainActivity : AppCompatActivity() {
 
         // Acquire Saved Settings
 
-        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
-        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))!!
         val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 1)
         val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
 
@@ -174,18 +174,16 @@ class MainActivity : AppCompatActivity() {
 
         // Saved Preferences
 
-        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
-        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))!!
         val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 0)
         val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
 
-        // Setup
+        // Toolbar and Nav
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
-        val actionbar = supportActionBar
-        if (actionbar != null) {
+        supportActionBar?.let { actionbar ->
             actionbar.setDisplayHomeAsUpEnabled(true)
             actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp)
         }
@@ -208,9 +206,9 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val device = deviceOptions[position]
-                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), device) }
-                viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
+                val selectedDevice = deviceOptions[position]
+                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+                viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
             }
         }
 
@@ -225,11 +223,11 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val modelId = viewModel.modelIds[position]
-                val bundle = viewModel.manager.bundleWithId(modelId)
+                val selectedModelId = viewModel.modelIds[position]
+                val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
                 try {
-                    val model = bundle.newModel() as TIOTFLiteModel
-                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), modelId) }
+                    val model = selectedBundle.newModel() as TIOTFLiteModel
+                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
                     viewModel.modelRunner.switchModel(model)
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
@@ -250,9 +248,9 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val threads = numThreadsOptions[position]
-                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), threads) }
-                viewModel.modelRunner.numThreads = threads
+                val selectedThreads = numThreadsOptions[position]
+                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+                viewModel.modelRunner.numThreads = selectedThreads
             }
         }
 
