@@ -211,11 +211,8 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
-
                 prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), device) }
                 viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
-
-                Toast.makeText(this@MainActivity, "Using $device", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -234,11 +231,8 @@ class MainActivity : AppCompatActivity() {
                 val bundle = viewModel.manager.bundleWithId(modelId)
                 try {
                     val model = bundle.newModel() as TIOTFLiteModel
-
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), modelId) }
                     viewModel.modelRunner.switchModel(model)
-
-                    Toast.makeText(this@MainActivity, "Loading $modelId", Toast.LENGTH_SHORT).show()
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
                 } catch (e: TIOModelException) {
@@ -259,11 +253,8 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
-
                 prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), threads) }
                 viewModel.modelRunner.numThreads = threads
-
-                Toast.makeText(this@MainActivity, "Using $threads threads", Toast.LENGTH_SHORT).show()
             }
         }
 
