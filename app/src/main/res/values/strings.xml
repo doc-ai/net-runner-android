@@ -21,4 +21,11 @@
     <string name="nav_import_model">Import Model</string>
     <string name="nav_title_configuration">Configuration</string>
 
+    <string name="prefs_selected_model">prefs.model.selected_model</string>
+    <string name="prefs_num_threads">prefs.model.num_threads</string>
+    <string name="prefs_run_on_device">prefs.model.device</string>
+    <string name="prefs_use_16_bit">prefs.model.16_bit</string>
+
+    <string name="prefs_default_selected_model">Mobilenet_V2_1.0_224</string>
+    <string name="prefs_default_device">CPU</string>
 </resources>

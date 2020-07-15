@@ -2,25 +2,25 @@ package ai.doc.netrunner.view
 
 import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-import ai.doc.netrunner.databinding.FragmentLiveCameraTabBinding
 
 import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModelProviders
+import androidx.fragment.app.activityViewModels
 
-private const val RESULTS_TO_SHOW = 3
-private const val FILTER_STAGES = 3
-private const val FILTER_FACTOR = 0.4f
+private const val CLASSIFICATION_TOP_N_COUNT = 3
+private const val SMOOTHING_DECAY = 0.7f
+private const val SMOOTHING_THRESHOLD = 0.02f
+private const val SMOOTHING_TOP_N_COUNT = 5
 
 // TODO: Assumes classification model (#24)
 
@@ -33,36 +33,25 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     // UI
 
     private lateinit var textureView: TextureView
-
-    // Live Data Variables
-
-    private val _latency = MutableLiveData<String>()
-    val latency: LiveData<String> = _latency
-
-    private val _predictions = MutableLiveData<String>()
-    val predictions: LiveData<String> = _predictions
+    private lateinit var predictionTextView: TextView
+    private lateinit var latencyTextView: TextView
 
     // View Model
 
-    // requires fragment-ktx dependency
-    // val viewModel: ClassificationViewModel by activityViewModels()
+    private val viewModel by activityViewModels<MainViewModel>()
 
-    private val viewModel: MainViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
-    }
+    // Creation
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
-        val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera_tab, container, false) as FragmentLiveCameraTabBinding
-        binding.fragment = this
-        binding.lifecycleOwner = this
-        return binding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.fragment_live_camera_tab, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         textureView = view.findViewById(R.id.texture)
+        predictionTextView = view.findViewById(R.id.predictions)
+        latencyTextView = view.findViewById(R.id.latency)
     }
 
     //beginRegion Lifecycle
@@ -87,13 +76,15 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
             val classification = output["classification"] as? Map<String, Float>
-            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, 0.7f, 0.02f)
-            val top5ordered = top5smoothed.take(5).sortedWith(compareBy { it.value }).reversed()
+            val top5 = TIOClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
+            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
+            val top5ordered = top5smoothed.take(SMOOTHING_TOP_N_COUNT).sortedWith(compareBy { it.value }).reversed()
             val top5formatted = formattedResults(top5ordered)
 
-            _predictions.postValue(top5formatted)
-            _latency.postValue("$l ms")
+            Handler(Looper.getMainLooper()).post(Runnable {
+                predictionTextView.text = top5formatted
+                latencyTextView.text = "$l ms"
+            })
 
             previousTop5 = top5smoothed as ArrayList<Map.Entry<String, Float>>
         })

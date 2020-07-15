@@ -13,20 +13,18 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <RelativeLayout
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/black">
+
+    <TextureView
+        android:id="@+id/texture"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@color/black">
-
-        <TextureView
-            android:id="@+id/texture"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true" />
-    </RelativeLayout>
-</layout>
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true" />
+</RelativeLayout>
 
 

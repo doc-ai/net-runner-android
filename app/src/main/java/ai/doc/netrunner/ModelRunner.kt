@@ -30,6 +30,17 @@ class ModelRunner(model: TIOTFLiteModel) {
         NNAPI
     }
 
+    companion object {
+        fun deviceFromString(string: String): Device {
+            return when (string) {
+                "CPU" -> Device.CPU
+                "GPU" -> Device.GPU
+                "NNAPI" -> Device.NNAPI
+                else -> Device.CPU
+            }
+        }
+    }
+
     var model: TIOTFLiteModel = model
         private set
 

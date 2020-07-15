@@ -16,7 +16,7 @@ import android.widget.ImageView
 import android.widget.TextView
 
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
+import androidx.fragment.app.activityViewModels
 
 private const val RESULTS_TO_SHOW = 3
 
@@ -32,29 +32,26 @@ class SingleImageClassificationFragment : Fragment() {
 
     // View Model
 
-    // requires fragment-ktx dependency
-    // val viewModel: ClassificationViewModel by activityViewModels()
+    private val viewModel by activityViewModels<MainViewModel>()
 
-    private val viewModel: MainViewModel by lazy {
-        ViewModelProviders.of(requireActivity()).get(MainViewModel::class.java)
-    }
+    // Creation
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // Inflate the layout for this fragment
+        return inflater.inflate(R.layout.fragment_single_image_tab, container, false)
+    }
 
-        val root = inflater.inflate(R.layout.fragment_single_image_tab, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        imageView = root.findViewById(R.id.imageview)
-        predictionTextView = root.findViewById(R.id.predictions)
-        latencyTextView = root.findViewById(R.id.latency)
+        imageView = view.findViewById(R.id.imageview)
+        predictionTextView = view.findViewById(R.id.predictions)
+        latencyTextView = view.findViewById(R.id.latency)
 
         // Use any provided bitmap
 
         viewModel.bitmap?.let {
             doBitmap(it)
         }
-
-        return root
     }
 
     private fun doBitmap(bitmap: Bitmap) {

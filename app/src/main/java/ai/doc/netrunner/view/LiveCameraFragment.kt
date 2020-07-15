@@ -1,7 +1,6 @@
 package ai.doc.netrunner.view
 
 import ai.doc.netrunner.R
-import ai.doc.netrunner.databinding.FragmentLiveCameraBinding
 
 import android.Manifest
 import android.app.Activity
@@ -13,7 +12,6 @@ import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
-import android.os.HandlerThread
 import android.text.SpannableString
 import android.text.SpannableStringBuilder
 import android.util.Log
@@ -24,7 +22,6 @@ import android.view.TextureView.SurfaceTextureListener
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 
 import java.util.*
@@ -245,17 +242,12 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private val backgroundThread: HandlerThread? = null
-    private val backgroundHandler: Handler? = null
-
     /**
      * Layout the preview and buttons.
      */
 
-    override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val binding = DataBindingUtil.inflate(inflater, R.layout.fragment_live_camera, container, false) as FragmentLiveCameraBinding
-        return binding.root
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        return inflater.inflate(R.layout.fragment_live_camera, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -294,8 +286,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
      */
 
     private fun setUpCameraOutputs(width: Int, height: Int) {
-        val activity: Activity? = activity
-        val manager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = requireActivity().getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             for (cameraId in manager.cameraIdList) {
                 val characteristics = manager.getCameraCharacteristics(cameraId)
@@ -316,7 +307,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
-                val displayRotation = activity.windowManager.defaultDisplay.rotation
+                val displayRotation = requireActivity().windowManager.defaultDisplay.rotation
                 // noinspection ConstantConditions
                 /* Orientation of the camera sensor */
                 val sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
@@ -331,7 +322,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                     else -> Log.e(TAG, "Display rotation is invalid: $displayRotation")
                 }
                 val displaySize = Point()
-                activity.windowManager.defaultDisplay.getSize(displaySize)
+                requireActivity().windowManager.defaultDisplay.getSize(displaySize)
                 var rotatedPreviewWidth = width
                 var rotatedPreviewHeight = height
                 var maxPreviewWidth = displaySize.x
@@ -373,7 +364,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     private fun openCamera(width: Int, height: Int) {
 
         checkedPermissions = if (!checkedPermissions && !allPermissionsGranted()) {
-            ActivityCompat.requestPermissions(activity!!, requiredPermissions, PERMISSIONS_REQUEST_CODE)
+            ActivityCompat.requestPermissions(requireActivity(), requiredPermissions, PERMISSIONS_REQUEST_CODE)
             return
         } else {
             true
@@ -382,14 +373,13 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         setUpCameraOutputs(width, height)
         configureTransform(width, height)
 
-        val activity: Activity? = activity
-        val manager = activity!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = requireActivity().getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
         try {
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw RuntimeException("Time out waiting to lock camera opening.")
             }
-            if (ActivityCompat.checkSelfPermission(getActivity()!!, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return
             }
             manager.openCamera(cameraId, stateCallback, null) // TODO: change to other handler
@@ -402,7 +392,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     private fun allPermissionsGranted(): Boolean {
         for (permission in requiredPermissions) {
-            if (ContextCompat.checkSelfPermission(activity!!, permission!!) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(requireActivity(), permission!!) != PackageManager.PERMISSION_GRANTED) {
                 return false
             }
         }
@@ -416,6 +406,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     /**
      * Closes the current [CameraDevice].
      */
+
     protected fun closeCamera() {
         try {
             cameraOpenCloseLock.acquire()
