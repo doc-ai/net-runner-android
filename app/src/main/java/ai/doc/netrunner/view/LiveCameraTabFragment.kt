@@ -41,8 +41,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // TODO: Assumes classification model (#24)
-        val outputHandler = OutputHandlerManager.handlerForType("image.classification.imagenet").newInstance() as Fragment
+        val outputHandler = OutputHandlerManager.handlerForType(viewModel.modelRunner.model.type).newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
 
         textureView = view.findViewById(R.id.texture)
