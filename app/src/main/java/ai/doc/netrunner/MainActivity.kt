@@ -50,8 +50,6 @@ private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_IMAGE_CAPTURE = 2
 
-// TODO: Close drawer after selection
-
 class MainActivity : AppCompatActivity() {
 
     private val numThreadsOptions = arrayOf(1, 2, 4, 8)
