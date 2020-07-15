@@ -2,8 +2,8 @@ package ai.doc.netrunner.view
 
 import ai.doc.netrunner.MainViewModel
 import ai.doc.netrunner.R
-
-import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+import ai.doc.netrunner.outputhandler.MobileNetClassificationOutputHandler
+import ai.doc.netrunner.outputhandler.OutputHandler
 
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -18,16 +18,11 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 
-private const val RESULTS_TO_SHOW = 3
-
-// TODO: Assumes classification model (#24)
-
 class SingleImageClassificationFragment : Fragment() {
 
     // UI
 
     private lateinit var imageView: ImageView
-    private lateinit var predictionTextView: TextView
     private lateinit var latencyTextView: TextView
 
     // View Model
@@ -43,8 +38,11 @@ class SingleImageClassificationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // TODO: Assumes classification model (#24)
+        val outputHandler = MobileNetClassificationOutputHandler()
+        childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
+
         imageView = view.findViewById(R.id.imageview)
-        predictionTextView = view.findViewById(R.id.predictions)
         latencyTextView = view.findViewById(R.id.latency)
 
         // Use any provided bitmap
@@ -60,26 +58,13 @@ class SingleImageClassificationFragment : Fragment() {
         viewModel.modelRunner.runInferenceOnFrame( {
             bitmap
         }, { output: Map<String,Any>, l: Long ->
-            val classification = output["classification"] as? Map<String, Float>
-            val top5 = TIOClassificationHelper.topN(classification, RESULTS_TO_SHOW)
-            val top5formatted = formattedResults(top5)
-
             Handler(Looper.getMainLooper()).post(Runnable {
-                predictionTextView.text = top5formatted
                 latencyTextView.text = "$l ms"
+                (childFragmentManager.findFragmentById(R.id.outputContainer) as? OutputHandler)?.let { handler ->
+                    handler.output = output
+                }
             })
         })
     }
 
-    private fun formattedResults(results: List<Map.Entry<String, Float>>): String {
-        val b = StringBuilder()
-        for ((key, value) in results) {
-            b.append(key)
-            b.append(": ")
-            b.append(String.format("%.2f", value))
-            b.append("\n")
-        }
-        b.setLength(b.length - 1)
-        return b.toString()
-    }
 }

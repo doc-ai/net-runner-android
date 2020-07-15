@@ -28,4 +28,6 @@
 
     <string name="prefs_default_selected_model">Mobilenet_V2_1.0_224</string>
     <string name="prefs_default_device">CPU</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
