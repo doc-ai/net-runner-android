@@ -9,8 +9,10 @@ import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
@@ -31,6 +33,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.ViewModelProvider
@@ -42,8 +45,6 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
-
-private const val DEFAULT_MODEL_ID = "Mobilenet_V2_1.0_224"
 
 private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
@@ -71,19 +72,35 @@ class MainActivity : AppCompatActivity() {
         ViewModelProvider(this).get(MainViewModel::class.java)
     }
 
+    private val prefs: SharedPreferences by lazy {
+        getSharedPreferences("Settings", Context.MODE_PRIVATE)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Acquire Saved Settings
+
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+        val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 1)
+        val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
+
+        // Load the Model
+
         viewModel.manager = TIOModelBundleManager(applicationContext, "")
 
         try {
-            val bundle = viewModel.manager.bundleWithId(DEFAULT_MODEL_ID)
+            val bundle = viewModel.manager.bundleWithId(selectedModel)
             val model = bundle.newModel()
             model.load()
 
             val modelRunner = ModelRunner((model as TIOTFLiteModel))
             viewModel.modelRunner = modelRunner
+            viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
+            viewModel.modelRunner.numThreads = numThreads
+            viewModel.modelRunner.use16Bit = use16Bit
         } catch (e: IOException) {
             e.printStackTrace()
         } catch (e: TIOModelException) {
@@ -91,6 +108,8 @@ class MainActivity : AppCompatActivity() {
         } catch (e: TIOModelBundleException) {
             e.printStackTrace()
         }
+
+        // UI
 
         setupInputSourceButton()
         setupDrawer()
@@ -154,6 +173,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupDrawer() {
+
+        // Saved Preferences
+
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+        val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 0)
+        val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
+
+        // Setup
+
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -175,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
 
         deviceSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
-        deviceSpinner.setSelection(0, false)
+        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
 
         deviceSpinner.onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -183,14 +212,8 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val device = deviceOptions[position]
 
-                when (device) {
-                    getString(R.string.cpu) ->
-                        viewModel.modelRunner.device = ModelRunner.Device.CPU
-                    getString(R.string.gpu) ->
-                        viewModel.modelRunner.device = ModelRunner.Device.GPU
-                    else ->
-                        viewModel.modelRunner.device = ModelRunner.Device.NNAPI
-                }
+                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), device) }
+                viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
 
                 Toast.makeText(this@MainActivity, "Using $device", Toast.LENGTH_SHORT).show()
             }
@@ -201,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
 
         modelSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
-        modelSpinner.setSelection(0, false)
+        modelSpinner.setSelection(viewModel.modelIds.indexOf(selectedModel), false)
 
         modelSpinner.onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -211,7 +234,10 @@ class MainActivity : AppCompatActivity() {
                 val bundle = viewModel.manager.bundleWithId(modelId)
                 try {
                     val model = bundle.newModel() as TIOTFLiteModel
+
+                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), modelId) }
                     viewModel.modelRunner.switchModel(model)
+
                     Toast.makeText(this@MainActivity, "Loading $modelId", Toast.LENGTH_SHORT).show()
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
@@ -226,21 +252,27 @@ class MainActivity : AppCompatActivity() {
         (nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.threads_menu_item_title)
 
         threadsSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, numThreadsOptions)
-        threadsSpinner.setSelection(0, false)
+        threadsSpinner.setSelection(numThreadsOptions.indexOf(numThreads), false)
 
         threadsSpinner.onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val threads = numThreadsOptions[position]
+
+                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), threads) }
                 viewModel.modelRunner.numThreads = threads
+
                 Toast.makeText(this@MainActivity, "Using $threads threads", Toast.LENGTH_SHORT).show()
             }
         }
 
         // 16 Bit Checkbox
 
+        precisionSwitch.isChecked = use16Bit
+
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
             viewModel.modelRunner.use16Bit = isChecked
         }
     }
