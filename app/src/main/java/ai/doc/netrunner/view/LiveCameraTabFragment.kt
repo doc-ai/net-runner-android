@@ -12,7 +12,6 @@ import android.os.Handler
 import android.os.Looper
 import android.view.*
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.view.GestureDetectorCompat
 
 import androidx.fragment.app.Fragment
@@ -97,6 +96,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
 
         view.findViewById<FloatingActionButton>(R.id.toggle_pause_button).setOnClickListener {
             toggleCameraPaused()
+            val resId = if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
+            (it as FloatingActionButton).setImageResource(resId)
         }
     }
 
@@ -124,7 +125,6 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
             startClassification()
             resumeCamera()
         } else {
-            Toast.makeText(activity, R.string.camera_paused, Toast.LENGTH_SHORT).apply { setGravity(Gravity.CENTER,0,0) }.show()
             stopClassification()
             pauseCamera()
         }
