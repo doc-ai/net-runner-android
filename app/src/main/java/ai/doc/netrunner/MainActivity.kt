@@ -58,13 +58,12 @@ class MainActivity : AppCompatActivity() {
     private val numThreadsOptions = arrayOf(1, 2, 4, 8)
 
     private val deviceOptions: ArrayList<String> by lazy {
-        arrayListOf(
-                getString(R.string.cpu),
-                getString(R.string.gpu),
-                getString(R.string.nnapi)
-        ).apply {
+        arrayListOf(getString(R.string.cpu), getString(R.string.gpu), getString(R.string.nnapi)).apply {
             if (isEmulator || !viewModel.modelRunner.canRunOnGPU) {
                 remove(getString(R.string.gpu))
+            }
+            if (isEmulator || !viewModel.modelRunner.canRunOnNnApi) {
+                remove(getString(R.string.nnapi))
             }
         }
     }

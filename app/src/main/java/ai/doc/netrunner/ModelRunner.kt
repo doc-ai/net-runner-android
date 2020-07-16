@@ -1,6 +1,7 @@
 package ai.doc.netrunner
 
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
+import ai.doc.tensorio.TIOTFLiteModel.NnApiDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel.HardwareBacking.*
 import android.graphics.Bitmap
@@ -62,6 +63,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         private set
 
     val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
+    val canRunOnNnApi = NnApiDelegateHelper.isNnApiDelegateAvailable()
 
     /** The bitmap provider provides a bitmap to one step of inference */
 
