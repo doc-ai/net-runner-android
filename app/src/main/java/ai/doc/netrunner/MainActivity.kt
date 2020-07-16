@@ -119,9 +119,9 @@ class MainActivity : AppCompatActivity() {
             val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
 
             viewModel.modelRunner = modelRunner
-            viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(device), null)
-            viewModel.modelRunner.setNumThreads(numThreads, null)
-            viewModel.modelRunner.setUse16Bit(use16Bit, null)
+            viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(device))
+            viewModel.modelRunner.setNumThreads(numThreads)
+            viewModel.modelRunner.setUse16Bit(use16Bit)
 
             model.load()
         } catch(e: Exception) {

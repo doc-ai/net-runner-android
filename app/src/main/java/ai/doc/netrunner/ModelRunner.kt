@@ -121,24 +121,24 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // Set Configuration with Callback
 
-    fun setNumThreads(value: Int, callback: ModelRunnerCallback?) {
+    fun setNumThreads(value: Int, callback: ModelRunnerCallback? = null) {
         backgroundHandler.post { numThreads = value }
         backgroundHandler.post(callback)
     }
 
-    fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback?) {
+    fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback? = null) {
         backgroundHandler.post { use16Bit = value }
         backgroundHandler.post(callback)
     }
 
-    fun setDevice(value: Device, callback: ModelRunnerCallback?) {
+    fun setDevice(value: Device, callback: ModelRunnerCallback? = null) {
         backgroundHandler.post { device = value }
         backgroundHandler.post(callback)
     }
 
     /** Changes the model and uses current settings, falls back to previous model if fails */
 
-    fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback?) {
+    fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback? = null) {
         val previousModel = this.model
 
         fun doSwitch(model: TIOTFLiteModel) {
