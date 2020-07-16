@@ -1,9 +1,11 @@
 package ai.doc.netrunner.view
 
 import ai.doc.netrunner.MainViewModel
+import ai.doc.netrunner.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.tensorio.TIOModel.TIOModel
 
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -18,7 +20,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 
-class SingleImageClassificationFragment : Fragment() {
+class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
 
     // UI
 
@@ -38,8 +40,7 @@ class SingleImageClassificationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val outputHandler = OutputHandlerManager.handlerForType(viewModel.modelRunner.model.type).newInstance() as Fragment
-        childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
+        loadFragmentForModel(viewModel.modelRunner.model)
 
         imageView = view.findViewById(R.id.imageview)
         latencyTextView = view.findViewById(R.id.latency)
@@ -50,6 +51,26 @@ class SingleImageClassificationFragment : Fragment() {
             doBitmap(it)
         }
     }
+
+    private fun loadFragmentForModel(model: TIOModel) {
+        val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
+        childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
+    }
+
+    /** Replaces the output handler but waits for the model runner to finish  */
+
+    override fun modelDidChange() {
+        viewModel.modelRunner.wait {
+            Handler(Looper.getMainLooper()).post(Runnable {
+                loadFragmentForModel(viewModel.modelRunner.model)
+            })
+        }
+        viewModel.bitmap?.let {
+            doBitmap(it)
+        }
+    }
+
+    /** Executes inference on the provided bitmap */
 
     private fun doBitmap(bitmap: Bitmap) {
         imageView.setImageBitmap(bitmap)

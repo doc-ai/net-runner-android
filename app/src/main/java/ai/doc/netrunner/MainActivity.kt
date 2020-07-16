@@ -37,6 +37,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 
 import com.google.android.material.navigation.NavigationView
@@ -95,13 +96,14 @@ class MainActivity : AppCompatActivity() {
         try {
             val bundle = viewModel.manager.bundleWithId(selectedModel)
             val model = bundle.newModel()
-            model.load()
 
             val modelRunner = ModelRunner((model as TIOTFLiteModel))
             viewModel.modelRunner = modelRunner
             viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
             viewModel.modelRunner.numThreads = numThreads
             viewModel.modelRunner.use16Bit = use16Bit
+
+            model.load()
         } catch (e: IOException) {
             e.printStackTrace()
         } catch (e: TIOModelException) {
@@ -232,6 +234,11 @@ class MainActivity : AppCompatActivity() {
                     val model = selectedBundle.newModel() as TIOTFLiteModel
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
                     viewModel.modelRunner.switchModel(model)
+
+                    (supportFragmentManager.findFragmentById(R.id.container) as ModelRunnerWatcher)?.let {
+                        it.modelDidChange()
+                    }
+
                 } catch (e: TIOModelBundleException) {
                     e.printStackTrace()
                 } catch (e: TIOModelException) {
@@ -384,7 +391,7 @@ class MainActivity : AppCompatActivity() {
         val fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraClassificationFragment()
             Tab.SinglePhoto -> SingleImageClassificationFragment()
-        }
+        } as Fragment
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
     }

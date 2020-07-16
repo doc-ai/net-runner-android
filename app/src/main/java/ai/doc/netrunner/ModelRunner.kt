@@ -16,6 +16,10 @@ private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 private typealias Listener = (Map<String,Any>, Long) -> Unit
 private typealias BitmapProvider = () -> Bitmap?
 
+interface ModelRunnerWatcher {
+    fun modelDidChange()
+}
+
 /**
  * The ModelRunner is used to configure a model and to perform continuous or one-off inference
  * with a model.
@@ -200,6 +204,14 @@ class ModelRunner(model: TIOTFLiteModel) {
     fun stopStreamingInference() {
         backgroundHandler.post {
             running = false
+        }
+    }
+
+    /** Waits for the background handler to finish processing before calling lambda */
+
+    fun wait(lambda: ()->Unit) {
+        backgroundHandler.post {
+            lambda()
         }
     }
 }

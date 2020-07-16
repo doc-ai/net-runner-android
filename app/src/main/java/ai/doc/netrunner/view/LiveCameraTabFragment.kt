@@ -1,9 +1,11 @@
 package ai.doc.netrunner.view
 
 import ai.doc.netrunner.MainViewModel
+import ai.doc.netrunner.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.tensorio.TIOModel.TIOModel
 
 import android.os.Bundle
 import android.os.Handler
@@ -21,7 +23,7 @@ import androidx.fragment.app.activityViewModels
  * A simple [Fragment] subclass.
  */
 
-class LiveCameraClassificationFragment : LiveCameraFragment() {
+class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatcher {
 
     // UI
 
@@ -41,11 +43,27 @@ class LiveCameraClassificationFragment : LiveCameraFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val outputHandler = OutputHandlerManager.handlerForType(viewModel.modelRunner.model.type).newInstance() as Fragment
-        childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
+        loadFragmentForModel(viewModel.modelRunner.model)
 
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
+    }
+
+    private fun loadFragmentForModel(model: TIOModel) {
+        val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
+        childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
+    }
+
+    /** Replaces the output handler but waits for the model runner to finish **/
+
+    override fun modelDidChange() {
+        stopClassification()
+        viewModel.modelRunner.wait {
+            Handler(Looper.getMainLooper()).post(Runnable {
+                loadFragmentForModel(viewModel.modelRunner.model)
+            })
+        }
+        startClassification()
     }
 
     //beginRegion Lifecycle
