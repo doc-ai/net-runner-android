@@ -43,4 +43,6 @@
     <string name="modelrunner_exception_run_inference">There was a problem executing inference with this model, falling back to default model and settings</string>
     <string name="modelrunner_exception_load_model">This was a problem loading the model with these settings, falling back to previous model or settings"</string>
     <string name="modelrunner_exception_unknown">Net Runner encountered an unknown problem, falling back to previous model or settings"</string>
+
+    <string name="camera_paused">Paused. Tap again to resume.</string>
 </resources>

@@ -29,7 +29,11 @@ class MobileNetClassificationOutputHandler : Fragment(), OutputHandler {
 
     override var output: Map<String, Any>? = null
         set(value) {
-            processOutput(value)
+            if (value == null) {
+                clearOutput()
+            } else {
+                processOutput(value)
+            }
             field = value
         }
 
@@ -48,6 +52,10 @@ class MobileNetClassificationOutputHandler : Fragment(), OutputHandler {
     // Output Processing
 
     var previousTop5 = ArrayList<Map.Entry<String,Float>>()
+
+    private fun clearOutput() {
+        previousTop5 = ArrayList()
+    }
 
     private fun processOutput(output: Map<String, Any>?) {
         output?.let {

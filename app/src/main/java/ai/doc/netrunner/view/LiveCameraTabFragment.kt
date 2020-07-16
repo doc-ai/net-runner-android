@@ -10,25 +10,59 @@ import ai.doc.tensorio.TIOModel.TIOModel
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.LayoutInflater
-import android.view.TextureView
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
+import android.widget.Toast
+import androidx.core.view.GestureDetectorCompat
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import java.lang.ref.WeakReference
 
 /**
  * A simple [Fragment] subclass.
  */
 
-class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatcher {
+class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatcher, View.OnTouchListener {
+
+    /** Captures gestures on behalf of the fragment and forwards them back to the fragment */
+
+    private class GestureListener(): GestureDetector.SimpleOnGestureListener() {
+
+        private var weakHandler: WeakReference<LiveCameraClassificationFragment>? = null
+
+        var handler: LiveCameraClassificationFragment?
+            get() = weakHandler?.get()
+            set(value) {
+                if (value == null) {
+                    weakHandler?.clear()
+                } else {
+                    weakHandler = WeakReference(value)
+                }
+            }
+
+
+        override fun onDown(event: MotionEvent): Boolean {
+            return true
+        }
+
+        override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
+            return handler?.onSingleTapConfirmed(event) ?: super.onSingleTapConfirmed(event)
+        }
+
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+            return handler?.onFling(e1, e2, velocityX, velocityY) ?: super.onFling(e1, e2, velocityX, velocityY)
+        }
+
+    }
 
     // UI
 
     private lateinit var textureView: TextureView
     private lateinit var latencyTextView: TextView
+    private lateinit var gestureDetector: GestureDetectorCompat
+
+    private var isPaused = false
 
     // View Model
 
@@ -47,12 +81,44 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
 
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
+
+        val me = this
+        gestureDetector = GestureDetectorCompat(activity, GestureListener().apply { handler = me })
+        view.setOnTouchListener(this)
+    }
+
+    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
+        return gestureDetector.onTouchEvent(event)
+    }
+
+    fun onSingleTapConfirmed(event: MotionEvent): Boolean {
+        if (isPaused) {
+            child<OutputHandler>(R.id.outputContainer)?.output = null
+            startClassification()
+            resumeCamera()
+        } else {
+            Toast.makeText(activity, R.string.camera_paused, Toast.LENGTH_SHORT).apply { setGravity(Gravity.CENTER,0,0) }.show()
+            stopClassification()
+            pauseCamera()
+        }
+        isPaused = !isPaused
+        return true
+    }
+
+    fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+        stopClassification()
+        child<OutputHandler>(R.id.outputContainer)?.output = null
+        flipCamera()
+        startClassification()
+        return true
     }
 
     private fun loadFragmentForModel(model: TIOModel) {
         val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
     }
+
+    //region Model Runner Watcher
 
     /** Replaces the output handler but waits for the model runner to finish **/
 
@@ -71,6 +137,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     override fun startRunning() {
         startClassification()
     }
+
+    //endregion
 
     //region Lifecycle
 
@@ -92,16 +160,19 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
             Handler(Looper.getMainLooper()).post(Runnable {
+                child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
-                (childFragmentManager.findFragmentById(R.id.outputContainer) as? OutputHandler)?.let { handler ->
-                    handler.output = output
-                }
             })
         })
     }
 
     fun stopClassification() {
         viewModel.modelRunner.stopStreamingInference()
+    }
+
+    private fun <T>child(id: Int): T? {
+        @Suppress("UNCHECKED_CAST")
+        return childFragmentManager.findFragmentById(id) as? T
     }
 
 }
