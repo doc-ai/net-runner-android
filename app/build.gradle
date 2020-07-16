@@ -61,7 +61,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.2.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.google.android.material:material:1.1.0'
-    implementation 'com.github.doc-ai:tensorio-android:0.9.5'
+    implementation 'com.github.doc-ai:tensorio-android:044cb7ccf64559e47effb280d0060735c420d953'
 
     testImplementation 'junit:junit:4.13'
 
