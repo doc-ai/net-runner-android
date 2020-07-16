@@ -72,7 +72,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
         startClassification()
     }
 
-    //beginRegion Lifecycle
+    //region Lifecycle
 
     override fun onResume() {
         super.onResume()
@@ -85,7 +85,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
         super.onPause()
     }
 
-    //endRegion
+    //endregion
 
     private fun startClassification() {
         viewModel.modelRunner.startStreamingInference( {

@@ -11,17 +11,19 @@ import android.os.SystemClock
 private const val TAG = "ModelRunner"
 private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 
-/** A listener is called when a step of inference has completed **/
+/** A listener is called when a step of inference has completed */
 
 private typealias Listener = (Map<String,Any>, Long) -> Unit
 
-/** A bitmap provider provides a bitmap to the model runner for a single step of inference **/
+/** A bitmap provider provides a bitmap to the model runner for a single step of inference */
 
 private typealias BitmapProvider = () -> Bitmap?
 
-/** The model runner callback is called after any configuration change and is needed changes happen on background threads **/
+/** The model runner callback is called after any configuration change is completed on the runner's background thread */
 
 private typealias ModelRunnerCallback = () -> Unit
+
+/** Implemented by objects interested in changes to the model runner, but called by [MainActivity] */
 
 interface ModelRunnerWatcher {
     fun modelDidChange()
@@ -69,6 +71,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     var listener: Listener? = null
 
+    // Configuration
+
     private var numThreads = 1
         set(value) {
             model.numThreads = value
@@ -115,6 +119,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             }
         }
 
+    // Set Configuration with Callback
+
     fun setNumThreads(value: Int, callback: ModelRunnerCallback?) {
         backgroundHandler.post { numThreads = value }
         backgroundHandler.post(callback)
@@ -129,6 +135,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         backgroundHandler.post { device = value }
         backgroundHandler.post(callback)
     }
+
+    /** Changes the model and uses current settings, falls back to previous model if fails */
 
     fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback?) {
         val previousModel = this.model
@@ -161,7 +169,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         }
     }
 
-    //beginRegion Background Tasks
+    //region Background Tasks
 
     /** Background thread that processes requests on the background handler */
 
@@ -191,7 +199,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     private var running = false
 
-    //endRegion
+    //endregion
 
     init {
         setupBackgroundHandler()
@@ -201,9 +209,9 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     }
 
     private fun setupBackgroundHandler() {
-        val thizz = this
+        val my = this
         backgroundThread = HandlerThread(HANDLE_THREAD_NAME).apply {
-            this.uncaughtExceptionHandler = thizz.uncaughtExceptionHandler
+            uncaughtExceptionHandler = my.uncaughtExceptionHandler
             start()
         }
         backgroundHandler = Handler(backgroundThread.looper)
