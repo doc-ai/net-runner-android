@@ -1,7 +1,6 @@
 package ai.doc.netrunner.view
 
 import ai.doc.netrunner.R
-
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -12,24 +11,17 @@ import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.media.ImageReader
 import android.os.Bundle
 import android.os.Handler
-import android.text.SpannableString
-import android.text.SpannableStringBuilder
 import android.util.Log
 import android.util.Size
 import android.view.*
 import android.view.TextureView.SurfaceTextureListener
-
 import androidx.core.app.ActivityCompat
 import androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-
 import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
-
-// TODO: Support to pause and resume camera
-// TODO: Support to facing direction
 
 open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
@@ -303,8 +295,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                 val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
                 imageReader = ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG,  /*maxImages*/2)
 
-                // Find out if we need to swap dimension to get the preview size relative to sensor
-                // coordinate.
+                // Find out if we need to swap dimension to get the preview size relative to sensor coordinate.
 
                 val displayRotation = requireActivity().windowManager.defaultDisplay.rotation
 
@@ -313,6 +304,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
                 val sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
                 var swappedDimensions = false
+
                 when (displayRotation) {
                     Surface.ROTATION_0, Surface.ROTATION_180 -> if (sensorOrientation == 90 || sensorOrientation == 270) {
                         swappedDimensions = true
@@ -322,24 +314,30 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                     }
                     else -> Log.e(TAG, "Display rotation is invalid: $displayRotation")
                 }
+
                 val displaySize = Point()
                 requireActivity().windowManager.defaultDisplay.getSize(displaySize)
+
                 var rotatedPreviewWidth = width
                 var rotatedPreviewHeight = height
                 var maxPreviewWidth = displaySize.x
                 var maxPreviewHeight = displaySize.y
+
                 if (swappedDimensions) {
                     rotatedPreviewWidth = height
                     rotatedPreviewHeight = width
                     maxPreviewWidth = displaySize.y
                     maxPreviewHeight = displaySize.x
                 }
+
                 if (maxPreviewWidth > MAX_PREVIEW_WIDTH) {
                     maxPreviewWidth = MAX_PREVIEW_WIDTH
                 }
+
                 if (maxPreviewHeight > MAX_PREVIEW_HEIGHT) {
                     maxPreviewHeight = MAX_PREVIEW_HEIGHT
                 }
+
                 previewSize = chooseOptimalSize(
                         map.getOutputSizes(SurfaceTexture::class.java),
                         rotatedPreviewWidth,
@@ -347,7 +345,9 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                         maxPreviewWidth,
                         maxPreviewHeight,
                         largest)
+
                 this.cameraId = cameraId
+
                 return
             }
         } catch (e: CameraAccessException) {
@@ -449,36 +449,31 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
             previewRequestBuilder?.addTarget(surface)
 
             // Here, we create a CameraCaptureSession for camera preview.
-            cameraDevice!!.createCaptureSession(
-                    Arrays.asList(surface),
-                    object : CameraCaptureSession.StateCallback() {
-                        override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                            // The camera is already closed
-                            if (null == cameraDevice) {
-                                return
-                            }
-
-                            // When the session is ready, we start displaying the preview.
-                            captureSession = cameraCaptureSession
-                            try {
-                                // Auto focus should be continuous for camera preview.
-                                previewRequestBuilder?.set(
-                                        CaptureRequest.CONTROL_AF_MODE,
-                                        CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-
-                                // Finally, we start displaying the camera preview.
-                                previewRequest = previewRequestBuilder?.build()
-                                captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null) // TODO: change to other handler
-                            } catch (e: CameraAccessException) {
-                                Log.e(TAG, "Failed to set up config to capture Camera", e)
-                            }
+            cameraDevice!!.createCaptureSession(Arrays.asList(surface), object : CameraCaptureSession.StateCallback() {
+                    override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                        // The camera is already closed
+                        if (null == cameraDevice) {
+                            return
                         }
 
-                        override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                            showToast("Failed")
+                        // When the session is ready, we start displaying the preview.
+                        captureSession = cameraCaptureSession
+                        try {
+                            // Auto focus should be continuous for camera preview.
+                            previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+
+                            // Finally, we start displaying the camera preview.
+                            previewRequest = previewRequestBuilder?.build()
+                            captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null) // TODO: change to other handler
+                        } catch (e: CameraAccessException) {
+                            Log.e(TAG, "Failed to set up config to capture Camera", e)
                         }
-                    },
-                    null)
+                    }
+
+                    override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
+                        // TODO: Show error
+                    }
+                }, null)
         } catch (e: CameraAccessException) {
             Log.e(TAG, "Failed to preview Camera", e)
         }
@@ -494,13 +489,11 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
      */
 
     private fun configureTransform(viewWidth: Int, viewHeight: Int) {
-        val activity: Activity? = activity
-
-        if (null == textureView || null == previewSize || null == activity) {
+        if (null == previewSize || null == activity) {
             return
         }
 
-        val rotation = activity.windowManager.defaultDisplay.rotation
+        val rotation = requireActivity().windowManager.defaultDisplay.rotation
         val matrix = Matrix()
         val viewRect = RectF(0.0f, 0.0f, viewWidth.toFloat(), viewHeight.toFloat())
         val bufferRect = RectF(0.0f, 0.0f, previewSize!!.height.toFloat(), previewSize!!.width.toFloat())
@@ -510,9 +503,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
             bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY())
             matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL)
-            val scale = Math.max(
-                    viewHeight.toFloat() / previewSize!!.height,
-                    viewWidth.toFloat() / previewSize!!.width)
+            val scale = Math.max(viewHeight.toFloat() / previewSize!!.height, viewWidth.toFloat() / previewSize!!.width)
             matrix.postScale(scale, scale, centerX, centerY)
             matrix.postRotate(90 * (rotation - 2).toFloat(), centerX, centerY)
         } else if (Surface.ROTATION_180 == rotation) {
@@ -523,11 +514,15 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     }
 
     fun pauseCamera() {
-        captureSession?.stopRepeating()
+        try { captureSession?.stopRepeating() }
+        catch (e: CameraAccessException) {
+        }
     }
 
     fun resumeCamera() {
-        captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
+        try { captureSession?.setRepeatingRequest(previewRequest, captureCallback, null) }
+        catch (e: CameraAccessException) {
+        }
     }
 
     fun flipCamera() {
@@ -545,14 +540,4 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private fun showToast(s: String) {
-        val builder = SpannableStringBuilder()
-        val str1 = SpannableString(s)
-        builder.append(str1)
-        showToast(builder)
-    }
-
-    private fun showToast(builder: SpannableStringBuilder) {
-        Log.i("LiveCameraFragment", builder.toString())
-    }
 }

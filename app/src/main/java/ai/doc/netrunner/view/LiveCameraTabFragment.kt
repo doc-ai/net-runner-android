@@ -93,6 +93,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
 
     fun onSingleTapConfirmed(event: MotionEvent): Boolean {
         if (isPaused) {
+            child<OutputHandler>(R.id.outputContainer)?.output = null
             startClassification()
             resumeCamera()
         } else {
@@ -106,6 +107,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
 
     fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
         stopClassification()
+        child<OutputHandler>(R.id.outputContainer)?.output = null
         flipCamera()
         startClassification()
         return true
@@ -115,6 +117,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
         val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
     }
+
+    //region Model Runner Watcher
 
     /** Replaces the output handler but waits for the model runner to finish **/
 
@@ -133,6 +137,8 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     override fun startRunning() {
         startClassification()
     }
+
+    //endregion
 
     //region Lifecycle
 
@@ -154,16 +160,19 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
             Handler(Looper.getMainLooper()).post(Runnable {
+                child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
-                (childFragmentManager.findFragmentById(R.id.outputContainer) as? OutputHandler)?.let { handler ->
-                    handler.output = output
-                }
             })
         })
     }
 
     fun stopClassification() {
         viewModel.modelRunner.stopStreamingInference()
+    }
+
+    private fun <T>child(id: Int): T? {
+        @Suppress("UNCHECKED_CAST")
+        return childFragmentManager.findFragmentById(id) as? T
     }
 
 }
