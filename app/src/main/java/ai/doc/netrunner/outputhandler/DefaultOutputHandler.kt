@@ -6,13 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import ai.doc.netrunner.R
-import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+import android.graphics.Bitmap
 import android.widget.TextView
-
-private const val CLASSIFICATION_TOP_N_COUNT = 3
-private const val SMOOTHING_DECAY = 0.7f
-private const val SMOOTHING_THRESHOLD = 0.02f
-private const val SMOOTHING_TOP_N_COUNT = 5
 
 /**
  * A simple [Fragment] subclass.
@@ -49,32 +44,118 @@ class DefaultOutputHandler : Fragment(), OutputHandler {
 
     // Output Processing
 
-    var previousTop5 = ArrayList<Map.Entry<String,Float>>()
+    /** Format the output as best we can without making assumptions about its structure */
 
     private fun processOutput(output: Map<String, Any>?) {
-        output?.let {
-            val classification = it["classification"] as? Map<String, Float>
-            val top5 = TIOClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
-            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
-            val top5ordered = top5smoothed.take(SMOOTHING_TOP_N_COUNT).sortedWith(compareBy { it.value }).reversed()
-            val top5formatted = formattedResults(top5ordered)
-
-            predictionTextView.text = top5formatted
-            previousTop5 = top5smoothed as ArrayList<Map.Entry<String, Float>>
+        output?.let { o ->
+            val formattedText = formattedOutput(o)
+            predictionTextView.text = formattedText
         }
     }
 
-    private fun formattedResults(results: List<Map.Entry<String, Float>>): String {
+    private fun formattedOutput(output: Map<String, Any>): String {
         val b = StringBuilder()
-        for ((key, value) in results) {
+
+        for (key in output.keys.sorted()) {
+            val value = output[key]
             b.append(key)
             b.append(": ")
-            b.append(String.format("%.2f", value))
+
+            when (value) {
+                is FloatArray -> {
+                    b.append(formattedArray(value))
+                }
+                is IntArray -> {
+                    b.append(formattedArray(value))
+                }
+                is ByteArray -> {
+                    b.append(formattedArray(value))
+                }
+                is Bitmap -> {
+                    b.append("<Image> (${value.width}x${value.height})")
+                }
+                is Map<*, *> -> {
+                    b.append("<Map> (${value.size} entries)")
+                }
+                else -> {
+                    b.append("<Unknown>")
+                }
+            }
+
             b.append("\n")
         }
 
         if (b.isNotEmpty()) {
             b.setLength(b.length - 1)
+        }
+
+        return b.toString()
+    }
+
+    private fun formattedArray(array: FloatArray): String {
+        val b = StringBuilder()
+
+        if (array.size > 1) {
+            b.append("[")
+        }
+
+        for (v in array) {
+            b.append(String.format("%.2f", v))
+            b.append(", ")
+        }
+
+        if (b.length > 2) {
+            b.delete(b.length-2, b.length)
+        }
+
+        if (array.size > 1) {
+            b.append("]")
+        }
+
+        return b.toString()
+    }
+
+    private fun formattedArray(array: IntArray): String {
+        val b = StringBuilder()
+
+        if (array.size > 1) {
+            b.append("[")
+        }
+
+        for (v in array) {
+            b.append(v)
+            b.append(", ")
+        }
+
+        if (b.length > 2) {
+            b.delete(b.length-2, b.length)
+        }
+
+        if (array.size > 1) {
+            b.append("]")
+        }
+
+        return b.toString()
+    }
+
+    private fun formattedArray(array: ByteArray): String {
+        val b = StringBuilder()
+
+        if (array.size > 1) {
+            b.append("[")
+        }
+
+        for (v in array) {
+            b.append(String.format("%02X", v))
+            b.append(", ")
+        }
+
+        if (b.length > 2) {
+            b.delete(b.length-2, b.length)
+        }
+
+        if (array.size > 1) {
+            b.append("]")
         }
 
         return b.toString()
