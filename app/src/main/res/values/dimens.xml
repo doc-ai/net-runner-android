@@ -8,7 +8,7 @@
     <dimen name="margin_maximum">16dp</dimen>
     <dimen name="margin_big">20dp</dimen>
     <dimen name="margin_extra">24dp</dimen>
-    <dimen name="actionbar_camera_margin_right">10dp</dimen>
+    <dimen name="actionbar_camera_margin_right">28dp</dimen>
 
     <!-- Padding Values -->
     <dimen name="padding_minimum">4dp</dimen>
@@ -24,7 +24,7 @@
     <dimen name="font_size_xl">20sp</dimen>
 
     <!-- NetRunner Specific Margins -->
-    <dimen name="margin_predictions_layout">25dp</dimen>
+    <dimen name="margin_predictions_layout">16dp</dimen>
 
     <!-- NetRunner Specific Paddings -->
     <dimen name="padding_predictions_layout">15dp</dimen>
