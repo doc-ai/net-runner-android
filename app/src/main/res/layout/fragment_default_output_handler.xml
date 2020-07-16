@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    tools:context=".outputhandler.DefaultOutputHandler">
+
+    <TextView
+        android:id="@+id/predictions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/margin_tiny"
+        android:textColor="@color/black"
+        android:bufferType="spannable"
+        android:textSize="@dimen/font_size_l" />
+
+</FrameLayout>

@@ -2,10 +2,9 @@ package ai.doc.netrunner
 
 import ai.doc.netrunner.view.*
 import ai.doc.netrunner.MainViewModel.Tab
+import ai.doc.netrunner.outputhandler.OutputHandlerManager
 
-import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
-import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import android.Manifest
 import android.app.Activity
@@ -21,6 +20,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
@@ -36,6 +36,7 @@ import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 
 import com.google.android.material.navigation.NavigationView
@@ -49,6 +50,8 @@ import kotlin.collections.ArrayList
 private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_IMAGE_CAPTURE = 2
+
+private const val SET_PRGM = "programmatic"
 
 class MainActivity : AppCompatActivity() {
 
@@ -78,6 +81,26 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Register Model Output Formatters
+
+        OutputHandlerManager.registerHandlers()
+
+        // Init Model and Model Runner
+
+        initModelRunner()
+
+        // UI
+
+        setupInputSourceButton()
+        setupDrawer()
+
+        setupFragment(viewModel.currentTab)
+    }
+
+    /** Initializes the model runner and falls back on default model if there are problems */
+
+    private fun initModelRunner() {
+
         // Acquire Saved Settings
 
         val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
@@ -92,27 +115,29 @@ class MainActivity : AppCompatActivity() {
         try {
             val bundle = viewModel.manager.bundleWithId(selectedModel)
             val model = bundle.newModel()
-            model.load()
 
-            val modelRunner = ModelRunner((model as TIOTFLiteModel))
+            val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
+
             viewModel.modelRunner = modelRunner
-            viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
-            viewModel.modelRunner.numThreads = numThreads
-            viewModel.modelRunner.use16Bit = use16Bit
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } catch (e: TIOModelException) {
-            e.printStackTrace()
-        } catch (e: TIOModelBundleException) {
-            e.printStackTrace()
+            viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(device))
+            viewModel.modelRunner.setNumThreads(numThreads)
+            viewModel.modelRunner.setUse16Bit(use16Bit)
+
+            model.load()
+        } catch(e: Exception) {
+
+            AlertDialog.Builder(this).apply {
+                setTitle(R.string.modelrunner_initfail_dialog_title)
+                setMessage(R.string.modelrunner_initfail_dialog_message)
+
+                setPositiveButton("OK") { dialog, _ ->
+                    dialog.dismiss()
+                }
+            }.show()
+
+            resetSettings()
+            initModelRunner()
         }
-
-        // UI
-
-        setupInputSourceButton()
-        setupDrawer()
-
-        setupFragment(viewModel.currentTab)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -132,6 +157,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Called when action bar drawer button is tapped */
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
@@ -141,6 +168,101 @@ class MainActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
+
+    /** Catches uncaught exceptions on the Model Runner background thread */
+
+    private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
+        Thread.UncaughtExceptionHandler() { _, exception ->
+            Handler(Looper.getMainLooper()).post(Runnable {
+
+                // An inference exception is serious enough that we must reset everything
+
+                if (exception is ModelRunner.ModelInferenceException) {
+                    viewModel.modelRunner.model.unload()
+                    resetSettings()
+                    initModelRunner()
+                }
+
+                // Show Alert
+
+                val title: Int = when (exception) {
+                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_dialog_title
+                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference_dialog_title
+                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exception_dialog_title
+                    else -> R.string.modelrunner_exception_unknown_dialog_title
+                }
+
+                val message: Int = when (exception) {
+                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_load_model
+                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference
+                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exeption_gpu
+                    else -> R.string.modelrunner_exception_unknown
+                }
+
+                AlertDialog.Builder(this).apply {
+                    setTitle(title)
+                    setMessage(message)
+
+                    setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                }.show()
+
+                // Reset UI to Previous Settings
+
+                resetSettingsUI()
+
+                // Restart Model Runner
+
+                viewModel.modelRunner.reset()
+                child<ModelRunnerWatcher>(R.id.container)?.startRunning()
+            })
+        }
+    }
+
+    /** Reset to default settings */
+
+    private fun resetSettings() {
+        prefs.edit(true) {
+            putString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
+            putString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+            putInt(getString(R.string.prefs_num_threads), 1)
+            putBoolean(getString(R.string.prefs_use_16_bit), false)
+        }
+    }
+
+    /** Update UI to reflect change in settings, needed after fall back when exception occurs on model runner thread */
+
+    private fun resetSettingsUI() {
+
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))!!
+        val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 0)
+        val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
+
+        val nav = findViewById<NavigationView>(R.id.nav_view)
+
+        val deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner) as Spinner
+        val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
+        val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
+        val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
+
+        // Tag is set and checked in handlers to avoid programmatic triggering of action
+
+        deviceSpinner.tag = SET_PRGM
+        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
+
+        modelSpinner.tag = SET_PRGM
+        modelSpinner.setSelection(viewModel.modelIds.indexOf(selectedModel), false)
+
+        threadsSpinner.tag = SET_PRGM
+        threadsSpinner.setSelection(numThreadsOptions.indexOf(numThreads), false)
+
+        precisionSwitch.tag = SET_PRGM
+        precisionSwitch.isChecked = use16Bit
+    }
+
+    /** Actionbar button shows dialog allowing user to choose input source */
 
     private fun setupInputSourceButton() {
         val button = findViewById<ImageButton>(R.id.actionbar_camera_button)
@@ -170,7 +292,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** The drawer contains all the configuration settings available to the user */
+
     private fun setupDrawer() {
+        val context = this
 
         // Saved Preferences
 
@@ -206,9 +331,15 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (deviceSpinner.tag == SET_PRGM) {
+                    deviceSpinner.tag = null
+                    return
+                }
+
                 val selectedDevice = deviceOptions[position]
-                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
-                viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
+                viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(selectedDevice)) {
+                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+                }
             }
         }
 
@@ -223,16 +354,35 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (modelSpinner.tag == SET_PRGM) {
+                    modelSpinner.tag = null
+                    return
+                }
+
                 val selectedModelId = viewModel.modelIds[position]
                 val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
+
+                child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
                 try {
                     val model = selectedBundle.newModel() as TIOTFLiteModel
-                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
-                    viewModel.modelRunner.switchModel(model)
-                } catch (e: TIOModelBundleException) {
-                    e.printStackTrace()
-                } catch (e: TIOModelException) {
-                    e.printStackTrace()
+
+                    viewModel.modelRunner.switchModel(model) {
+                        prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
+                        child<ModelRunnerWatcher>(R.id.container)?.let {
+                            it.modelDidChange()
+                            it.startRunning()
+                        }
+                    }
+                } catch (e: Exception) {
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.unable_to_load_model_dialog_title)
+                        setMessage(R.string.unable_to_load_model_dialog_message)
+
+                        setPositiveButton("OK") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                    }.show()
                 }
             }
         }
@@ -248,9 +398,16 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (threadsSpinner.tag == SET_PRGM) {
+                    threadsSpinner.tag = null
+                    return
+                }
+
                 val selectedThreads = numThreadsOptions[position]
-                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
-                viewModel.modelRunner.numThreads = selectedThreads
+
+                viewModel.modelRunner.setNumThreads(selectedThreads) {
+                    prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+                }
             }
         }
 
@@ -259,8 +416,14 @@ class MainActivity : AppCompatActivity() {
         precisionSwitch.isChecked = use16Bit
 
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
-            viewModel.modelRunner.use16Bit = isChecked
+            if (precisionSwitch.tag == SET_PRGM) {
+                precisionSwitch.tag = null
+                return@setOnCheckedChangeListener
+            }
+
+            viewModel.modelRunner.setUse16Bit(isChecked) {
+                prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
+            }
         }
     }
 
@@ -278,7 +441,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //endRegion
+    //endregion
 
     //region Image Picker
 
@@ -362,9 +525,11 @@ class MainActivity : AppCompatActivity() {
         changeTab(Tab.SinglePhoto)
     }
 
-    //endRegion
+    //endregion
 
     //region Fragment Management
+
+    /** Setup new tab unless we're on video and requesting video */
 
     private fun changeTab(tab: Tab) {
         if ( viewModel.currentTab == Tab.LiveVideo && viewModel.currentTab == tab) {
@@ -376,9 +541,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFragment(tab: Tab) {
-        viewModel.modelRunner.stopStreamingInference()
-
-        val fragment = when (tab) {
+        val fragment: Fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraClassificationFragment()
             Tab.SinglePhoto -> SingleImageClassificationFragment()
         }
@@ -386,9 +549,14 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
     }
 
-    //endRegion
+    //endregion
 
     //region Utilities
+
+    private fun <T>child(id: Int): T? {
+        @Suppress("UNCHECKED_CAST")
+        return supportFragmentManager.findFragmentById(id) as? T
+    }
 
     private val isEmulator: Boolean
         get() = (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
@@ -408,5 +576,5 @@ class MainActivity : AppCompatActivity() {
                 || Build.PRODUCT.contains("emulator")
                 || Build.PRODUCT.contains("simulator"))
 
-    //endRegion
+    //endregion
 }

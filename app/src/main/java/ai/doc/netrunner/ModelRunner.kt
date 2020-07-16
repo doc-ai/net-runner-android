@@ -1,10 +1,8 @@
 package ai.doc.netrunner
 
-import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel.HardwareBacking.*
-
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
@@ -13,16 +11,35 @@ import android.os.SystemClock
 private const val TAG = "ModelRunner"
 private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 
+/** A listener is called when a step of inference has completed */
+
 private typealias Listener = (Map<String,Any>, Long) -> Unit
+
+/** A bitmap provider provides a bitmap to the model runner for a single step of inference */
+
 private typealias BitmapProvider = () -> Bitmap?
+
+/** The model runner callback is called after any configuration change is completed on the runner's background thread */
+
+private typealias ModelRunnerCallback = () -> Unit
+
+/** Implemented by objects interested in changes to the model runner, but called by [MainActivity] */
+
+interface ModelRunnerWatcher {
+    fun modelDidChange()
+    fun stopRunning()
+    fun startRunning()
+}
 
 /**
  * The ModelRunner is used to configure a model and to perform continuous or one-off inference
  * with a model.
  */
 
-class ModelRunner(model: TIOTFLiteModel) {
-    inner class UnsupportedConfigurationException(message: String?) : RuntimeException(message)
+class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
+    inner class GPUUnavailableException(): RuntimeException()
+    inner class ModelLoadingException(): RuntimeException()
+    inner class ModelInferenceException(): RuntimeException()
 
     enum class Device {
         CPU,
@@ -48,58 +65,83 @@ class ModelRunner(model: TIOTFLiteModel) {
 
     /** The bitmap provider provides a bitmap to one step of inference */
 
-    lateinit var bitmapProvider: BitmapProvider
+    var bitmapProvider: BitmapProvider? = null
 
     /** The listener is informed when one step of inference is completed */
 
-    lateinit var listener: Listener
+    var listener: Listener? = null
 
-    var numThreads = 1
+    // Configuration
+
+    private var numThreads = 1
         set(value) {
-            backgroundHandler.post {
-                model.numThreads = value
-                model.reload()
-                field = value
-            }
+            model.numThreads = value
+            model.reload()
+            field = value
         }
 
-    var use16Bit = false
+    private var use16Bit = false
         set(value) {
-            backgroundHandler.post {
-                model.setUse16BitPrecision(value)
-                model.reload()
-                field = value
-            }
+            model.setUse16BitPrecision(value)
+            model.reload()
+            field = value
         }
 
-    var device: Device = Device.CPU
+    private var device: Device = Device.CPU
         set(value) {
-            backgroundHandler.post {
-                when (value) {
-                    Device.CPU -> {
-                        model.hardwareBacking = CPU
-                        field = value
-                    }
-                    Device.NNAPI -> {
-                        model.hardwareBacking = NNAPI
-                        field = value
-                    }
-                    Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
-                        model.hardwareBacking = CPU
-                        field = Device.CPU
-                        throw UnsupportedConfigurationException("GPU not supported in this build")
-                    } else {
-                        model.hardwareBacking = GPU
-                        field = Device.GPU
-                    }
+            when (value) {
+                Device.CPU -> {
+                    model.hardwareBacking = CPU
+                    field = value
                 }
+                Device.NNAPI -> {
+                    model.hardwareBacking = NNAPI
+                    field = value
+                }
+                Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                    model.hardwareBacking = CPU
+                    field = Device.CPU
+                    throw GPUUnavailableException()
+                } else {
+                    model.hardwareBacking = GPU
+                    field = Device.GPU
+                }
+            }
+
+            try {
                 model.reload()
+            } catch (e: Exception) {
+                // Back up to CPU and reload
+                model.hardwareBacking = CPU
+                field = Device.CPU
+                model.reload()
+                throw ModelLoadingException()
             }
         }
 
-    @Throws(TIOModelException::class)
-    fun switchModel(model: TIOTFLiteModel) {
-        backgroundHandler.post {
+    // Set Configuration with Callback
+
+    fun setNumThreads(value: Int, callback: ModelRunnerCallback? = null) {
+        backgroundHandler.post { numThreads = value }
+        backgroundHandler.post(callback)
+    }
+
+    fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback? = null) {
+        backgroundHandler.post { use16Bit = value }
+        backgroundHandler.post(callback)
+    }
+
+    fun setDevice(value: Device, callback: ModelRunnerCallback? = null) {
+        backgroundHandler.post { device = value }
+        backgroundHandler.post(callback)
+    }
+
+    /** Changes the model and uses current settings, falls back to previous model if fails */
+
+    fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback? = null) {
+        val previousModel = this.model
+
+        fun doSwitch(model: TIOTFLiteModel) {
             this.model.unload()
             this.model = model
 
@@ -111,26 +153,36 @@ class ModelRunner(model: TIOTFLiteModel) {
                 Device.GPU -> model.hardwareBacking = GPU
                 Device.NNAPI -> model.hardwareBacking = NNAPI
             }
+        }
 
-            model.load()
+        backgroundHandler.post {
+            doSwitch(model)
+
+            try {
+                model.load()
+                callback?.invoke()
+            } catch (e: Exception) {
+                // Back up to previous model
+                doSwitch(previousModel)
+                throw ModelLoadingException()
+            }
         }
     }
 
-    //beginRegion Background Tasks
+    //region Background Tasks
 
     /** Background thread that processes requests on the background handler */
 
-    private val backgroundThread: HandlerThread by lazy {
-        HandlerThread(HANDLE_THREAD_NAME).apply {
-            start()
-        }
-    }
+    private lateinit var backgroundThread: HandlerThread
 
     /** Background queue that receives request to interact with the model */
 
-    private val backgroundHandler: Handler by lazy {
-        Handler(backgroundThread.looper)
-    }
+    private lateinit var backgroundHandler: Handler
+
+    /** Background thread exception handler */
+
+    var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler = uncaughtExceptionHandler
+        private set
 
     /** A continuous runnable that will repeatedly execute inference on the model until running is set to false */
 
@@ -147,30 +199,42 @@ class ModelRunner(model: TIOTFLiteModel) {
 
     private var running = false
 
-    //endRegion
+    //endregion
 
     init {
+        setupBackgroundHandler()
         backgroundHandler.post {
-            try {
-                model.load()
-            } catch (e: TIOModelException) {
-                e.printStackTrace()
-            }
+            model.load()
         }
+    }
+
+    private fun setupBackgroundHandler() {
+        val my = this
+        backgroundThread = HandlerThread(HANDLE_THREAD_NAME).apply {
+            uncaughtExceptionHandler = my.uncaughtExceptionHandler
+            start()
+        }
+        backgroundHandler = Handler(backgroundThread.looper)
+    }
+
+    /** Restart the model runner after its background thread dies on an uncaught exception */
+
+    fun reset() {
+        setupBackgroundHandler()
     }
 
     /** Executes a single step of inference */
 
     private fun runInference() {
-        val bitmap = bitmapProvider() ?: return
+        val bitmap = bitmapProvider?.invoke() ?: return
 
         try {
             val startTime = SystemClock.uptimeMillis()
             val result = model.runOn(bitmap)
             val endTime = SystemClock.uptimeMillis()
-            listener(result, endTime - startTime)
-        } catch (e: TIOModelException) {
-            e.printStackTrace()
+            listener?.invoke(result, endTime - startTime)
+        } catch (e: Exception) {
+            throw ModelInferenceException()
         }
     }
 
@@ -199,7 +263,17 @@ class ModelRunner(model: TIOTFLiteModel) {
 
     fun stopStreamingInference() {
         backgroundHandler.post {
+            this.bitmapProvider = null
+            this.listener = null
             running = false
+        }
+    }
+
+    /** Waits for the background handler to finish processing before calling lambda */
+
+    fun wait(lambda: ()->Unit) {
+        backgroundHandler.post {
+            lambda()
         }
     }
 }

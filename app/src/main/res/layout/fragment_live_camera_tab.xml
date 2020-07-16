@@ -24,15 +24,12 @@
         android:orientation="horizontal"
         android:layout_alignParentBottom="true">
 
-        <TextView
-            android:id="@+id/predictions"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+        <FrameLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_margin="@dimen/margin_tiny"
-            android:textColor="@color/black"
-            android:bufferType="spannable"
-            android:textSize="@dimen/font_size_l" />
+            android:id="@+id/outputContainer" />
 
         <TextView
             android:id="@+id/latency"
