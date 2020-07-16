@@ -113,8 +113,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    protected val cameraFacing: Int
-        protected get() = CameraCharacteristics.LENS_FACING_BACK
+    private var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a [ ].
@@ -152,13 +151,13 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
      * A [CameraCaptureSession] for camera preview.
      */
 
-    protected var captureSession: CameraCaptureSession? = null
+    private var captureSession: CameraCaptureSession? = null
 
     /**
      * A reference to the opened [CameraDevice].
      */
 
-    protected var cameraDevice: CameraDevice? = null
+    private var cameraDevice: CameraDevice? = null
 
     /**
      * The [android.util.Size] of camera preview.
@@ -290,16 +289,16 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
             for (cameraId in manager.cameraIdList) {
                 val characteristics = manager.getCameraCharacteristics(cameraId)
 
-                // We don't use a front facing camera in this sample.
+                // Find the Preferred Camera
+
                 val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-                if (facing != null && facing != cameraFacing) {
+                if (facing != cameraFacing) {
                     continue
                 }
 
-                val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                        ?: continue
+                val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP) ?: continue
 
-                // // For still image captures, we use the largest available size.
+                // For still image captures, we use the largest available size.
 
                 val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
                 imageReader = ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG,  /*maxImages*/2)
@@ -529,6 +528,21 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     fun resumeCamera() {
         captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
+    }
+
+    fun flipCamera() {
+        closeCamera()
+
+        cameraFacing = when (cameraFacing) {
+            CameraCharacteristics.LENS_FACING_BACK -> CameraCharacteristics.LENS_FACING_FRONT
+            else -> CameraCharacteristics.LENS_FACING_BACK
+        }
+
+        if (textureView.isAvailable) {
+            openCamera(textureView.width, textureView.height)
+        } else {
+            textureView.surfaceTextureListener = surfaceTextureListener
+        }
     }
 
     private fun showToast(s: String) {

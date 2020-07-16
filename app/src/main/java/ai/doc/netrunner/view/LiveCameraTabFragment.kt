@@ -32,9 +32,7 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
         private var weakHandler: WeakReference<LiveCameraClassificationFragment>? = null
 
         var handler: LiveCameraClassificationFragment?
-            get() {
-                return weakHandler?.get()
-            }
+            get() = weakHandler?.get()
             set(value) {
                 if (value == null) {
                     weakHandler?.clear()
@@ -49,9 +47,13 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
         }
 
         override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-            handler?.onSingleTapConfirmed(event)
-            return true
+            return handler?.onSingleTapConfirmed(event) ?: super.onSingleTapConfirmed(event)
         }
+
+        override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+            return handler?.onFling(e1, e2, velocityX, velocityY) ?: super.onFling(e1, e2, velocityX, velocityY)
+        }
+
     }
 
     // UI
@@ -99,6 +101,13 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
             pauseCamera()
         }
         isPaused = !isPaused
+        return true
+    }
+
+    fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
+        stopClassification()
+        flipCamera()
+        startClassification()
         return true
     }
 
