@@ -70,6 +70,14 @@ class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
         }
     }
 
+    override fun stopRunning() {
+
+    }
+
+    override fun startRunning() {
+
+    }
+
     /** Executes inference on the provided bitmap */
 
     private fun doBitmap(bitmap: Bitmap) {

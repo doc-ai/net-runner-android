@@ -4,9 +4,7 @@ import ai.doc.netrunner.view.*
 import ai.doc.netrunner.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 
-import ai.doc.tensorio.TIOModel.TIOModelBundleException
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
-import ai.doc.tensorio.TIOModel.TIOModelException
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
 import android.Manifest
 import android.app.Activity
@@ -22,6 +20,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
@@ -52,8 +51,6 @@ private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_IMAGE_CAPTURE = 2
 
-// TODO: Wrap any call to set the device or change the model in a try block
-
 class MainActivity : AppCompatActivity() {
 
     private val numThreadsOptions = arrayOf(1, 2, 4, 8)
@@ -82,7 +79,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Register Model Output Formatters
+
         OutputHandlerManager.registerHandlers()
+
+        // Init Model and Model Runner
+
+        initModelRunner()
+
+        // UI
+
+        setupInputSourceButton()
+        setupDrawer()
+
+        setupFragment(viewModel.currentTab)
+    }
+
+    private fun initModelRunner() {
 
         // Acquire Saved Settings
 
@@ -99,27 +112,28 @@ class MainActivity : AppCompatActivity() {
             val bundle = viewModel.manager.bundleWithId(selectedModel)
             val model = bundle.newModel()
 
-            val modelRunner = ModelRunner((model as TIOTFLiteModel))
+            val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
+
             viewModel.modelRunner = modelRunner
-            viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
-            viewModel.modelRunner.numThreads = numThreads
-            viewModel.modelRunner.use16Bit = use16Bit
+            viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(device), null)
+            viewModel.modelRunner.setNumThreads(numThreads, null)
+            viewModel.modelRunner.setUse16Bit(use16Bit, null)
 
             model.load()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } catch (e: TIOModelException) {
-            e.printStackTrace()
-        } catch (e: TIOModelBundleException) {
-            e.printStackTrace()
+        } catch(e: Exception) {
+
+            AlertDialog.Builder(this).apply {
+                setTitle(R.string.modelrunner_initfail_dialog_title)
+                setMessage(R.string.modelrunner_initfail_dialog_message)
+
+                setPositiveButton("OK") { dialog, which ->
+                    dialog.dismiss()
+                }
+            }.show()
+
+            resetSettings()
+            initModelRunner()
         }
-
-        // UI
-
-        setupInputSourceButton()
-        setupDrawer()
-
-        setupFragment(viewModel.currentTab)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -147,6 +161,91 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    /** Catches uncaught exceptions on the Model Runner background thread */
+
+    private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
+        Thread.UncaughtExceptionHandler() { _, exception ->
+            Handler(Looper.getMainLooper()).post(Runnable {
+
+                // An inference exception is serious enough that we must reset everything
+
+                if (exception is ModelRunner.ModelInferenceException) {
+                    viewModel.modelRunner.model.unload()
+                    resetSettings()
+                    initModelRunner()
+                }
+
+                // Show Alert
+
+                var title: Int = when (exception) {
+                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_dialog_title
+                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference_dialog_title
+                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exception_dialog_title
+                    else -> R.string.modelrunner_exception_unknown_dialog_title
+                }
+
+                val message: Int = when (exception) {
+                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_load_model
+                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference
+                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exeption_gpu
+                    else -> R.string.modelrunner_exception_unknown
+                }
+
+                AlertDialog.Builder(this).apply {
+                    setTitle(title)
+                    setMessage(message)
+
+                    setPositiveButton("OK") { dialog, which ->
+                        dialog.dismiss()
+                    }
+                }.show()
+
+                // Reset UI to Previous Settings
+
+                resetSettingsUI()
+
+                // Restart Model Runner
+
+                viewModel.modelRunner.reset()
+                (supportFragmentManager.findFragmentById(R.id.container) as ModelRunnerWatcher)?.let {
+                    it.startRunning()
+                }
+            })
+        }
+    }
+
+    /** Reset to default settings */
+
+    private fun resetSettings() {
+        prefs.edit(true) {
+            putString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))
+            putString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))
+            putInt(getString(R.string.prefs_num_threads), 1)
+            putBoolean(getString(R.string.prefs_use_16_bit), false)
+        }
+    }
+
+    /** Update UI to reflect change in settings */
+
+    private fun resetSettingsUI() {
+        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
+        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))!!
+        val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 0)
+        val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
+
+        val nav = findViewById<NavigationView>(R.id.nav_view)
+
+        val deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner) as Spinner
+        val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
+        val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
+        val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
+
+        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
+        modelSpinner.setSelection(viewModel.modelIds.indexOf(selectedModel), false)
+        threadsSpinner.setSelection(numThreadsOptions.indexOf(numThreads), false)
+        precisionSwitch.isChecked = use16Bit
     }
 
     private fun setupInputSourceButton() {
@@ -178,6 +277,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupDrawer() {
+        val context = this
 
         // Saved Preferences
 
@@ -214,8 +314,10 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedDevice = deviceOptions[position]
-                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
-                viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
+
+                viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(selectedDevice)) {
+                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+                }
             }
         }
 
@@ -232,19 +334,30 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedModelId = viewModel.modelIds[position]
                 val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
+
+                (supportFragmentManager.findFragmentById(R.id.container) as ModelRunnerWatcher)?.let {
+                    it.stopRunning()
+                }
+
                 try {
                     val model = selectedBundle.newModel() as TIOTFLiteModel
-                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
-                    viewModel.modelRunner.switchModel(model)
 
-                    (supportFragmentManager.findFragmentById(R.id.container) as ModelRunnerWatcher)?.let {
-                        it.modelDidChange()
+                    viewModel.modelRunner.switchModel(model) {
+                        prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
+                        (supportFragmentManager.findFragmentById(R.id.container) as ModelRunnerWatcher)?.let {
+                            it.modelDidChange()
+                            it.startRunning()
+                        }
                     }
+                } catch (e: Exception) {
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.unable_to_load_model_dialog_title)
+                        setMessage(R.string.unable_to_load_model_dialog_message)
 
-                } catch (e: TIOModelBundleException) {
-                    e.printStackTrace()
-                } catch (e: TIOModelException) {
-                    e.printStackTrace()
+                        setPositiveButton("OK") { dialog, which ->
+                            dialog.dismiss()
+                        }
+                    }.show()
                 }
             }
         }
@@ -261,8 +374,10 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedThreads = numThreadsOptions[position]
-                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
-                viewModel.modelRunner.numThreads = selectedThreads
+
+                viewModel.modelRunner.setNumThreads(selectedThreads) {
+                    prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+                }
             }
         }
 
@@ -271,8 +386,9 @@ class MainActivity : AppCompatActivity() {
         precisionSwitch.isChecked = use16Bit
 
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
-            viewModel.modelRunner.use16Bit = isChecked
+            viewModel.modelRunner.setUse16Bit(isChecked) {
+                prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
+            }
         }
     }
 
@@ -388,8 +504,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupFragment(tab: Tab) {
-        viewModel.modelRunner.stopStreamingInference()
-
         val fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraClassificationFragment()
             Tab.SinglePhoto -> SingleImageClassificationFragment()

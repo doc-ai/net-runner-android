@@ -57,12 +57,18 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     /** Replaces the output handler but waits for the model runner to finish **/
 
     override fun modelDidChange() {
-        stopClassification()
         viewModel.modelRunner.wait {
             Handler(Looper.getMainLooper()).post(Runnable {
                 loadFragmentForModel(viewModel.modelRunner.model)
             })
         }
+    }
+
+    override fun stopRunning() {
+        stopClassification()
+    }
+
+    override fun startRunning() {
         startClassification()
     }
 

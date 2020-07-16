@@ -53,6 +53,7 @@ class MobileNetClassificationOutputHandler : Fragment(), OutputHandler {
         output?.let {
             val classification = it["classification"] as Map<String, Float>
             val top5 = TIOClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
+            if (previousTop5.size == 0) { previousTop5 = top5 as ArrayList<Map.Entry<String, Float>> }
             val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
             val top5ordered = top5smoothed.take(SMOOTHING_TOP_N_COUNT).sortedWith(compareBy { it.value }).reversed()
             val top5formatted = formattedResults(top5ordered)
