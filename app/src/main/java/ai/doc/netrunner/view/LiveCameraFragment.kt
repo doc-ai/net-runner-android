@@ -40,8 +40,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     private class CompareSizesByArea : Comparator<Size> {
         override fun compare(lhs: Size, rhs: Size): Int {
             // We cast here to ensure the multiplications won't overflow
-            return java.lang.Long.signum(
-                    lhs.width.toLong() * lhs.height - rhs.width.toLong() * rhs.height)
+            return java.lang.Long.signum(lhs.width.toLong() * lhs.height - rhs.width.toLong() * rhs.height)
         }
     }
 
@@ -153,13 +152,13 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
      * A [CameraCaptureSession] for camera preview.
      */
 
-    private var captureSession: CameraCaptureSession? = null
+    protected var captureSession: CameraCaptureSession? = null
 
     /**
      * A reference to the opened [CameraDevice].
      */
 
-    private var cameraDevice: CameraDevice? = null
+    protected var cameraDevice: CameraDevice? = null
 
     /**
      * The [android.util.Size] of camera preview.
@@ -296,20 +295,23 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                 if (facing != null && facing != cameraFacing) {
                     continue
                 }
+
                 val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
                         ?: continue
 
                 // // For still image captures, we use the largest available size.
-                val largest = Collections.max(
-                        Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
-                imageReader = ImageReader.newInstance(
-                        largest.width, largest.height, ImageFormat.JPEG,  /*maxImages*/2)
+
+                val largest = Collections.max(Arrays.asList(*map.getOutputSizes(ImageFormat.JPEG)), CompareSizesByArea())
+                imageReader = ImageReader.newInstance(largest.width, largest.height, ImageFormat.JPEG,  /*maxImages*/2)
 
                 // Find out if we need to swap dimension to get the preview size relative to sensor
                 // coordinate.
+
                 val displayRotation = requireActivity().windowManager.defaultDisplay.rotation
+
                 // noinspection ConstantConditions
                 /* Orientation of the camera sensor */
+
                 val sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION)
                 var swappedDimensions = false
                 when (displayRotation) {
@@ -467,8 +469,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
                                 // Finally, we start displaying the camera preview.
                                 previewRequest = previewRequestBuilder?.build()
-                                captureSession!!.setRepeatingRequest(
-                                        previewRequest, captureCallback, null) // TODO: change to other handler
+                                captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null) // TODO: change to other handler
                             } catch (e: CameraAccessException) {
                                 Log.e(TAG, "Failed to set up config to capture Camera", e)
                             }
@@ -520,6 +521,14 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
 
         textureView.setTransform(matrix)
+    }
+
+    fun pauseCamera() {
+        captureSession?.stopRepeating()
+    }
+
+    fun resumeCamera() {
+        captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
     }
 
     private fun showToast(s: String) {
