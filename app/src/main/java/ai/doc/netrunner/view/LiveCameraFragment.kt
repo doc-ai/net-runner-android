@@ -105,7 +105,13 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
+    /** Only set this property prior to the camera opening. Otherwise use [flipCamera] */
+
+    protected var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
+
+    /** Only set this property prior to the camera opening. Otherwise use [pauseCamera] */
+
+    protected var isCameraPaused: Boolean = false
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a [ ].
@@ -450,30 +456,33 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
             // Here, we create a CameraCaptureSession for camera preview.
             cameraDevice!!.createCaptureSession(Arrays.asList(surface), object : CameraCaptureSession.StateCallback() {
-                    override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
-                        // The camera is already closed
-                        if (null == cameraDevice) {
-                            return
-                        }
-
-                        // When the session is ready, we start displaying the preview.
-                        captureSession = cameraCaptureSession
-                        try {
-                            // Auto focus should be continuous for camera preview.
-                            previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-
-                            // Finally, we start displaying the camera preview.
-                            previewRequest = previewRequestBuilder?.build()
-                            captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null) // TODO: change to other handler
-                        } catch (e: CameraAccessException) {
-                            Log.e(TAG, "Failed to set up config to capture Camera", e)
-                        }
+                override fun onConfigured(cameraCaptureSession: CameraCaptureSession) {
+                    // The camera is already closed
+                    if (null == cameraDevice) {
+                        return
                     }
 
-                    override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
-                        // TODO: Show error
+                    // When the session is ready, we start displaying the preview.
+                    captureSession = cameraCaptureSession
+                    try {
+                        // Auto focus should be continuous for camera preview.
+                        previewRequestBuilder?.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
+
+                        // Finally, we start displaying the camera preview.
+                        previewRequest = previewRequestBuilder?.build()
+
+                        // TODO: change to other handler (Sam -- Phil: ?)
+                        captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null)
                     }
-                }, null)
+                    catch (e: CameraAccessException) {
+                        Log.e(TAG, "Failed to set up config to capture Camera", e)
+                    }
+                }
+
+                override fun onConfigureFailed(cameraCaptureSession: CameraCaptureSession) {
+                    // TODO: Show error
+                }
+            }, null)
         } catch (e: CameraAccessException) {
             Log.e(TAG, "Failed to preview Camera", e)
         }

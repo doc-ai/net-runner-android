@@ -29,6 +29,8 @@
     <string name="prefs_default_selected_model">Mobilenet_V2_1.0_224</string>
     <string name="prefs_default_device">CPU</string>
 
+    <string name="prefs_camera_facing">prefs.camera.facing</string>
+
     <string name="unable_to_load_model_dialog_title">Unable to load model</string>
     <string name="unable_to_load_model_dialog_message">There was a problem loading this model, please try another one</string>
 
