@@ -16,49 +16,16 @@ import android.os.Looper
 import android.view.*
 import android.widget.TextView
 import androidx.core.content.edit
-import androidx.core.view.GestureDetectorCompat
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import java.lang.ref.WeakReference
 
 /**
  * A simple [Fragment] subclass.
  */
 
 class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.OnTouchListener */ {
-
-    /** Captures gestures on behalf of the fragment and forwards them back to the fragment */
-
-//    private class GestureListener(): GestureDetector.SimpleOnGestureListener() {
-//
-//        private var weakHandler: WeakReference<LiveCameraTabFragment>? = null
-//
-//        var handler: LiveCameraTabFragment?
-//            get() = weakHandler?.get()
-//            set(value) {
-//                if (value == null) {
-//                    weakHandler?.clear()
-//                } else {
-//                    weakHandler = WeakReference(value)
-//                }
-//            }
-//
-//
-//        override fun onDown(event: MotionEvent): Boolean {
-//            return true
-//        }
-//
-//        override fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-//            return handler?.onSingleTapConfirmed(event) ?: super.onSingleTapConfirmed(event)
-//        }
-//
-//        override fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-//            return handler?.onFling(e1, e2, velocityX, velocityY) ?: super.onFling(e1, e2, velocityX, velocityY)
-//        }
-//
-//    }
 
     // UI
 
@@ -95,12 +62,6 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         cameraFacing = prefs?.getInt(getString(R.string.prefs_camera_facing), CameraCharacteristics.LENS_FACING_BACK)
                 ?: CameraCharacteristics.LENS_FACING_BACK
 
-        // Gestures for Camera Control
-
-        // val me = this
-        // gestureDetector = GestureDetectorCompat(activity, GestureListener().apply { handler = me })
-        // view.setOnTouchListener(this)
-
         // Buttons for Camera Control
 
         view.findViewById<FloatingActionButton>(R.id.toggle_facing_button).setOnClickListener {
@@ -119,22 +80,6 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         val pauseButton = view.findViewById<FloatingActionButton>(R.id.toggle_pause_button)
         (pauseButton as FloatingActionButton).setImageResource(resId)
     }
-
-    // Gestures for Camera Control
-
-//    override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-//        return gestureDetector.onTouchEvent(event)
-//    }
-//
-//    fun onSingleTapConfirmed(event: MotionEvent): Boolean {
-//        toggleCameraPaused()
-//        return true
-//    }
-//
-//    fun onFling(e1: MotionEvent?, e2: MotionEvent?, velocityX: Float, velocityY: Float): Boolean {
-//        toggleCameraFacing()
-//        return true
-//    }
 
     // Camera Control
 
