@@ -93,8 +93,8 @@ class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
             bitmap
         }, { output: Map<String,Any>, l: Long ->
             Handler(Looper.getMainLooper()).post(Runnable {
-                latencyTextView.text = "$l ms"
                 child<OutputHandler>(R.id.outputContainer)?.output = output
+                latencyTextView.text = "$l ms"
             })
         })
     }

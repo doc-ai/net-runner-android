@@ -31,7 +31,8 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     private lateinit var textureView: TextureView
     private lateinit var latencyTextView: TextView
-    // private lateinit var gestureDetector: GestureDetectorCompat
+    private lateinit var pauseButton: FloatingActionButton
+    private lateinit var flipButton: FloatingActionButton
 
     // View Model
 
@@ -56,6 +57,8 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
+        pauseButton = view.findViewById(R.id.toggle_pause_button)
+        flipButton = view.findViewById(R.id.toggle_facing_button)
 
         // Camera Settings
 
@@ -64,21 +67,20 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
         // Buttons for Camera Control
 
-        view.findViewById<FloatingActionButton>(R.id.toggle_facing_button).setOnClickListener {
+        flipButton.setOnClickListener {
             toggleCameraFacing()
         }
 
-        view.findViewById<FloatingActionButton>(R.id.toggle_pause_button).setOnClickListener {
+        pauseButton.setOnClickListener {
             toggleCameraPaused()
             val resId = if (isCameraPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
-            (it as FloatingActionButton).setImageResource(resId)
+            pauseButton.setImageResource(resId)
         }
 
         // Update Pause|Play Button
 
         val resId = if (isCameraPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
-        val pauseButton = view.findViewById<FloatingActionButton>(R.id.toggle_pause_button)
-        (pauseButton as FloatingActionButton).setImageResource(resId)
+        pauseButton.setImageResource(resId)
     }
 
     // Camera Control
@@ -86,24 +88,27 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     private fun toggleCameraPaused() {
         if (isCameraPaused) {
             child<OutputHandler>(R.id.outputContainer)?.output = null
-            startClassification()
+            startContinuousInference()
             resumeCamera()
         } else {
-            stopClassification()
+            stopContinuousInference()
             pauseCamera()
         }
         isCameraPaused = !isCameraPaused
     }
 
     private fun toggleCameraFacing() {
-        stopClassification()
+        stopContinuousInference()
 
         child<OutputHandler>(R.id.outputContainer)?.output = null
 
         flipCamera()
         prefs?.edit(true) { putInt(getString(R.string.prefs_camera_facing), cameraFacing) }
 
-        startClassification()
+        pauseButton.setImageResource(android.R.drawable.ic_media_pause)
+        isCameraPaused = false
+
+        startContinuousInference()
     }
 
     private fun loadFragmentForModel(model: TIOModel) {
@@ -124,11 +129,15 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     }
 
     override fun stopRunning() {
-        stopClassification()
+        stopContinuousInference()
     }
 
     override fun startRunning() {
-        startClassification()
+        if (isCameraPaused) {
+            runSingleFrameOfInference()
+        } else {
+            startContinuousInference()
+        }
     }
 
     //endregion
@@ -139,19 +148,21 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         super.onResume()
 
         if (!isCameraPaused) {
-            startClassification()
+            startContinuousInference()
         }
     }
 
     override fun onPause() {
         super.closeCamera()
-        stopClassification()
+        stopContinuousInference()
         super.onPause()
     }
 
     //endregion
 
-    private fun startClassification() {
+    /** Instructs the model runner to begin continuous classification of the model */
+
+    private fun startContinuousInference() {
         if (isDetached || !isAdded) {
             return
         }
@@ -166,9 +177,31 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         })
     }
 
-    fun stopClassification() {
+    /** Halts continuous classification of the model */
+
+    private fun stopContinuousInference() {
         viewModel.modelRunner.stopStreamingInference()
     }
+
+    /** Runs a single frame of inference, used for exapmle when the camera is paused but the model changes */
+
+    private fun runSingleFrameOfInference() {
+        if (isDetached || !isAdded) {
+            return
+        }
+
+        viewModel.modelRunner.runInferenceOnFrame( {
+            textureView.bitmap
+        }, { output: Map<String,Any>, l: Long ->
+            Handler(Looper.getMainLooper()).post(Runnable {
+                child<OutputHandler>(R.id.outputContainer)?.output = null
+                child<OutputHandler>(R.id.outputContainer)?.output = output
+                latencyTextView.text = "$l ms"
+            })
+        })
+    }
+
+    /** Returns a child fragment safely cast to type */
 
     private fun <T>child(id: Int): T? {
         if (isDetached || !isAdded) {
