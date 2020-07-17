@@ -6,12 +6,16 @@ import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.tensorio.TIOModel.TIOModel
+import android.content.Context
+import android.content.SharedPreferences
+import android.hardware.camera2.CameraCharacteristics
 
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.*
 import android.widget.TextView
+import androidx.core.content.edit
 import androidx.core.view.GestureDetectorCompat
 
 import androidx.fragment.app.Fragment
@@ -68,6 +72,10 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     private val viewModel by activityViewModels<MainViewModel>()
 
+    private val prefs: SharedPreferences? by lazy {
+        activity?.getSharedPreferences("Settings", Context.MODE_PRIVATE)
+    }
+
     // Creation
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -83,6 +91,9 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
+
+        cameraFacing = prefs?.getInt(getString(R.string.prefs_camera_facing), CameraCharacteristics.LENS_FACING_BACK)
+                ?: CameraCharacteristics.LENS_FACING_BACK
 
         // Gestures for Camera Control
 
@@ -135,8 +146,12 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     private fun toggleCameraFacing() {
         stopClassification()
+
         child<OutputHandler>(R.id.outputContainer)?.output = null
+
         flipCamera()
+        prefs?.edit(true) { putInt(getString(R.string.prefs_camera_facing), cameraFacing) }
+
         startClassification()
     }
 

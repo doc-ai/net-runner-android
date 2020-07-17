@@ -105,7 +105,9 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
+    /** Only set this method prior to the camera opening. Otherwise use [flipCamera] */
+
+    protected var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a [ ].
