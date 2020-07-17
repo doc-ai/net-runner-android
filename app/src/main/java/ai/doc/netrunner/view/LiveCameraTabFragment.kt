@@ -23,15 +23,15 @@ import java.lang.ref.WeakReference
  * A simple [Fragment] subclass.
  */
 
-class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.OnTouchListener */ {
+class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.OnTouchListener */ {
 
     /** Captures gestures on behalf of the fragment and forwards them back to the fragment */
 
 //    private class GestureListener(): GestureDetector.SimpleOnGestureListener() {
 //
-//        private var weakHandler: WeakReference<LiveCameraClassificationFragment>? = null
+//        private var weakHandler: WeakReference<LiveCameraTabFragment>? = null
 //
-//        var handler: LiveCameraClassificationFragment?
+//        var handler: LiveCameraTabFragment?
 //            get() = weakHandler?.get()
 //            set(value) {
 //                if (value == null) {
@@ -77,7 +77,9 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadFragmentForModel(viewModel.modelRunner.model)
+        if (savedInstanceState == null) {
+            loadFragmentForModel(viewModel.modelRunner.model)
+        }
 
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
@@ -181,6 +183,10 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     //endregion
 
     private fun startClassification() {
+        if (isDetached || !isAdded) {
+            return
+        }
+
         viewModel.modelRunner.startStreamingInference( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
@@ -196,6 +202,10 @@ class LiveCameraClassificationFragment : LiveCameraFragment(), ModelRunnerWatche
     }
 
     private fun <T>child(id: Int): T? {
+        if (isDetached || !isAdded) {
+            return null
+        }
+
         @Suppress("UNCHECKED_CAST")
         return childFragmentManager.findFragmentById(id) as? T
     }
