@@ -6,17 +6,26 @@ import androidx.lifecycle.ViewModel
 import java.util.ArrayList
 
 class MainViewModel : ViewModel() {
+
+    // Selected Tab
+
     enum class Tab {
         LiveVideo,
         SinglePhoto
     }
 
+    var currentTab = Tab.LiveVideo
+
+    // Model Management
+
     lateinit var manager: TIOModelBundleManager
     lateinit var modelRunner: ModelRunner
-    var currentTab = Tab.LiveVideo
-    var bitmap: Bitmap? = null
 
     val modelIds: ArrayList<String> by lazy {
         ArrayList<String>(manager.bundleIds)
     }
+
+    // Last Bitmap Used For Inference
+
+    var bitmap: Bitmap? = null
 }

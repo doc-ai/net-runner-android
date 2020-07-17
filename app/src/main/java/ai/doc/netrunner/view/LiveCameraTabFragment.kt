@@ -66,8 +66,6 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     private lateinit var latencyTextView: TextView
     // private lateinit var gestureDetector: GestureDetectorCompat
 
-    private var isPaused = false
-
     // View Model
 
     private val viewModel by activityViewModels<MainViewModel>()
@@ -92,6 +90,8 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         textureView = view.findViewById(R.id.texture)
         latencyTextView = view.findViewById(R.id.latency)
 
+        // Camera Settings
+
         cameraFacing = prefs?.getInt(getString(R.string.prefs_camera_facing), CameraCharacteristics.LENS_FACING_BACK)
                 ?: CameraCharacteristics.LENS_FACING_BACK
 
@@ -101,7 +101,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         // gestureDetector = GestureDetectorCompat(activity, GestureListener().apply { handler = me })
         // view.setOnTouchListener(this)
 
-        // Button for Camera Control
+        // Buttons for Camera Control
 
         view.findViewById<FloatingActionButton>(R.id.toggle_facing_button).setOnClickListener {
             toggleCameraFacing()
@@ -109,9 +109,15 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
         view.findViewById<FloatingActionButton>(R.id.toggle_pause_button).setOnClickListener {
             toggleCameraPaused()
-            val resId = if (isPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
+            val resId = if (isCameraPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
             (it as FloatingActionButton).setImageResource(resId)
         }
+
+        // Update Pause|Play Button
+
+        val resId = if (isCameraPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
+        val pauseButton = view.findViewById<FloatingActionButton>(R.id.toggle_pause_button)
+        (pauseButton as FloatingActionButton).setImageResource(resId)
     }
 
     // Gestures for Camera Control
@@ -133,7 +139,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     // Camera Control
 
     private fun toggleCameraPaused() {
-        if (isPaused) {
+        if (isCameraPaused) {
             child<OutputHandler>(R.id.outputContainer)?.output = null
             startClassification()
             resumeCamera()
@@ -141,7 +147,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
             stopClassification()
             pauseCamera()
         }
-        isPaused = !isPaused
+        isCameraPaused = !isCameraPaused
     }
 
     private fun toggleCameraFacing() {
@@ -186,7 +192,10 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     override fun onResume() {
         super.onResume()
-        startClassification()
+
+        if (!isCameraPaused) {
+            startClassification()
+        }
     }
 
     override fun onPause() {
