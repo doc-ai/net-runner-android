@@ -20,7 +20,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 
-class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
+class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
 
     // UI
 
@@ -40,7 +40,9 @@ class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        loadFragmentForModel(viewModel.modelRunner.model)
+        if (savedInstanceState == null) {
+            loadFragmentForModel(viewModel.modelRunner.model)
+        }
 
         imageView = view.findViewById(R.id.imageview)
         latencyTextView = view.findViewById(R.id.latency)
@@ -81,6 +83,10 @@ class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
     /** Executes inference on the provided bitmap */
 
     private fun doBitmap(bitmap: Bitmap) {
+        if (isDetached || !isAdded) {
+            return
+        }
+
         imageView.setImageBitmap(bitmap)
 
         viewModel.modelRunner.runInferenceOnFrame( {
@@ -88,11 +94,18 @@ class SingleImageClassificationFragment : Fragment(), ModelRunnerWatcher {
         }, { output: Map<String,Any>, l: Long ->
             Handler(Looper.getMainLooper()).post(Runnable {
                 latencyTextView.text = "$l ms"
-                (childFragmentManager.findFragmentById(R.id.outputContainer) as? OutputHandler)?.let { handler ->
-                    handler.output = output
-                }
+                child<OutputHandler>(R.id.outputContainer)?.output = output
             })
         })
+    }
+
+    private fun <T>child(id: Int): T? {
+        if (isDetached || !isAdded) {
+            return null
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        return childFragmentManager.findFragmentById(id) as? T
     }
 
 }

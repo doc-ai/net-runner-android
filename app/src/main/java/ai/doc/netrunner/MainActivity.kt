@@ -93,7 +93,9 @@ class MainActivity : AppCompatActivity() {
         setupInputSourceButton()
         setupDrawer()
 
-        setupFragment(viewModel.currentTab)
+        if (savedInstanceState == null) {
+            setupFragment(viewModel.currentTab)
+        }
     }
 
     /** Initializes the model runner and falls back on default model if there are problems */
@@ -541,8 +543,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupFragment(tab: Tab) {
         val fragment: Fragment = when (tab) {
-            Tab.LiveVideo -> LiveCameraClassificationFragment()
-            Tab.SinglePhoto -> SingleImageClassificationFragment()
+            Tab.LiveVideo -> LiveCameraTabFragment()
+            Tab.SinglePhoto -> SingleImageTabFragment()
         }
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()
