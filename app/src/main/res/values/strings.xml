@@ -37,13 +37,15 @@
     <string name="modelrunner_initfail_dialog_title">Unable to load model</string>
     <string name="modelrunner_initfail_dialog_message">There was a problem initializing the previous model, falling back to default model and settings</string>
 
-    <string name="modelrunner_exception_dialog_title">Unable to update settings</string>
+    <string name="modelrunner_model_exception_dialog_title">Unable to change model</string>
+    <string name="modelrunner_settings_exception_dialog_title">Unable to change setting</string>
     <string name="modelrunner_exception_run_inference_dialog_title">Unable to run the model</string>
     <string name="modelrunner_exception_unknown_dialog_title">"An unkown problem occurred"</string>
 
     <string name="modelrunner_exeption_gpu">GPU not supported in this build, falling back</string>
-    <string name="modelrunner_exception_run_inference">There was a problem executing inference with this model, falling back to default model and settings</string>
-    <string name="modelrunner_exception_load_model">This was a problem loading the model with these settings, falling back to previous model or settings"</string>
+    <string name="modelrunner_exception_run_inference">There was a problem executing inference with this model, try another one or change the model settings</string>
+    <string name="modelrunner_exception_change_model_message">This was a problem loading the model with the current settings, falling back to previous model"</string>
+    <string name="modelrunner_exception_change_settings_message">This was a problem loading the model with these settings, falling back to previous models"</string>
     <string name="modelrunner_exception_unknown">Net Runner encountered an unknown problem, falling back to previous model or settings"</string>
 
     <string name="camera_paused">Paused. Tap again to resume.</string>

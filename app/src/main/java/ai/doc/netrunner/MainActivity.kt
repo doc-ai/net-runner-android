@@ -170,53 +170,34 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    /** Catches uncaught exceptions on the Model Runner background thread */
+    /** Catches the uncaught inference exception on the Model Runner background thread */
 
     private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
         Thread.UncaughtExceptionHandler() { _, exception ->
             Handler(Looper.getMainLooper()).post(Runnable {
 
-                // An inference exception is serious enough that we must reset everything
+                // When inference fails: unload the model, let the user know, and reset the model runner
+                // An orientation change or tapping pause|play may try to run inference again,
+                // in which case this exception handler just catches it again
 
-                if (exception is ModelRunner.ModelInferenceException) {
-                    viewModel.modelRunner.model.unload()
-                    resetSettings()
-                    initModelRunner()
-                }
+                // Unload Model
+
+                viewModel.modelRunner.model.unload()
 
                 // Show Alert
 
-                val title: Int = when (exception) {
-                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_dialog_title
-                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference_dialog_title
-                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exception_dialog_title
-                    else -> R.string.modelrunner_exception_unknown_dialog_title
-                }
-
-                val message: Int = when (exception) {
-                    is ModelRunner.ModelLoadingException -> R.string.modelrunner_exception_load_model
-                    is ModelRunner.ModelInferenceException -> R.string.modelrunner_exception_run_inference
-                    is ModelRunner.GPUUnavailableException -> R.string.modelrunner_exeption_gpu
-                    else -> R.string.modelrunner_exception_unknown
-                }
-
                 AlertDialog.Builder(this).apply {
-                    setTitle(title)
-                    setMessage(message)
+                    setTitle(R.string.modelrunner_exception_run_inference_dialog_title)
+                    setMessage(R.string.modelrunner_exception_run_inference)
 
                     setPositiveButton("OK") { dialog, _ ->
                         dialog.dismiss()
                     }
                 }.show()
 
-                // Reset UI to Previous Settings
-
-                resetSettingsUI()
-
-                // Restart Model Runner
+                // Rest Model Runner
 
                 viewModel.modelRunner.reset()
-                child<ModelRunnerWatcher>(R.id.container)?.startRunning()
             })
         }
     }
@@ -230,37 +211,6 @@ class MainActivity : AppCompatActivity() {
             putInt(getString(R.string.prefs_num_threads), 1)
             putBoolean(getString(R.string.prefs_use_16_bit), false)
         }
-    }
-
-    /** Update UI to reflect change in settings, needed after fall back when exception occurs on model runner thread */
-
-    private fun resetSettingsUI() {
-
-        val selectedModel = prefs.getString(getString(R.string.prefs_selected_model), getString(R.string.prefs_default_selected_model))!!
-        val device = prefs.getString(getString(R.string.prefs_run_on_device), getString(R.string.prefs_default_device))!!
-        val numThreads = prefs.getInt(getString(R.string.prefs_num_threads), 0)
-        val use16Bit = prefs.getBoolean(getString(R.string.prefs_use_16_bit), false)
-
-        val nav = findViewById<NavigationView>(R.id.nav_view)
-
-        val deviceSpinner = nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById(R.id.spinner) as Spinner
-        val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
-        val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
-        val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
-
-        // Tag is set and checked in handlers to avoid programmatic triggering of action
-
-        deviceSpinner.tag = SET_PRGM
-        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
-
-        modelSpinner.tag = SET_PRGM
-        modelSpinner.setSelection(viewModel.modelIds.indexOf(selectedModel), false)
-
-        threadsSpinner.tag = SET_PRGM
-        threadsSpinner.setSelection(numThreadsOptions.indexOf(numThreads), false)
-
-        precisionSwitch.tag = SET_PRGM
-        precisionSwitch.isChecked = use16Bit
     }
 
     /** Actionbar button shows dialog allowing user to choose input source */
@@ -332,10 +282,8 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (deviceSpinner.tag == SET_PRGM) {
-                    deviceSpinner.tag = null
-                    return
-                }
+                val previousValue = deviceOptions.indexOf(ModelRunner.stringForevice(viewModel.modelRunner.device))
+
                 try {
                     child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
 
@@ -346,14 +294,15 @@ class MainActivity : AppCompatActivity() {
                     child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
                     AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_load_model)
+                        setTitle(R.string.modelrunner_settings_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_change_settings_message)
 
                         setPositiveButton("OK") { dialog, _ ->
                             dialog.dismiss()
                         }
                     }.show()
-                    // TODO: rollback?
+
+                    deviceSpinner.setSelection(previousValue)
                 }
             }
         }
@@ -369,11 +318,10 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (modelSpinner.tag == SET_PRGM) {
-                    modelSpinner.tag = null
-                    return
-                }
+                val previousValue = viewModel.modelIds.indexOf(viewModel.modelRunner.model.identifier)
+
                 try {
+
                     child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
 
                     val selectedModelId = viewModel.modelIds[position]
@@ -389,14 +337,15 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_load_model)
+                        setTitle(R.string.modelrunner_model_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_change_model_message)
 
                         setPositiveButton("OK") { dialog, _ ->
                             dialog.dismiss()
                         }
                     }.show()
-                    // TODO: rollback?
+
+                    modelSpinner.setSelection(previousValue)
                 }
             }
         }
@@ -412,10 +361,8 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if (threadsSpinner.tag == SET_PRGM) {
-                    threadsSpinner.tag = null
-                    return
-                }
+                val previousValue = numThreadsOptions.indexOf(viewModel.modelRunner.numThreads)
+
                 try {
                     child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
 
@@ -426,14 +373,15 @@ class MainActivity : AppCompatActivity() {
                     child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
                     AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_load_model)
+                        setTitle(R.string.modelrunner_settings_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_change_settings_message)
 
                         setPositiveButton("OK") { dialog, _ ->
                             dialog.dismiss()
                         }
                     }.show()
-                    // TODO: rollback?
+
+                    threadsSpinner.setSelection(previousValue)
                 }
             }
         }
@@ -443,10 +391,8 @@ class MainActivity : AppCompatActivity() {
         precisionSwitch.isChecked = use16Bit
 
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (precisionSwitch.tag == SET_PRGM) {
-                precisionSwitch.tag = null
-                return@setOnCheckedChangeListener
-            }
+            val previousValue = viewModel.modelRunner.use16Bit
+
             try {
                 child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
 
@@ -456,14 +402,15 @@ class MainActivity : AppCompatActivity() {
                 child<ModelRunnerWatcher>(R.id.container)?.startRunning()
             } catch (e: ModelRunner.ModelLoadingException) {
                 AlertDialog.Builder(context).apply {
-                    setTitle(R.string.modelrunner_exception_dialog_title)
-                    setMessage(R.string.modelrunner_exception_load_model)
+                    setTitle(R.string.modelrunner_settings_exception_dialog_title)
+                    setMessage(R.string.modelrunner_exception_change_settings_message)
 
                     setPositiveButton("OK") { dialog, _ ->
                         dialog.dismiss()
                     }
                 }.show()
-                // TODO: rollback?
+
+                precisionSwitch.isChecked = previousValue
             }
         }
     }

@@ -58,6 +58,13 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                 else -> Device.CPU
             }
         }
+        fun stringForevice(device: Device): String {
+            return when (device) {
+                Device.CPU -> "CPU"
+                Device.GPU -> "GPU"
+                Device.NNAPI -> "NNAPI"
+            }
+        }
     }
 
     val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
@@ -95,6 +102,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     }
 
                     value.load()
+
                     field = value
                     block.put(true)
                 } catch (e: Exception) {
@@ -162,6 +170,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     }
 
                     model.reload()
+
                     block.put(true)
                 } catch (e: Exception) {
                     block.put(false)
