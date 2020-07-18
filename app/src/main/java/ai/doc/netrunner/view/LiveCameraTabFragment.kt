@@ -123,12 +123,6 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     override fun modelDidChange() {
         viewModel.modelRunner.waitOnRunner()
         loadFragmentForModel(viewModel.modelRunner.model)
-
-//        viewModel.modelRunner.wait {
-//            Handler(Looper.getMainLooper()).post(Runnable {
-//                loadFragmentForModel(viewModel.modelRunner.model)
-//            })
-//        }
     }
 
     override fun stopRunning() {

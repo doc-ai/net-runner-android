@@ -64,13 +64,6 @@ class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
     override fun modelDidChange() {
         viewModel.modelRunner.waitOnRunner()
         loadFragmentForModel(viewModel.modelRunner.model)
-
-//        viewModel.modelRunner.wait {
-//            Handler(Looper.getMainLooper()).post(Runnable {
-//                loadFragmentForModel(viewModel.modelRunner.model)
-//            })
-//        }
-
         viewModel.bitmap?.let {
             doBitmap(it)
         }

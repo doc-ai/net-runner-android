@@ -73,7 +73,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // Configuration
 
-    /** All configuration changes must be performed on the same thread inference is executed on */
+    /**
+     * All configuration changes must be performed on the same thread inference is executed on
+     * Before calling any configuration change stop the runner and start it again only if the
+     * change is successful.
+     * */
 
     var model: TIOTFLiteModel = model
         @Throws(ModelLoadingException::class) set(value) {
@@ -97,7 +101,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     block.put(false)
                 }
             }
-
             if (!block.take()) {
                 throw ModelLoadingException()
             }
@@ -137,8 +140,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             }
         }
 
-    // TODO: No need to backup
-
     var device: Device = Device.CPU
         @Throws(ModelLoadingException::class) set(value) {
             backgroundHandler.post {
@@ -153,9 +154,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                             field = value
                         }
                         Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
-                            // TODO: Don't backup
-                            model.hardwareBacking = CPU
-                            field = Device.CPU
                             throw GPUUnavailableException()
                         } else {
                             model.hardwareBacking = GPU
@@ -167,16 +165,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     block.put(true)
                 } catch (e: Exception) {
                     block.put(false)
-
-                    // TODO: Don't backup
-                    // Back up to CPU and reload
-                    model.hardwareBacking = CPU
-                    field = Device.CPU
-                    model.reload()
-                    throw ModelLoadingException()
                 }
             }
-
             if (!block.take()) {
                 throw ModelLoadingException()
             }

@@ -337,9 +337,13 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 try {
+                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
                     val selectedDevice = deviceOptions[position]
                     viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
                     prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+
+                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
                     // TODO: alert and rollback or do we even need to rollback?
                 }
@@ -361,14 +365,13 @@ class MainActivity : AppCompatActivity() {
                     modelSpinner.tag = null
                     return
                 }
-
-                val selectedModelId = viewModel.modelIds[position]
-                val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
-
-                child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
                 try {
+                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
+                    val selectedModelId = viewModel.modelIds[position]
+                    val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
                     val model = selectedBundle.newModel() as TIOTFLiteModel
+
                     viewModel.modelRunner.model = model
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
 
@@ -406,9 +409,13 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
                 try {
+                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
                     val selectedThreads = numThreadsOptions[position]
                     viewModel.modelRunner.numThreads = selectedThreads
                     prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+
+                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
                  // TODO: alert and rollback
                 }
@@ -425,8 +432,12 @@ class MainActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
             try {
+                child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
                 viewModel.modelRunner.use16Bit = isChecked
                 prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
+
+                child<ModelRunnerWatcher>(R.id.container)?.startRunning()
             } catch (e: ModelRunner.ModelLoadingException) {
                 // TODO: alert and rollback
             }
