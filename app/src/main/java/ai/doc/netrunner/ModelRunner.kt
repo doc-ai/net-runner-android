@@ -73,8 +73,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // Configuration
 
+    /** All configuration changes must be performed on the same thread inference is executed on */
+
     var model: TIOTFLiteModel = model
-        set(value) {
+        @Throws(ModelLoadingException::class) set(value) {
             backgroundHandler.post {
                 try {
                     model.unload()
@@ -96,57 +98,71 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                 }
             }
 
-            val succeeded = block.take()
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
         }
 
     var numThreads = 1
-        set(value) {
+        @Throws(ModelLoadingException::class) set(value) {
             backgroundHandler.post {
-                model.numThreads = value
-                model.reload()
-                field = value
-                block.put(true) // false if fails
+                try {
+                    model.numThreads = value
+                    model.reload()
+                    field = value
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
             }
-            val succeeded = block.take()
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
         }
 
     var use16Bit = false
-        set(value) {
+        @Throws(ModelLoadingException::class) set(value) {
             backgroundHandler.post {
-                model.setUse16BitPrecision(value)
-                model.reload()
-                field = value
-                block.put(true) // false if fails
+                try {
+                    model.setUse16BitPrecision(value)
+                    model.reload()
+                    field = value
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
             }
-            val succeeded = block.take()
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
         }
 
     // TODO: No need to backup
 
     var device: Device = Device.CPU
-        set(value) {
+        @Throws(ModelLoadingException::class) set(value) {
             backgroundHandler.post {
-                when (value) {
-                    Device.CPU -> {
-                        model.hardwareBacking = CPU
-                        field = value
-                    }
-                    Device.NNAPI -> {
-                        model.hardwareBacking = NNAPI
-                        field = value
-                    }
-                    Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
-                        // TODO: Don't backup
-                        model.hardwareBacking = CPU
-                        field = Device.CPU
-                        throw GPUUnavailableException()
-                    } else {
-                        model.hardwareBacking = GPU
-                        field = Device.GPU
-                    }
-                }
-
                 try {
+                    when (value) {
+                        Device.CPU -> {
+                            model.hardwareBacking = CPU
+                            field = value
+                        }
+                        Device.NNAPI -> {
+                            model.hardwareBacking = NNAPI
+                            field = value
+                        }
+                        Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                            // TODO: Don't backup
+                            model.hardwareBacking = CPU
+                            field = Device.CPU
+                            throw GPUUnavailableException()
+                        } else {
+                            model.hardwareBacking = GPU
+                            field = Device.GPU
+                        }
+                    }
+
                     model.reload()
                     block.put(true)
                 } catch (e: Exception) {
@@ -160,7 +176,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     throw ModelLoadingException()
                 }
             }
-            val succeeded = block.take()
+
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
         }
 
     //region Background Tasks
@@ -286,4 +305,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
         val succeeded = block.take()
     }
+
+    // TODO: ignore block.take() values
 }
