@@ -3,6 +3,7 @@ package ai.doc.netrunner
 import ai.doc.netrunner.view.*
 import ai.doc.netrunner.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.netrunner.utilities.DeviceUtilities
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
@@ -17,7 +18,6 @@ import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -57,10 +57,10 @@ class MainActivity : AppCompatActivity() {
 
     private val deviceOptions: ArrayList<String> by lazy {
         arrayListOf(getString(R.string.cpu), getString(R.string.gpu), getString(R.string.nnapi)).apply {
-            if (isEmulator || !viewModel.modelRunner.canRunOnGPU) {
+            if (DeviceUtilities.isEmulator || !viewModel.modelRunner.canRunOnGPU) {
                 remove(getString(R.string.gpu))
             }
-            if (isEmulator || !viewModel.modelRunner.canRunOnNnApi) {
+            if (DeviceUtilities.isEmulator || !viewModel.modelRunner.canRunOnNnApi) {
                 remove(getString(R.string.nnapi))
             }
         }
@@ -360,7 +360,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun showImageResults(data: Intent?) {
         val image = data?.data ?: return
-
         val filePath = arrayOf(MediaStore.Images.Media.DATA)
 
         this.contentResolver.query(image, filePath, null, null, null)?.let {cursor ->
@@ -514,24 +513,6 @@ class MainActivity : AppCompatActivity() {
         around()
         child<ModelRunnerWatcher>(R.id.container)?.startRunning()
     }
-
-    private val isEmulator: Boolean
-        get() = (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.HARDWARE.contains("goldfish")
-                || Build.HARDWARE.contains("ranchu")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || Build.PRODUCT.contains("sdk_google")
-                || Build.PRODUCT.contains("google_sdk")
-                || Build.PRODUCT.contains("sdk")
-                || Build.PRODUCT.contains("sdk_x86")
-                || Build.PRODUCT.contains("vbox86p")
-                || Build.PRODUCT.contains("emulator")
-                || Build.PRODUCT.contains("simulator"))
 
     //endregion
 }
