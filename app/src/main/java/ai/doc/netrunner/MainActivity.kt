@@ -120,9 +120,9 @@ class MainActivity : AppCompatActivity() {
             val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
 
             viewModel.modelRunner = modelRunner
-            viewModel.modelRunner.setDevice_temp(ModelRunner.deviceFromString(device))
-            viewModel.modelRunner.setNumThreads_temp(numThreads)
-            viewModel.modelRunner.setUse16Bit_temp(use16Bit)
+            viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
+            viewModel.modelRunner.numThreads = numThreads
+            viewModel.modelRunner.use16Bit = use16Bit
 
             model.load()
         } catch(e: Exception) {
@@ -338,7 +338,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val selectedDevice = deviceOptions[position]
-                viewModel.modelRunner.setDevice_temp(ModelRunner.deviceFromString(selectedDevice))
+                viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
                 prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
             }
         }
@@ -404,8 +404,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val selectedThreads = numThreadsOptions[position]
-
-                viewModel.modelRunner.setNumThreads_temp(selectedThreads)
+                viewModel.modelRunner.numThreads = selectedThreads
                 prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
             }
         }
@@ -420,7 +419,7 @@ class MainActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
 
-            viewModel.modelRunner.setUse16Bit_temp(isChecked)
+            viewModel.modelRunner.use16Bit = isChecked
             prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
         }
     }

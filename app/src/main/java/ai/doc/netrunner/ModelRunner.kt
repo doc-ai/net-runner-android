@@ -76,85 +76,77 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // Configuration
 
-    private var numThreads = 1
+    var numThreads = 1
         set(value) {
-            model.numThreads = value
-            model.reload()
-            field = value
+            backgroundHandler.post {
+                model.numThreads = value
+                model.reload()
+                field = value
+                block.put(true) // false if fails
+            }
+            val succeeded = block.take()
         }
 
-    private var use16Bit = false
+    var use16Bit = false
         set(value) {
-            model.setUse16BitPrecision(value)
-            model.reload()
-            field = value
+            backgroundHandler.post {
+                model.setUse16BitPrecision(value)
+                model.reload()
+                field = value
+                block.put(true) // false if fails
+            }
+            val succeeded = block.take()
         }
 
-    private var device: Device = Device.CPU
+    // TODO: No need to backup
+
+    var device: Device = Device.CPU
         set(value) {
-            when (value) {
-                Device.CPU -> {
-                    model.hardwareBacking = CPU
-                    field = value
+            backgroundHandler.post {
+                when (value) {
+                    Device.CPU -> {
+                        model.hardwareBacking = CPU
+                        field = value
+                    }
+                    Device.NNAPI -> {
+                        model.hardwareBacking = NNAPI
+                        field = value
+                    }
+                    Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                        // TODO: Don't backup
+                        model.hardwareBacking = CPU
+                        field = Device.CPU
+                        throw GPUUnavailableException()
+                    } else {
+                        model.hardwareBacking = GPU
+                        field = Device.GPU
+                    }
                 }
-                Device.NNAPI -> {
-                    model.hardwareBacking = NNAPI
-                    field = value
-                }
-                Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+
+                try {
+                    model.reload()
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+
+                    // TODO: Don't backup
+                    // Back up to CPU and reload
                     model.hardwareBacking = CPU
                     field = Device.CPU
-                    throw GPUUnavailableException()
-                } else {
-                    model.hardwareBacking = GPU
-                    field = Device.GPU
+                    model.reload()
+                    throw ModelLoadingException()
                 }
             }
-
-            try {
-                model.reload()
-            } catch (e: Exception) {
-                // Back up to CPU and reload
-                model.hardwareBacking = CPU
-                field = Device.CPU
-                model.reload()
-                throw ModelLoadingException()
-            }
+            val succeeded = block.take()
         }
 
     // Set Configuration with Callback
 
     var block = SynchronousQueue<Boolean>()
-    // backgroundHandler.post(callback)
-
-    fun setNumThreads_temp(value: Int) {
-        backgroundHandler.post {
-            numThreads = value
-            block.put(true) // false if fails
-        }
-
-        val succeeded = block.take()
-    }
-
-    fun setUse16Bit_temp(value: Boolean) {
-        backgroundHandler.post {
-            use16Bit = value
-            block.put(true) // false if fails
-        }
-
-        val succeeded = block.take()
-    }
-
-    fun setDevice_temp(value: Device) {
-        backgroundHandler.post {
-            device = value
-            block.put(true) // false if fails
-        }
-
-        val succeeded = block.take()
-    }
 
     /** Changes the model and uses current settings, falls back to previous model if fails */
+
+    // TODO: Move to setter
 
     fun switchModel(model: TIOTFLiteModel) {
         // val previousModel = this.model
