@@ -180,7 +180,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         viewModel.modelRunner.stopStreamingInference()
     }
 
-    /** Runs a single frame of inference, used for exapmle when the camera is paused but the model changes */
+    /** Runs a single frame of inference, used for example when the camera is paused but the model changes */
 
     private fun runSingleFrameOfInference() {
         if (isDetached || !isAdded) {

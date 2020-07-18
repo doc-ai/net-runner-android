@@ -126,16 +126,7 @@ class MainActivity : AppCompatActivity() {
 
             model.load()
         } catch(e: Exception) {
-
-            AlertDialog.Builder(this).apply {
-                setTitle(R.string.modelrunner_initfail_dialog_title)
-                setMessage(R.string.modelrunner_initfail_dialog_message)
-
-                setPositiveButton("OK") { dialog, _ ->
-                    dialog.dismiss()
-                }
-            }.show()
-
+            alertInitModelRunnerException()
             resetSettings()
             initModelRunner()
         }
@@ -180,23 +171,8 @@ class MainActivity : AppCompatActivity() {
                 // An orientation change or tapping pause|play may try to run inference again,
                 // in which case this exception handler just catches it again
 
-                // Unload Model
-
                 viewModel.modelRunner.model.unload()
-
-                // Show Alert
-
-                AlertDialog.Builder(this).apply {
-                    setTitle(R.string.modelrunner_exception_run_inference_dialog_title)
-                    setMessage(R.string.modelrunner_exception_run_inference)
-
-                    setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                }.show()
-
-                // Rest Model Runner
-
+                alertInferenceException()
                 viewModel.modelRunner.reset()
             })
         }
@@ -246,7 +222,6 @@ class MainActivity : AppCompatActivity() {
     /** The drawer contains all the configuration settings available to the user */
 
     private fun setupDrawer() {
-        val context = this
 
         // Saved Preferences
 
@@ -270,42 +245,6 @@ class MainActivity : AppCompatActivity() {
         val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
         val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
         val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
-
-        // Device Selection
-
-        (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
-
-        deviceSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
-        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
-
-        deviceSpinner.onItemSelectedListener = object: OnItemSelectedListener {
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-            }
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val previousValue = deviceOptions.indexOf(ModelRunner.stringForevice(viewModel.modelRunner.device))
-
-                try {
-                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
-                    val selectedDevice = deviceOptions[position]
-                    viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
-                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
-
-                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
-                } catch (e: ModelRunner.ModelLoadingException) {
-                    AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_settings_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_change_settings_message)
-
-                        setPositiveButton("OK") { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                    }.show()
-
-                    deviceSpinner.setSelection(previousValue)
-                }
-            }
-        }
 
         // Model Selection
 
@@ -336,16 +275,36 @@ class MainActivity : AppCompatActivity() {
                         it.startRunning()
                     }
                 } catch (e: Exception) {
-                    AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_model_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_change_model_message)
-
-                        setPositiveButton("OK") { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                    }.show()
-
+                    alertModelChangeException()
                     modelSpinner.setSelection(previousValue)
+                }
+            }
+        }
+
+        // Device Selection
+
+        (nav.menu.findItem(R.id.nav_select_accelerator).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.device_menu_item_title)
+
+        deviceSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, deviceOptions)
+        deviceSpinner.setSelection(deviceOptions.indexOf(device), false)
+
+        deviceSpinner.onItemSelectedListener = object: OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val previousValue = deviceOptions.indexOf(ModelRunner.stringForevice(viewModel.modelRunner.device))
+
+                try {
+                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+
+                    val selectedDevice = deviceOptions[position]
+                    viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
+                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+
+                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
+                } catch (e: ModelRunner.ModelLoadingException) {
+                    alertConfigChangeException()
+                    deviceSpinner.setSelection(previousValue)
                 }
             }
         }
@@ -372,15 +331,7 @@ class MainActivity : AppCompatActivity() {
 
                     child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
-                    AlertDialog.Builder(context).apply {
-                        setTitle(R.string.modelrunner_settings_exception_dialog_title)
-                        setMessage(R.string.modelrunner_exception_change_settings_message)
-
-                        setPositiveButton("OK") { dialog, _ ->
-                            dialog.dismiss()
-                        }
-                    }.show()
-
+                    alertConfigChangeException()
                     threadsSpinner.setSelection(previousValue)
                 }
             }
@@ -401,15 +352,7 @@ class MainActivity : AppCompatActivity() {
 
                 child<ModelRunnerWatcher>(R.id.container)?.startRunning()
             } catch (e: ModelRunner.ModelLoadingException) {
-                AlertDialog.Builder(context).apply {
-                    setTitle(R.string.modelrunner_settings_exception_dialog_title)
-                    setMessage(R.string.modelrunner_exception_change_settings_message)
-
-                    setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }
-                }.show()
-
+                alertConfigChangeException()
                 precisionSwitch.isChecked = previousValue
             }
         }
@@ -538,6 +481,54 @@ class MainActivity : AppCompatActivity() {
     }
 
     //endregion
+
+    // region Alerts
+
+    private fun alertInitModelRunnerException() {
+        AlertDialog.Builder(this).apply {
+            setTitle(R.string.modelrunner_initfail_dialog_title)
+            setMessage(R.string.modelrunner_initfail_dialog_message)
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun alertInferenceException() {
+        AlertDialog.Builder(this).apply {
+            setTitle(R.string.modelrunner_exception_run_inference_dialog_title)
+            setMessage(R.string.modelrunner_exception_run_inference_message)
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun alertConfigChangeException() {
+        AlertDialog.Builder(this).apply {
+            setTitle(R.string.modelrunner_settings_exception_dialog_title)
+            setMessage(R.string.modelrunner_exception_change_settings_message)
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun alertModelChangeException() {
+        AlertDialog.Builder(this).apply {
+            setTitle(R.string.modelrunner_model_exception_dialog_title)
+            setMessage(R.string.modelrunner_exception_change_model_message)
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    // endregion
 
     //region Utilities
 

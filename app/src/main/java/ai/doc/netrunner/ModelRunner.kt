@@ -81,9 +81,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     // Configuration
 
     /**
-     * All configuration changes must be performed on the same thread inference is executed on
+     * All configuration changes must be performed on the same thread inference is executed on,
+     * thus the use of the [backgroundHandler] and [block]
+     *
      * Before calling any configuration change stop the runner and start it again only if the
-     * change is successful.
+     * change is successful
      * */
 
     var model: TIOTFLiteModel = model
@@ -183,7 +185,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     //region Background Tasks
 
-    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner */
+    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner, an implied await */
 
     private val block = SynchronousQueue<Boolean>()
 
@@ -200,7 +202,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler = uncaughtExceptionHandler
         private set
 
-    /** A continuous runnable that will repeatedly execute inference on the background thread until running is set to false */
+    /** A continuous runnable that will repeatedly execute inference on the background thread until [running] is set to false */
 
     private val periodicRunner = object: Runnable {
         override fun run() {
@@ -216,6 +218,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     private var running = false
 
     //endregion
+
+    //region Initialization
 
     init {
         setupBackgroundHandler()
@@ -238,6 +242,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     fun reset() {
         setupBackgroundHandler()
     }
+
+    // endregion
+
+    // region Inference
 
     /** Executes a single step of inference */
 
@@ -264,7 +272,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             block.put(true)
         }
 
-        val succeeded = block.take()
+        block.take()
     }
 
     /** Start continuous inference */
@@ -278,7 +286,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         }
         backgroundHandler.post(periodicRunner)
 
-        val succeeded = block.take()
+        block.take()
     }
 
     /** Stop continuous inference */
@@ -291,10 +299,12 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             block.put(true)
         }
 
-        val succeeded = block.take()
+        block.take()
     }
 
-    /** Waits for the background handler to finish processing before calling lambda */
+    // endregion
+
+    /** Pauses the current thread until the background handler has finished processing its current task */
 
     fun waitOnRunner() {
         backgroundHandler.post {
@@ -302,8 +312,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             block.put(true)
         }
 
-        val succeeded = block.take()
+        block.take()
     }
-
-    // TODO: ignore block.take() values
 }
