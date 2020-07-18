@@ -51,8 +51,6 @@ private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_IMAGE_CAPTURE = 2
 
-private const val SET_PRGM = "programmatic"
-
 class MainActivity : AppCompatActivity() {
 
     private val numThreadsOptions = arrayOf(1, 2, 4, 8)
@@ -80,15 +78,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Register Model Output Formatters
-
         OutputHandlerManager.registerHandlers()
-
-        // Init Model and Model Runner
-
         initModelRunner()
-
-        // UI
 
         setupInputSourceButton()
         setupDrawer()
@@ -164,11 +155,11 @@ class MainActivity : AppCompatActivity() {
     /** Catches the uncaught inference exception on the Model Runner background thread */
 
     private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
-        Thread.UncaughtExceptionHandler() { _, exception ->
+        Thread.UncaughtExceptionHandler() { _, _ ->
             Handler(Looper.getMainLooper()).post(Runnable {
 
                 // When inference fails: unload the model, let the user know, and reset the model runner
-                // An orientation change or tapping pause|play may try to run inference again,
+                // An orientation change or tapping pause|play may restart inference,
                 // in which case this exception handler just catches it again
 
                 viewModel.modelRunner.model.unload()
@@ -259,22 +250,15 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val previousValue = viewModel.modelIds.indexOf(viewModel.modelRunner.model.identifier)
 
-                try {
-
-                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
+                try { restartingInference {
                     val selectedModelId = viewModel.modelIds[position]
                     val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
                     val model = selectedBundle.newModel() as TIOTFLiteModel
 
                     viewModel.modelRunner.model = model
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
-
-                    child<ModelRunnerWatcher>(R.id.container)?.let {
-                        it.modelDidChange()
-                        it.startRunning()
-                    }
-                } catch (e: Exception) {
+                    child<ModelRunnerWatcher>(R.id.container)?.modelDidChange()
+                }} catch (e: Exception) {
                     alertModelChangeException()
                     modelSpinner.setSelection(previousValue)
                 }
@@ -292,17 +276,13 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val previousValue = deviceOptions.indexOf(ModelRunner.stringForevice(viewModel.modelRunner.device))
+                val previousValue = deviceOptions.indexOf(ModelRunner.stringForDevice(viewModel.modelRunner.device))
 
-                try {
-                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
+                try { restartingInference {
                     val selectedDevice = deviceOptions[position]
                     viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
                     prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
-
-                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
-                } catch (e: ModelRunner.ModelLoadingException) {
+                }} catch (e: Exception) {
                     alertConfigChangeException()
                     deviceSpinner.setSelection(previousValue)
                 }
@@ -322,15 +302,11 @@ class MainActivity : AppCompatActivity() {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val previousValue = numThreadsOptions.indexOf(viewModel.modelRunner.numThreads)
 
-                try {
-                    child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
+                try { restartingInference {
                     val selectedThreads = numThreadsOptions[position]
                     viewModel.modelRunner.numThreads = selectedThreads
                     prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
-
-                    child<ModelRunnerWatcher>(R.id.container)?.startRunning()
-                } catch (e: ModelRunner.ModelLoadingException) {
+                }} catch (e: Exception) {
                     alertConfigChangeException()
                     threadsSpinner.setSelection(previousValue)
                 }
@@ -344,14 +320,10 @@ class MainActivity : AppCompatActivity() {
         precisionSwitch.setOnCheckedChangeListener { _, isChecked ->
             val previousValue = viewModel.modelRunner.use16Bit
 
-            try {
-                child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
-
+            try { restartingInference {
                 viewModel.modelRunner.use16Bit = isChecked
                 prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
-
-                child<ModelRunnerWatcher>(R.id.container)?.startRunning()
-            } catch (e: ModelRunner.ModelLoadingException) {
+            }} catch (e: Exception) {
                 alertConfigChangeException()
                 precisionSwitch.isChecked = previousValue
             }
@@ -535,6 +507,12 @@ class MainActivity : AppCompatActivity() {
     private fun <T>child(id: Int): T? {
         @Suppress("UNCHECKED_CAST")
         return supportFragmentManager.findFragmentById(id) as? T
+    }
+
+    private fun restartingInference(around: ()->Unit) {
+        child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
+        around()
+        child<ModelRunnerWatcher>(R.id.container)?.startRunning()
     }
 
     private val isEmulator: Boolean

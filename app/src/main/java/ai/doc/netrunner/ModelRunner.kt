@@ -10,7 +10,6 @@ import android.os.HandlerThread
 import android.os.SystemClock
 import java.util.concurrent.SynchronousQueue
 
-private const val TAG = "ModelRunner"
 private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 
 /** A listener is called when a step of inference has completed */
@@ -58,7 +57,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                 else -> Device.CPU
             }
         }
-        fun stringForevice(device: Device): String {
+        fun stringForDevice(device: Device): String {
             return when (device) {
                 Device.CPU -> "CPU"
                 Device.GPU -> "GPU"
@@ -104,8 +103,8 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                     }
 
                     value.load()
-
                     field = value
+
                     block.put(true)
                 } catch (e: Exception) {
                     block.put(false)
