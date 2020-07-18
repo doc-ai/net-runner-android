@@ -336,10 +336,13 @@ class MainActivity : AppCompatActivity() {
                     deviceSpinner.tag = null
                     return
                 }
-
-                val selectedDevice = deviceOptions[position]
-                viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
-                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+                try {
+                    val selectedDevice = deviceOptions[position]
+                    viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
+                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
+                } catch (e: ModelRunner.ModelLoadingException) {
+                    // TODO: alert and rollback or do we even need to rollback?
+                }
             }
         }
 
@@ -382,6 +385,7 @@ class MainActivity : AppCompatActivity() {
                             dialog.dismiss()
                         }
                     }.show()
+                    // TODO: rollback?
                 }
             }
         }
@@ -401,10 +405,13 @@ class MainActivity : AppCompatActivity() {
                     threadsSpinner.tag = null
                     return
                 }
-
-                val selectedThreads = numThreadsOptions[position]
-                viewModel.modelRunner.numThreads = selectedThreads
-                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+                try {
+                    val selectedThreads = numThreadsOptions[position]
+                    viewModel.modelRunner.numThreads = selectedThreads
+                    prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
+                } catch (e: ModelRunner.ModelLoadingException) {
+                 // TODO: alert and rollback
+                }
             }
         }
 
@@ -417,9 +424,12 @@ class MainActivity : AppCompatActivity() {
                 precisionSwitch.tag = null
                 return@setOnCheckedChangeListener
             }
-
-            viewModel.modelRunner.use16Bit = isChecked
-            prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
+            try {
+                viewModel.modelRunner.use16Bit = isChecked
+                prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
+            } catch (e: ModelRunner.ModelLoadingException) {
+                // TODO: alert and rollback
+            }
         }
     }
 
