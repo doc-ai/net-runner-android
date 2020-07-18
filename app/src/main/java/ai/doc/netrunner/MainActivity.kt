@@ -366,8 +366,7 @@ class MainActivity : AppCompatActivity() {
 
                 try {
                     val model = selectedBundle.newModel() as TIOTFLiteModel
-
-                    viewModel.modelRunner.switchModel(model)
+                    viewModel.modelRunner.model = model
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
 
                     child<ModelRunnerWatcher>(R.id.container)?.let {

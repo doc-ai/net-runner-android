@@ -60,9 +60,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         }
     }
 
-    var model: TIOTFLiteModel = model
-        private set
-
     val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
     val canRunOnNnApi = NnApiDelegateHelper.isNnApiDelegateAvailable()
 
@@ -75,6 +72,32 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     var listener: Listener? = null
 
     // Configuration
+
+    var model: TIOTFLiteModel = model
+        set(value) {
+            backgroundHandler.post {
+                try {
+                    model.unload()
+
+                    value.numThreads = numThreads
+                    value.setUse16BitPrecision(use16Bit)
+
+                    when (device) {
+                        Device.CPU -> value.hardwareBacking = CPU
+                        Device.GPU -> value.hardwareBacking = GPU
+                        Device.NNAPI -> value.hardwareBacking = NNAPI
+                    }
+
+                    value.load()
+                    field = value
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
+            }
+
+            val succeeded = block.take()
+        }
 
     var numThreads = 1
         set(value) {
@@ -140,55 +163,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             val succeeded = block.take()
         }
 
-    // Set Configuration with Callback
-
-    var block = SynchronousQueue<Boolean>()
-
-    /** Changes the model and uses current settings, falls back to previous model if fails */
-
-    // TODO: Move to setter
-
-    fun switchModel(model: TIOTFLiteModel) {
-        // val previousModel = this.model
-
-        fun doSwitch(model: TIOTFLiteModel) {
-            this.model.unload()
-            this.model = model
-
-            model.numThreads = numThreads
-            model.setUse16BitPrecision(use16Bit)
-
-            when(device) {
-                Device.CPU -> model.hardwareBacking = CPU
-                Device.GPU -> model.hardwareBacking = GPU
-                Device.NNAPI -> model.hardwareBacking = NNAPI
-            }
-        }
-
-        backgroundHandler.post {
-            doSwitch(model)
-
-            try {
-                model.load()
-                block.put(true)
-            } catch (e: Exception) {
-                block.put(false)
-            }
-
-//            try {
-//                model.load()
-//                callback?.invoke()
-//            } catch (e: Exception) {
-//                // Back up to previous model
-//                doSwitch(previousModel)
-//                throw ModelLoadingException()
-//            }
-        }
-
-        val succeeded = block.take()
-    }
-
     //region Background Tasks
+
+    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner */
+
+    private val block = SynchronousQueue<Boolean>()
 
     /** Background thread that processes requests on the background handler */
 
