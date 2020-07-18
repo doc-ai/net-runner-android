@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
+import java.util.concurrent.SynchronousQueue
 
 private const val TAG = "ModelRunner"
 private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
@@ -35,6 +36,10 @@ interface ModelRunnerWatcher {
 /**
  * The ModelRunner is used to configure a model and to perform continuous or one-off inference
  * with a model.
+ *
+ * The somewhat convoluted use of the blocking queue is necessary because the model must be created
+ * on the same thread it is invoked on. In truth only models that use the GPU have this requirement
+ * related to the GPU context, and we support GPU backing so.
  */
 
 class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
@@ -123,25 +128,46 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // Set Configuration with Callback
 
+    var block = SynchronousQueue<Boolean>()
+    // backgroundHandler.post(callback)
+
     fun setNumThreads(value: Int, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { numThreads = value }
-        backgroundHandler.post(callback)
+        backgroundHandler.post {
+            numThreads = value
+            block.put(true) // false if fails
+        }
+
+        val succeeded = block.take()
+
+        callback?.invoke()
     }
 
     fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { use16Bit = value }
-        backgroundHandler.post(callback)
+        backgroundHandler.post {
+            use16Bit = value
+            block.put(true) // false if fails
+        }
+
+        val succeeded = block.take()
+
+        callback?.invoke()
     }
 
     fun setDevice(value: Device, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { device = value }
-        backgroundHandler.post(callback)
+        backgroundHandler.post {
+            device = value
+            block.put(true) // false if fails
+        }
+
+        val succeeded = block.take()
+
+        callback?.invoke()
     }
 
     /** Changes the model and uses current settings, falls back to previous model if fails */
 
     fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback? = null) {
-        val previousModel = this.model
+        // val previousModel = this.model
 
         fun doSwitch(model: TIOTFLiteModel) {
             this.model.unload()
@@ -162,13 +188,24 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
             try {
                 model.load()
-                callback?.invoke()
+                block.put(true)
             } catch (e: Exception) {
-                // Back up to previous model
-                doSwitch(previousModel)
-                throw ModelLoadingException()
+                block.put(false)
             }
+
+//            try {
+//                model.load()
+//                callback?.invoke()
+//            } catch (e: Exception) {
+//                // Back up to previous model
+//                doSwitch(previousModel)
+//                throw ModelLoadingException()
+//            }
         }
+
+        val succeeded = block.take()
+
+        callback?.invoke()
     }
 
     //region Background Tasks
@@ -186,7 +223,7 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler = uncaughtExceptionHandler
         private set
 
-    /** A continuous runnable that will repeatedly execute inference on the model until running is set to false */
+    /** A continuous runnable that will repeatedly execute inference on the background thread until running is set to false */
 
     private val periodicRunner = object: Runnable {
         override fun run() {
@@ -247,7 +284,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = bitmapProvider
             this.listener = listener
             runInference()
+            block.put(true)
         }
+
+        val succeeded = block.take()
     }
 
     /** Start continuous inference */
@@ -257,8 +297,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = bitmapProvider
             this.listener = listener
             running = true
+            block.put(true)
         }
         backgroundHandler.post(periodicRunner)
+
+        val succeeded = block.take()
     }
 
     /** Stop continuous inference */
@@ -268,14 +311,21 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = null
             this.listener = null
             running = false
+            block.put(true)
         }
+
+        val succeeded = block.take()
     }
 
     /** Waits for the background handler to finish processing before calling lambda */
 
     fun wait(lambda: ()->Unit) {
         backgroundHandler.post {
-            lambda()
+            // lambda()
+            block.put(true)
         }
+
+        val succeeded = block.take()
+        lambda()
     }
 }
