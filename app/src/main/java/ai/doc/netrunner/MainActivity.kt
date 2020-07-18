@@ -345,7 +345,15 @@ class MainActivity : AppCompatActivity() {
 
                     child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
-                    // TODO: alert and rollback or do we even need to rollback?
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.modelrunner_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_load_model)
+
+                        setPositiveButton("OK") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                    }.show()
+                    // TODO: rollback?
                 }
             }
         }
@@ -381,8 +389,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     AlertDialog.Builder(context).apply {
-                        setTitle(R.string.unable_to_load_model_dialog_title)
-                        setMessage(R.string.unable_to_load_model_dialog_message)
+                        setTitle(R.string.modelrunner_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_load_model)
 
                         setPositiveButton("OK") { dialog, _ ->
                             dialog.dismiss()
@@ -417,7 +425,15 @@ class MainActivity : AppCompatActivity() {
 
                     child<ModelRunnerWatcher>(R.id.container)?.startRunning()
                 } catch (e: ModelRunner.ModelLoadingException) {
-                 // TODO: alert and rollback
+                    AlertDialog.Builder(context).apply {
+                        setTitle(R.string.modelrunner_exception_dialog_title)
+                        setMessage(R.string.modelrunner_exception_load_model)
+
+                        setPositiveButton("OK") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                    }.show()
+                    // TODO: rollback?
                 }
             }
         }
@@ -439,7 +455,15 @@ class MainActivity : AppCompatActivity() {
 
                 child<ModelRunnerWatcher>(R.id.container)?.startRunning()
             } catch (e: ModelRunner.ModelLoadingException) {
-                // TODO: alert and rollback
+                AlertDialog.Builder(context).apply {
+                    setTitle(R.string.modelrunner_exception_dialog_title)
+                    setMessage(R.string.modelrunner_exception_load_model)
+
+                    setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                }.show()
+                // TODO: rollback?
             }
         }
     }
