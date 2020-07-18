@@ -120,9 +120,9 @@ class MainActivity : AppCompatActivity() {
             val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
 
             viewModel.modelRunner = modelRunner
-            viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(device))
-            viewModel.modelRunner.setNumThreads(numThreads)
-            viewModel.modelRunner.setUse16Bit(use16Bit)
+            viewModel.modelRunner.setDevice_temp(ModelRunner.deviceFromString(device))
+            viewModel.modelRunner.setNumThreads_temp(numThreads)
+            viewModel.modelRunner.setUse16Bit_temp(use16Bit)
 
             model.load()
         } catch(e: Exception) {
@@ -338,9 +338,8 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val selectedDevice = deviceOptions[position]
-                viewModel.modelRunner.setDevice(ModelRunner.deviceFromString(selectedDevice)) {
-                    prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
-                }
+                viewModel.modelRunner.setDevice_temp(ModelRunner.deviceFromString(selectedDevice))
+                prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
             }
         }
 
@@ -368,12 +367,12 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val model = selectedBundle.newModel() as TIOTFLiteModel
 
-                    viewModel.modelRunner.switchModel(model) {
-                        prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
-                        child<ModelRunnerWatcher>(R.id.container)?.let {
-                            it.modelDidChange()
-                            it.startRunning()
-                        }
+                    viewModel.modelRunner.switchModel(model)
+                    prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
+
+                    child<ModelRunnerWatcher>(R.id.container)?.let {
+                        it.modelDidChange()
+                        it.startRunning()
                     }
                 } catch (e: Exception) {
                     AlertDialog.Builder(context).apply {
@@ -406,9 +405,8 @@ class MainActivity : AppCompatActivity() {
 
                 val selectedThreads = numThreadsOptions[position]
 
-                viewModel.modelRunner.setNumThreads(selectedThreads) {
-                    prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
-                }
+                viewModel.modelRunner.setNumThreads_temp(selectedThreads)
+                prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
             }
         }
 
@@ -422,9 +420,8 @@ class MainActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
 
-            viewModel.modelRunner.setUse16Bit(isChecked) {
-                prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
-            }
+            viewModel.modelRunner.setUse16Bit_temp(isChecked)
+            prefs.edit(true) { putBoolean(getString(R.string.prefs_use_16_bit), isChecked) }
         }
     }
 

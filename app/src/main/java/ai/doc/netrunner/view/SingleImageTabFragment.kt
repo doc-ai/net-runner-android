@@ -62,11 +62,15 @@ class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
     /** Replaces the output handler but waits for the model runner to finish  */
 
     override fun modelDidChange() {
-        viewModel.modelRunner.wait {
-            Handler(Looper.getMainLooper()).post(Runnable {
-                loadFragmentForModel(viewModel.modelRunner.model)
-            })
-        }
+        viewModel.modelRunner.waitOnRunner()
+        loadFragmentForModel(viewModel.modelRunner.model)
+
+//        viewModel.modelRunner.wait {
+//            Handler(Looper.getMainLooper()).post(Runnable {
+//                loadFragmentForModel(viewModel.modelRunner.model)
+//            })
+//        }
+
         viewModel.bitmap?.let {
             doBitmap(it)
         }

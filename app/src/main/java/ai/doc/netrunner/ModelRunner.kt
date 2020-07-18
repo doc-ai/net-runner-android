@@ -21,10 +21,6 @@ private typealias Listener = (Map<String,Any>, Long) -> Unit
 
 private typealias BitmapProvider = () -> Bitmap?
 
-/** The model runner callback is called after any configuration change is completed on the runner's background thread */
-
-private typealias ModelRunnerCallback = () -> Unit
-
 /** Implemented by objects interested in changes to the model runner, but called by [MainActivity] */
 
 interface ModelRunnerWatcher {
@@ -131,42 +127,36 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
     var block = SynchronousQueue<Boolean>()
     // backgroundHandler.post(callback)
 
-    fun setNumThreads(value: Int, callback: ModelRunnerCallback? = null) {
+    fun setNumThreads_temp(value: Int) {
         backgroundHandler.post {
             numThreads = value
             block.put(true) // false if fails
         }
 
         val succeeded = block.take()
-
-        callback?.invoke()
     }
 
-    fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback? = null) {
+    fun setUse16Bit_temp(value: Boolean) {
         backgroundHandler.post {
             use16Bit = value
             block.put(true) // false if fails
         }
 
         val succeeded = block.take()
-
-        callback?.invoke()
     }
 
-    fun setDevice(value: Device, callback: ModelRunnerCallback? = null) {
+    fun setDevice_temp(value: Device) {
         backgroundHandler.post {
             device = value
             block.put(true) // false if fails
         }
 
         val succeeded = block.take()
-
-        callback?.invoke()
     }
 
     /** Changes the model and uses current settings, falls back to previous model if fails */
 
-    fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback? = null) {
+    fun switchModel(model: TIOTFLiteModel) {
         // val previousModel = this.model
 
         fun doSwitch(model: TIOTFLiteModel) {
@@ -204,8 +194,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         }
 
         val succeeded = block.take()
-
-        callback?.invoke()
     }
 
     //region Background Tasks
@@ -319,13 +307,12 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     /** Waits for the background handler to finish processing before calling lambda */
 
-    fun wait(lambda: ()->Unit) {
+    fun waitOnRunner() {
         backgroundHandler.post {
             // lambda()
             block.put(true)
         }
 
         val succeeded = block.take()
-        lambda()
     }
 }
