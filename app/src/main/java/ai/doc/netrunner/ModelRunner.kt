@@ -16,7 +16,7 @@ private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 
 private typealias Listener = (Map<String,Any>, Long) -> Unit
 
-/** A bitmap provider provides a bitmap to the model runner for a single step of inference */
+/** A bitmap provider vends a bitmap to the model runner for a single step of inference */
 
 private typealias BitmapProvider = () -> Bitmap?
 
@@ -29,15 +29,23 @@ interface ModelRunnerWatcher {
 }
 
 /**
- * The ModelRunner is used to configure a model and to perform continuous or one-off inference
- * with a model.
+ * The ModelRunner is used to change models, configure models, and to perform continuous or one-off
+ * inference with a model.
  *
- * The somewhat convoluted use of the blocking queue is necessary because the model must be created
- * on the same thread it is invoked on. In truth only models that use the GPU have this requirement
- * related to the GPU context, and we support GPU backing so.
+ * The somewhat convoluted use of the blocking queue when changing the model or model settings is
+ * necessary because the model must be created on the same thread it is invoked on. Consequently
+ * all model or model settings changes are dispatched to the background thread but the calling
+ * thread is halted via the blocking queue until the background process is complete. API callers
+ * get synchronous code even though we're dispatching to a background thread.
+ *
+ * In truth only models that use the GPU have this requirement related to the GPU context, and we
+ * support GPU backing, so.
+ *
+ * The use of the uncaught exception handler ensures that exceptions which are not thrown until
+ * inference is executed can be caught and effectively dealt with.
  */
 
-class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
+class ModelRunner(model: TIOTFLiteModel, private var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
     inner class GPUUnavailableException(): RuntimeException()
     inner class ModelLoadingException(): RuntimeException()
     inner class ModelInferenceException(): RuntimeException()
@@ -77,33 +85,65 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     var listener: Listener? = null
 
+    //region Background Tasks
+
+    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner, an implied await */
+
+    private val block = SynchronousQueue<Boolean>()
+
+    /** Background thread that processes requests on the background handler */
+
+    private lateinit var backgroundThread: HandlerThread
+
+    /** Background queue that receives request to interact with the model */
+
+    private lateinit var backgroundHandler: Handler
+
+    /** Determines if the periodic runner will continue to call itself */
+
+    private var running = false
+
+    /** A continuous runnable that will repeatedly execute inference on the background thread until [running] is set to false */
+
+    private val periodicRunner = object: Runnable {
+        override fun run() {
+            if (running) {
+                runInference()
+                backgroundHandler.post(this)
+            }
+        }
+    }
+
+    //endregion
+
     // Configuration
 
     /**
      * All configuration changes must be performed on the same thread inference is executed on,
-     * thus the use of the [backgroundHandler] and [block]
+     * thus the use of the [backgroundHandler] and [block].
      *
      * Before calling any configuration change stop the runner and start it again only if the
-     * change is successful
-     * */
+     * change is successful. If the change is not successful it is up to the caller to decide
+     * what to do next.
+     */
 
     var model: TIOTFLiteModel = model
-        @Throws(ModelLoadingException::class) set(value) {
+        @Throws(ModelLoadingException::class) set(newModel) {
             backgroundHandler.post {
                 try {
                     model.unload()
 
-                    value.numThreads = numThreads
-                    value.setUse16BitPrecision(use16Bit)
+                    newModel.numThreads = numThreads
+                    newModel.setUse16BitPrecision(use16Bit)
 
                     when (device) {
-                        Device.CPU -> value.hardwareBacking = CPU
-                        Device.GPU -> value.hardwareBacking = GPU
-                        Device.NNAPI -> value.hardwareBacking = NNAPI
+                        Device.CPU -> newModel.hardwareBacking = CPU
+                        Device.GPU -> newModel.hardwareBacking = GPU
+                        Device.NNAPI -> newModel.hardwareBacking = NNAPI
                     }
 
-                    value.load()
-                    field = value
+                    newModel.load()
+                    field = newModel
 
                     block.put(true)
                 } catch (e: Exception) {
@@ -181,42 +221,6 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                 throw ModelLoadingException()
             }
         }
-
-    //region Background Tasks
-
-    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner, an implied await */
-
-    private val block = SynchronousQueue<Boolean>()
-
-    /** Background thread that processes requests on the background handler */
-
-    private lateinit var backgroundThread: HandlerThread
-
-    /** Background queue that receives request to interact with the model */
-
-    private lateinit var backgroundHandler: Handler
-
-    /** Background thread exception handler */
-
-    var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler = uncaughtExceptionHandler
-        private set
-
-    /** A continuous runnable that will repeatedly execute inference on the background thread until [running] is set to false */
-
-    private val periodicRunner = object: Runnable {
-        override fun run() {
-            if (running) {
-                runInference()
-                backgroundHandler.post(this)
-            }
-        }
-    }
-
-    /** Determines if the periodic runner will continue to call itself */
-
-    private var running = false
-
-    //endregion
 
     //region Initialization
 
@@ -303,11 +307,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     // endregion
 
-    /** Pauses the current thread until the background handler has finished processing its current task */
+    /** Pauses the calling thread until the background handler has finished processing its current task */
 
     fun waitOnRunner() {
         backgroundHandler.post {
-            // lambda()
             block.put(true)
         }
 

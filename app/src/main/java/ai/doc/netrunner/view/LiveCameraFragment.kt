@@ -23,6 +23,8 @@ import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
+// TODO: Migrate to CameraView (#53)
+
 open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     /**

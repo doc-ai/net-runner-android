@@ -5,14 +5,13 @@ import ai.doc.netrunner.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.tensorio.TIOModel.TIOModel
 import android.content.Context
 import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.*
 import android.widget.TextView
 import androidx.core.content.edit
@@ -157,7 +156,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     //endregion
 
-    /** Instructs the model runner to begin continuous classification of the model */
+    /** Instructs the model runner to run continuous inference with the model */
 
     private fun startContinuousInference() {
         if (isDetached || !isAdded) {
@@ -167,14 +166,14 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         viewModel.modelRunner.startStreamingInference( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
-            Handler(Looper.getMainLooper()).post(Runnable {
+            HandlerUtilities.main(Runnable {
                 child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
             })
         })
     }
 
-    /** Halts continuous classification of the model */
+    /** Halts continuous inference with the model */
 
     private fun stopContinuousInference() {
         viewModel.modelRunner.stopStreamingInference()
@@ -190,7 +189,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         viewModel.modelRunner.runInferenceOnFrame( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
-            Handler(Looper.getMainLooper()).post(Runnable {
+            HandlerUtilities.main(Runnable {
                 child<OutputHandler>(R.id.outputContainer)?.output = null
                 child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"

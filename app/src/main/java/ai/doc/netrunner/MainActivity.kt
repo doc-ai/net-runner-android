@@ -4,6 +4,7 @@ import ai.doc.netrunner.view.*
 import ai.doc.netrunner.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.DeviceUtilities
+import ai.doc.netrunner.utilities.HandlerUtilities
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
@@ -20,7 +21,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
@@ -123,6 +123,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Activities requested include: photo gallery, camera */
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -152,17 +154,18 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    /** Catches the uncaught inference exception on the Model Runner background thread */
+    /**
+     * Catches the uncaught inference exception on the Model Runner background thread
+     *
+     * When inference fails: unload the model, let the user know, and reset the model runner
+     * An orientation change or tapping pause|play may restart inference, in which case this
+     * exception handler just catches the exception again
+     */
 
     private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
         Thread.UncaughtExceptionHandler() { _, _ ->
-            Handler(Looper.getMainLooper()).post(Runnable {
-
-                // When inference fails: unload the model, let the user know, and reset the model runner
-                // An orientation change or tapping pause|play may restart inference,
-                // in which case this exception handler just catches it again
-
-                viewModel.modelRunner.model.unload()
+            HandlerUtilities.main(Runnable {
+                 viewModel.modelRunner.model.unload()
                 alertInferenceException()
                 viewModel.modelRunner.reset()
             })
@@ -249,13 +252,11 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val previousValue = viewModel.modelIds.indexOf(viewModel.modelRunner.model.identifier)
+                val selectedModelId = viewModel.modelIds[position]
+                val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
 
                 try { restartingInference {
-                    val selectedModelId = viewModel.modelIds[position]
-                    val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
-                    val model = selectedBundle.newModel() as TIOTFLiteModel
-
-                    viewModel.modelRunner.model = model
+                    viewModel.modelRunner.model = selectedBundle.newModel() as TIOTFLiteModel
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
                     child<ModelRunnerWatcher>(R.id.container)?.modelDidChange()
                 }} catch (e: Exception) {
@@ -277,9 +278,9 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val previousValue = deviceOptions.indexOf(ModelRunner.stringForDevice(viewModel.modelRunner.device))
+                val selectedDevice = deviceOptions[position]
 
                 try { restartingInference {
-                    val selectedDevice = deviceOptions[position]
                     viewModel.modelRunner.device = ModelRunner.deviceFromString(selectedDevice)
                     prefs.edit(true) { putString(getString(R.string.prefs_run_on_device), selectedDevice) }
                 }} catch (e: Exception) {
@@ -301,9 +302,9 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val previousValue = numThreadsOptions.indexOf(viewModel.modelRunner.numThreads)
+                val selectedThreads = numThreadsOptions[position]
 
                 try { restartingInference {
-                    val selectedThreads = numThreadsOptions[position]
                     viewModel.modelRunner.numThreads = selectedThreads
                     prefs.edit(true) { putInt(getString(R.string.prefs_num_threads), selectedThreads) }
                 }} catch (e: Exception) {
@@ -455,6 +456,8 @@ class MainActivity : AppCompatActivity() {
 
     // region Alerts
 
+    /** Alert when model runner initialization fails in onCreate */
+
     private fun alertInitModelRunnerException() {
         AlertDialog.Builder(this).apply {
             setTitle(R.string.modelrunner_initfail_dialog_title)
@@ -465,6 +468,8 @@ class MainActivity : AppCompatActivity() {
             }
         }.show()
     }
+
+    /** Alert when an inference exception is raised on the model runner thread */
 
     private fun alertInferenceException() {
         AlertDialog.Builder(this).apply {
@@ -477,6 +482,8 @@ class MainActivity : AppCompatActivity() {
         }.show()
     }
 
+    /** Alert when changing a configuration settings raises an exception */
+
     private fun alertConfigChangeException() {
         AlertDialog.Builder(this).apply {
             setTitle(R.string.modelrunner_settings_exception_dialog_title)
@@ -487,6 +494,8 @@ class MainActivity : AppCompatActivity() {
             }
         }.show()
     }
+
+    /** Alert when changing the model raises an exception */
 
     private fun alertModelChangeException() {
         AlertDialog.Builder(this).apply {

@@ -5,12 +5,11 @@ import ai.doc.netrunner.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.tensorio.TIOModel.TIOModel
 
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -89,7 +88,7 @@ class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
         viewModel.modelRunner.runInferenceOnFrame( {
             bitmap
         }, { output: Map<String,Any>, l: Long ->
-            Handler(Looper.getMainLooper()).post(Runnable {
+            HandlerUtilities.main(Runnable {
                 child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
             })
