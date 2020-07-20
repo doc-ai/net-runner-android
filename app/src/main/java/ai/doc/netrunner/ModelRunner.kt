@@ -8,21 +8,17 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
+import java.util.concurrent.SynchronousQueue
 
-private const val TAG = "ModelRunner"
 private const val HANDLE_THREAD_NAME = "ai.doc.netrunner.model-runner"
 
 /** A listener is called when a step of inference has completed */
 
 private typealias Listener = (Map<String,Any>, Long) -> Unit
 
-/** A bitmap provider provides a bitmap to the model runner for a single step of inference */
+/** A bitmap provider vends a bitmap to the model runner for a single step of inference */
 
 private typealias BitmapProvider = () -> Bitmap?
-
-/** The model runner callback is called after any configuration change is completed on the runner's background thread */
-
-private typealias ModelRunnerCallback = () -> Unit
 
 /** Implemented by objects interested in changes to the model runner, but called by [MainActivity] */
 
@@ -33,11 +29,23 @@ interface ModelRunnerWatcher {
 }
 
 /**
- * The ModelRunner is used to configure a model and to perform continuous or one-off inference
- * with a model.
+ * The ModelRunner is used to change models, configure models, and to perform continuous or one-off
+ * inference with a model.
+ *
+ * The somewhat convoluted use of the blocking queue when changing the model or model settings is
+ * necessary because the model must be created on the same thread it is invoked on. Consequently
+ * all model or model settings changes are dispatched to the background thread but the calling
+ * thread is halted via the blocking queue until the background process is complete. API callers
+ * get synchronous code even though we're dispatching to a background thread.
+ *
+ * In truth only models that use the GPU have this requirement related to the GPU context, and we
+ * support GPU backing, so.
+ *
+ * The use of the uncaught exception handler ensures that exceptions which are not thrown until
+ * inference is executed can be caught and effectively dealt with.
  */
 
-class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
+class ModelRunner(model: TIOTFLiteModel, private var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
     inner class GPUUnavailableException(): RuntimeException()
     inner class ModelLoadingException(): RuntimeException()
     inner class ModelInferenceException(): RuntimeException()
@@ -57,10 +65,14 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
                 else -> Device.CPU
             }
         }
+        fun stringForDevice(device: Device): String {
+            return when (device) {
+                Device.CPU -> "CPU"
+                Device.GPU -> "GPU"
+                Device.NNAPI -> "NNAPI"
+            }
+        }
     }
-
-    var model: TIOTFLiteModel = model
-        private set
 
     val canRunOnGPU = GpuDelegateHelper.isGpuDelegateAvailable()
     val canRunOnNnApi = NnApiDelegateHelper.isNnApiDelegateAvailable()
@@ -73,105 +85,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     var listener: Listener? = null
 
-    // Configuration
-
-    private var numThreads = 1
-        set(value) {
-            model.numThreads = value
-            model.reload()
-            field = value
-        }
-
-    private var use16Bit = false
-        set(value) {
-            model.setUse16BitPrecision(value)
-            model.reload()
-            field = value
-        }
-
-    private var device: Device = Device.CPU
-        set(value) {
-            when (value) {
-                Device.CPU -> {
-                    model.hardwareBacking = CPU
-                    field = value
-                }
-                Device.NNAPI -> {
-                    model.hardwareBacking = NNAPI
-                    field = value
-                }
-                Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
-                    model.hardwareBacking = CPU
-                    field = Device.CPU
-                    throw GPUUnavailableException()
-                } else {
-                    model.hardwareBacking = GPU
-                    field = Device.GPU
-                }
-            }
-
-            try {
-                model.reload()
-            } catch (e: Exception) {
-                // Back up to CPU and reload
-                model.hardwareBacking = CPU
-                field = Device.CPU
-                model.reload()
-                throw ModelLoadingException()
-            }
-        }
-
-    // Set Configuration with Callback
-
-    fun setNumThreads(value: Int, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { numThreads = value }
-        backgroundHandler.post(callback)
-    }
-
-    fun setUse16Bit(value: Boolean, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { use16Bit = value }
-        backgroundHandler.post(callback)
-    }
-
-    fun setDevice(value: Device, callback: ModelRunnerCallback? = null) {
-        backgroundHandler.post { device = value }
-        backgroundHandler.post(callback)
-    }
-
-    /** Changes the model and uses current settings, falls back to previous model if fails */
-
-    fun switchModel(model: TIOTFLiteModel, callback: ModelRunnerCallback? = null) {
-        val previousModel = this.model
-
-        fun doSwitch(model: TIOTFLiteModel) {
-            this.model.unload()
-            this.model = model
-
-            model.numThreads = numThreads
-            model.setUse16BitPrecision(use16Bit)
-
-            when(device) {
-                Device.CPU -> model.hardwareBacking = CPU
-                Device.GPU -> model.hardwareBacking = GPU
-                Device.NNAPI -> model.hardwareBacking = NNAPI
-            }
-        }
-
-        backgroundHandler.post {
-            doSwitch(model)
-
-            try {
-                model.load()
-                callback?.invoke()
-            } catch (e: Exception) {
-                // Back up to previous model
-                doSwitch(previousModel)
-                throw ModelLoadingException()
-            }
-        }
-    }
-
     //region Background Tasks
+
+    /** The synchronous queue allows us to opaquely perform background tasks in a synchronous manner, an implied await */
+
+    private val block = SynchronousQueue<Boolean>()
 
     /** Background thread that processes requests on the background handler */
 
@@ -181,12 +99,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
 
     private lateinit var backgroundHandler: Handler
 
-    /** Background thread exception handler */
+    /** Determines if the periodic runner will continue to call itself */
 
-    var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler = uncaughtExceptionHandler
-        private set
+    private var running = false
 
-    /** A continuous runnable that will repeatedly execute inference on the model until running is set to false */
+    /** A continuous runnable that will repeatedly execute inference on the background thread until [running] is set to false */
 
     private val periodicRunner = object: Runnable {
         override fun run() {
@@ -197,11 +114,115 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         }
     }
 
-    /** Determines if the periodic runner will continue to call itself */
-
-    private var running = false
-
     //endregion
+
+    // Configuration
+
+    /**
+     * All configuration changes must be performed on the same thread inference is executed on,
+     * thus the use of the [backgroundHandler] and [block].
+     *
+     * Before calling any configuration change stop the runner and start it again only if the
+     * change is successful. If the change is not successful it is up to the caller to decide
+     * what to do next.
+     */
+
+    var model: TIOTFLiteModel = model
+        @Throws(ModelLoadingException::class) set(newModel) {
+            backgroundHandler.post {
+                try {
+                    model.unload()
+
+                    newModel.numThreads = numThreads
+                    newModel.setUse16BitPrecision(use16Bit)
+
+                    when (device) {
+                        Device.CPU -> newModel.hardwareBacking = CPU
+                        Device.GPU -> newModel.hardwareBacking = GPU
+                        Device.NNAPI -> newModel.hardwareBacking = NNAPI
+                    }
+
+                    newModel.load()
+                    field = newModel
+
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
+            }
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
+        }
+
+    var numThreads = 1
+        @Throws(ModelLoadingException::class) set(value) {
+            backgroundHandler.post {
+                try {
+                    model.numThreads = value
+                    model.reload()
+                    field = value
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
+            }
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
+        }
+
+    var use16Bit = false
+        @Throws(ModelLoadingException::class) set(value) {
+            backgroundHandler.post {
+                try {
+                    model.setUse16BitPrecision(value)
+                    model.reload()
+                    field = value
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
+            }
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
+        }
+
+    var device: Device = Device.CPU
+        @Throws(ModelLoadingException::class) set(value) {
+            backgroundHandler.post {
+                try {
+                    when (value) {
+                        Device.CPU -> {
+                            model.hardwareBacking = CPU
+                            field = value
+                        }
+                        Device.NNAPI -> {
+                            model.hardwareBacking = NNAPI
+                            field = value
+                        }
+                        Device.GPU -> if (!GpuDelegateHelper.isGpuDelegateAvailable()) {
+                            throw GPUUnavailableException()
+                        } else {
+                            model.hardwareBacking = GPU
+                            field = Device.GPU
+                        }
+                    }
+
+                    model.reload()
+
+                    block.put(true)
+                } catch (e: Exception) {
+                    block.put(false)
+                }
+            }
+            if (!block.take()) {
+                throw ModelLoadingException()
+            }
+        }
+
+    //region Initialization
 
     init {
         setupBackgroundHandler()
@@ -225,6 +246,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
         setupBackgroundHandler()
     }
 
+    // endregion
+
+    // region Inference
+
     /** Executes a single step of inference */
 
     private fun runInference() {
@@ -247,7 +272,10 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = bitmapProvider
             this.listener = listener
             runInference()
+            block.put(true)
         }
+
+        block.take()
     }
 
     /** Start continuous inference */
@@ -257,8 +285,11 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = bitmapProvider
             this.listener = listener
             running = true
+            block.put(true)
         }
         backgroundHandler.post(periodicRunner)
+
+        block.take()
     }
 
     /** Stop continuous inference */
@@ -268,14 +299,21 @@ class ModelRunner(model: TIOTFLiteModel, uncaughtExceptionHandler: Thread.Uncaug
             this.bitmapProvider = null
             this.listener = null
             running = false
+            block.put(true)
         }
+
+        block.take()
     }
 
-    /** Waits for the background handler to finish processing before calling lambda */
+    // endregion
 
-    fun wait(lambda: ()->Unit) {
+    /** Pauses the calling thread until the background handler has finished processing its current task */
+
+    fun waitOnRunner() {
         backgroundHandler.post {
-            lambda()
+            block.put(true)
         }
+
+        block.take()
     }
 }

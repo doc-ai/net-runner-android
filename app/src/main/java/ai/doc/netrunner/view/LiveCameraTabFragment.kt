@@ -5,14 +5,13 @@ import ai.doc.netrunner.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
+import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.tensorio.TIOModel.TIOModel
 import android.content.Context
 import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
 
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.view.*
 import android.widget.TextView
 import androidx.core.content.edit
@@ -121,11 +120,8 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     /** Replaces the output handler but waits for the model runner to finish **/
 
     override fun modelDidChange() {
-        viewModel.modelRunner.wait {
-            Handler(Looper.getMainLooper()).post(Runnable {
-                loadFragmentForModel(viewModel.modelRunner.model)
-            })
-        }
+        viewModel.modelRunner.waitOnRunner()
+        loadFragmentForModel(viewModel.modelRunner.model)
     }
 
     override fun stopRunning() {
@@ -160,7 +156,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     //endregion
 
-    /** Instructs the model runner to begin continuous classification of the model */
+    /** Instructs the model runner to run continuous inference with the model */
 
     private fun startContinuousInference() {
         if (isDetached || !isAdded) {
@@ -170,20 +166,20 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         viewModel.modelRunner.startStreamingInference( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
-            Handler(Looper.getMainLooper()).post(Runnable {
+            HandlerUtilities.main(Runnable {
                 child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
             })
         })
     }
 
-    /** Halts continuous classification of the model */
+    /** Halts continuous inference with the model */
 
     private fun stopContinuousInference() {
         viewModel.modelRunner.stopStreamingInference()
     }
 
-    /** Runs a single frame of inference, used for exapmle when the camera is paused but the model changes */
+    /** Runs a single frame of inference, used for example when the camera is paused but the model changes */
 
     private fun runSingleFrameOfInference() {
         if (isDetached || !isAdded) {
@@ -193,7 +189,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         viewModel.modelRunner.runInferenceOnFrame( {
             textureView.bitmap
         }, { output: Map<String,Any>, l: Long ->
-            Handler(Looper.getMainLooper()).post(Runnable {
+            HandlerUtilities.main(Runnable {
                 child<OutputHandler>(R.id.outputContainer)?.output = null
                 child<OutputHandler>(R.id.outputContainer)?.output = output
                 latencyTextView.text = "$l ms"
