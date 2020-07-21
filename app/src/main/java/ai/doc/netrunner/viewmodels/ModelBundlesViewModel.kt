@@ -1,4 +1,4 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.viewmodels
 
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager

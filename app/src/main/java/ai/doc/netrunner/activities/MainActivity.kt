@@ -1,10 +1,14 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.activities
 
-import ai.doc.netrunner.view.*
-import ai.doc.netrunner.MainViewModel.Tab
+import ai.doc.netrunner.*
+import ai.doc.netrunner.fragments.*
+import ai.doc.netrunner.viewmodels.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.DeviceUtilities
 import ai.doc.netrunner.utilities.HandlerUtilities
+import ai.doc.netrunner.utilities.ModelRunner
+import ai.doc.netrunner.utilities.ModelRunnerWatcher
+import ai.doc.netrunner.viewmodels.MainViewModel
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel

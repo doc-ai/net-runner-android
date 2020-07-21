@@ -1,7 +1,7 @@
-package ai.doc.netrunner.view
+package ai.doc.netrunner.fragments
 
-import ai.doc.netrunner.MainViewModel
-import ai.doc.netrunner.ModelRunnerWatcher
+import ai.doc.netrunner.viewmodels.MainViewModel
+import ai.doc.netrunner.utilities.ModelRunnerWatcher
 import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager

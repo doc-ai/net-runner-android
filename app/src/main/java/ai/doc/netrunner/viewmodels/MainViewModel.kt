@@ -1,5 +1,6 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.viewmodels
 
+import ai.doc.netrunner.utilities.ModelRunner
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel

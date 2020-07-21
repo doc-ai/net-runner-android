@@ -1,6 +1,6 @@
-package ai.doc.netrunner.view
+package ai.doc.netrunner.fragments
 
-import ai.doc.netrunner.ModelBundlesViewModel
+import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.netrunner.R
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import android.os.Bundle
@@ -48,10 +48,6 @@ class ModelBundleListFragment : Fragment() {
     private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
 
     private lateinit var modelBundleRecyclerView: RecyclerView
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_model_bundle_list, container, false)

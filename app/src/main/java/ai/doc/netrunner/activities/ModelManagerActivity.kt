@@ -1,6 +1,8 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.activities
 
-import ai.doc.netrunner.view.ModelBundleListFragment
+import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
+import ai.doc.netrunner.R
+import ai.doc.netrunner.fragments.ModelBundleListFragment
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
