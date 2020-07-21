@@ -9,13 +9,10 @@
             android:id="@+id/nav_select_model"
             app:actionLayout="@layout/menu_item_spinner" />
 
-        <!--
-        TODO: Import model (#1)
         <item
-            tools:ignore="MenuTitle,icon"
             android:id="@+id/nav_import_model"
-            app:actionLayout="@layout/menu_item_import_model" />
-            -->
+            android:title="@string/manage_models"
+            tools:ignore="MenuTitle,icon" />
 
     </group>
 

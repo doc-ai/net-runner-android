@@ -41,4 +41,7 @@
     <string name="modelrunner_exception_run_inference_message">There was a problem executing inference with this model, try another one or change the model settings</string>
     <string name="modelrunner_exception_change_model_message">This was a problem loading the model with the current settings, falling back to previous model"</string>
     <string name="modelrunner_exception_change_settings_message">This was a problem loading the model with these settings, falling back to previous models"</string>
+    <string name="manage_models">Manage Models</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

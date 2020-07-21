@@ -240,6 +240,14 @@ class MainActivity : AppCompatActivity() {
         val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
         val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
 
+        // Model Management
+
+        (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
+            (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, ModelManagerActivity::class.java))
+            return@setOnMenuItemClickListener true
+        }
+
         // Model Selection
 
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
