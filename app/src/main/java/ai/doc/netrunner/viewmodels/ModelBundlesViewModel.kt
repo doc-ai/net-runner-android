@@ -15,4 +15,8 @@ class ModelBundlesViewModel : ViewModel() {
     val modelBundles: List<TIOModelBundle> by lazy {
         modelIds.map { this.manager.bundleWithId(it) }.sortedBy { it.identifier }
     }
+
+    fun bundleWithId(identifier: String): TIOModelBundle {
+        return manager.bundleWithId(identifier)
+    }
 }

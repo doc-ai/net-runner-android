@@ -9,6 +9,7 @@ import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.netrunner.utilities.ModelRunner
 import ai.doc.netrunner.utilities.ModelRunnerWatcher
 import ai.doc.netrunner.viewmodels.MainViewModel
+import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
@@ -58,8 +59,6 @@ private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_IMAGE_CAPTURE = 2
 
-// TODO: Reuse ModelBundlesViewModel
-
 class MainActivity : AppCompatActivity() {
 
     private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<TIOModelBundle>) : ArrayAdapter<TIOModelBundle>(context, resource, list) {
@@ -90,6 +89,10 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by lazy {
         ViewModelProvider(this).get(MainViewModel::class.java)
+    }
+
+    private val modelBundlesViewModel: ModelBundlesViewModel by lazy {
+        ViewModelProvider(this).get(ModelBundlesViewModel::class.java)
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -124,10 +127,10 @@ class MainActivity : AppCompatActivity() {
 
         // Load the Model
 
-        viewModel.manager = TIOModelBundleManager(applicationContext, "")
+        modelBundlesViewModel.manager = TIOModelBundleManager(applicationContext, "")
 
         try {
-            val bundle = viewModel.manager.bundleWithId(selectedModel)
+            val bundle = modelBundlesViewModel.bundleWithId(selectedModel)
             val model = bundle.newModel()
 
             val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
@@ -274,15 +277,15 @@ class MainActivity : AppCompatActivity() {
 
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
 
-        modelSpinner.adapter = ModelBundleArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelBundles)
-        modelSpinner.setSelection(viewModel.modelBundles.indexOf(viewModel.manager.bundleWithId(selectedModel)), false)
+        modelSpinner.adapter = ModelBundleArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, modelBundlesViewModel.modelBundles)
+        modelSpinner.setSelection(modelBundlesViewModel.modelBundles.indexOf(modelBundlesViewModel.bundleWithId(selectedModel)), false)
 
         modelSpinner.onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val previousValue = viewModel.modelBundles.indexOf(viewModel.modelRunner.model.bundle)
-                val selectedBundle = viewModel.modelBundles[position]
+                val previousValue = modelBundlesViewModel.modelBundles.indexOf(viewModel.modelRunner.model.bundle)
+                val selectedBundle = modelBundlesViewModel.modelBundles[position]
                 val selectedModelId = selectedBundle.identifier
 
                 try { restartingInference {
