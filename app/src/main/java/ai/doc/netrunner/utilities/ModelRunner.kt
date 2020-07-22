@@ -1,4 +1,4 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.utilities
 
 import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
 import ai.doc.tensorio.TIOTFLiteModel.NnApiDelegateHelper

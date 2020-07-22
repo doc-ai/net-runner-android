@@ -1,9 +1,8 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.viewmodels
 
-import ai.doc.tensorio.TIOModel.TIOModelBundleManager
+import ai.doc.netrunner.utilities.ModelRunner
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
-import java.util.ArrayList
 
 class MainViewModel : ViewModel() {
 
@@ -16,14 +15,9 @@ class MainViewModel : ViewModel() {
 
     var currentTab = Tab.LiveVideo
 
-    // Model Management
+    // Model Runner
 
-    lateinit var manager: TIOModelBundleManager
     lateinit var modelRunner: ModelRunner
-
-    val modelIds: ArrayList<String> by lazy {
-        ArrayList<String>(manager.bundleIds)
-    }
 
     // Last Bitmap Used For Inference
 

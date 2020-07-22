@@ -1,4 +1,4 @@
-package ai.doc.netrunner.view
+package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import android.Manifest

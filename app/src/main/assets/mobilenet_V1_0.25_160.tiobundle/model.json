@@ -1,5 +1,5 @@
 {
-  "name": "Mobilenet_V1_0.25_160",
+  "name": "Mobilenet V1 0.25 160",
   "details": "MobileNet V2 with a width multiplier of 1.0 and an input resolution of 160x160. \n\nMobileNets are based on a streamlined architecture that have depth-wise separable convolutions to build light weight deep neural networks. Trained on ImageNet with categories such as trees, animals, food, vehicles, person etc. MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications.",
   "id": "Mobilenet_V1_0.25_160",
   "version": "1",

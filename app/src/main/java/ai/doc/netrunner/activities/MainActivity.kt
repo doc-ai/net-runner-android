@@ -1,10 +1,16 @@
-package ai.doc.netrunner
+package ai.doc.netrunner.activities
 
-import ai.doc.netrunner.view.*
-import ai.doc.netrunner.MainViewModel.Tab
+import ai.doc.netrunner.*
+import ai.doc.netrunner.fragments.*
+import ai.doc.netrunner.viewmodels.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.DeviceUtilities
 import ai.doc.netrunner.utilities.HandlerUtilities
+import ai.doc.netrunner.utilities.ModelRunner
+import ai.doc.netrunner.utilities.ModelRunnerWatcher
+import ai.doc.netrunner.viewmodels.MainViewModel
+import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
+import ai.doc.tensorio.TIOModel.TIOModelBundle
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
@@ -24,8 +30,10 @@ import android.os.Handler
 import android.provider.MediaStore
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
+import androidx.annotation.LayoutRes
 
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -53,6 +61,19 @@ private const val REQUEST_IMAGE_CAPTURE = 2
 
 class MainActivity : AppCompatActivity() {
 
+    private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<TIOModelBundle>) : ArrayAdapter<TIOModelBundle>(context, resource, list) {
+
+        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+            val view = super.getView(position, convertView, parent) as TextView
+            view.text = getItem(position).name
+            return view
+        }
+
+        override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+            return getView(position, convertView, parent)
+        }
+    }
+
     private val numThreadsOptions = arrayOf(1, 2, 4, 8)
 
     private val deviceOptions: ArrayList<String> by lazy {
@@ -68,6 +89,10 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel: MainViewModel by lazy {
         ViewModelProvider(this).get(MainViewModel::class.java)
+    }
+
+    private val modelBundlesViewModel: ModelBundlesViewModel by lazy {
+        ViewModelProvider(this).get(ModelBundlesViewModel::class.java)
     }
 
     private val prefs: SharedPreferences by lazy {
@@ -102,10 +127,10 @@ class MainActivity : AppCompatActivity() {
 
         // Load the Model
 
-        viewModel.manager = TIOModelBundleManager(applicationContext, "")
+        modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
 
         try {
-            val bundle = viewModel.manager.bundleWithId(selectedModel)
+            val bundle = modelBundlesViewModel.bundleWithId(selectedModel)
             val model = bundle.newModel()
 
             val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
@@ -240,20 +265,28 @@ class MainActivity : AppCompatActivity() {
         val threadsSpinner = nav.menu.findItem(R.id.nav_select_threads).actionView.findViewById(R.id.spinner) as Spinner
         val precisionSwitch = nav.menu.findItem(R.id.nav_switch_precision).actionView as SwitchCompat
 
+        // Model Management
+
+        (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
+            (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
+            startActivity(Intent(this, ModelManagerActivity::class.java))
+            return@setOnMenuItemClickListener true
+        }
+
         // Model Selection
 
         (nav.menu.findItem(R.id.nav_select_model).actionView.findViewById<View>(R.id.menu_title) as TextView).setText(R.string.model_menu_item_title)
 
-        modelSpinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, viewModel.modelIds)
-        modelSpinner.setSelection(viewModel.modelIds.indexOf(selectedModel), false)
+        modelSpinner.adapter = ModelBundleArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, modelBundlesViewModel.modelBundles)
+        modelSpinner.setSelection(modelBundlesViewModel.modelBundles.indexOf(modelBundlesViewModel.bundleWithId(selectedModel)), false)
 
         modelSpinner.onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val previousValue = viewModel.modelIds.indexOf(viewModel.modelRunner.model.identifier)
-                val selectedModelId = viewModel.modelIds[position]
-                val selectedBundle = viewModel.manager.bundleWithId(selectedModelId)
+                val previousValue = modelBundlesViewModel.modelBundles.indexOf(viewModel.modelRunner.model.bundle)
+                val selectedBundle = modelBundlesViewModel.modelBundles[position]
+                val selectedModelId = selectedBundle.identifier
 
                 try { restartingInference {
                     viewModel.modelRunner.model = selectedBundle.newModel() as TIOTFLiteModel
