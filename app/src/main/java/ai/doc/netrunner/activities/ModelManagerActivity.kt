@@ -2,6 +2,7 @@ package ai.doc.netrunner.activities
 
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.netrunner.R
+import ai.doc.netrunner.fragments.ImportModelBundleFragment
 import ai.doc.netrunner.fragments.ModelBundleFragment
 import ai.doc.netrunner.fragments.ModelBundleJsonFragment
 import ai.doc.netrunner.fragments.ModelBundleListFragment
@@ -10,8 +11,11 @@ import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.MenuItem
+import android.widget.ImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
+
+const val IMPORT_DIALOG_TAG = "import_dialog"
 
 class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callbacks, ModelBundleFragment.Callbacks {
 
@@ -25,11 +29,13 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
 
         modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
 
-        val toolbar = findViewById<Toolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
-
+        setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        findViewById<ImageButton>(R.id.import_model).setOnClickListener {
+            importModel()
+        }
 
         if (savedInstanceState == null) {
             val fragment = ModelBundleListFragment.newInstance()
@@ -66,5 +72,10 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
                 .replace(R.id.container, fragment)
                 .addToBackStack(null)
                 .commit()
+    }
+
+    private fun importModel() {
+        val fragment = ImportModelBundleFragment()
+        fragment.show(supportFragmentManager, IMPORT_DIALOG_TAG)
     }
 }
