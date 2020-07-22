@@ -18,23 +18,23 @@
         app:layout_constraintTop_toTopOf="parent"
         app:title="Manage Models">
 
-        <Button
+<!--        <Button-->
+<!--            android:id="@+id/import_model"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="end"-->
+<!--            android:layout_marginEnd="12dp"-->
+<!--            android:text="Import" />-->
+
+        <ImageButton
             android:id="@+id/import_model"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:src="@drawable/ic_menu_add"
+            android:background="?android:selectableItemBackgroundBorderless"
             android:layout_gravity="end"
             android:layout_marginEnd="12dp"
-            android:text="Import" />
-
-        <!--        <ImageButton-->
-        <!--            android:id="@+id/actionbar_add_button"-->
-        <!--            android:layout_width="wrap_content"-->
-        <!--            android:layout_height="wrap_content"-->
-        <!--            android:src="@android:drawable/ic_input_add"-->
-        <!--            android:background="?android:selectableItemBackgroundBorderless"-->
-        <!--            android:layout_gravity="end"-->
-        <!--            android:layout_marginEnd="@dimen/actionbar_camera_margin_right"-->
-        <!--            />-->
+            />
 
     </androidx.appcompat.widget.Toolbar>
 

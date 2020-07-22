@@ -8,7 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
@@ -73,7 +73,7 @@ class ModelBundleListFragment : Fragment() {
         val view = inflater.inflate(R.layout.fragment_model_bundle_list, container, false)
 
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = "Manage Models"
-        activity?.findViewById<Button>(R.id.import_model)?.visibility = View.VISIBLE
+        activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.VISIBLE
 
         // import_model
 
