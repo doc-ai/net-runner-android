@@ -6,6 +6,7 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
@@ -51,6 +52,8 @@ class ModelBundleFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_model_bundle, container, false)
 
+        setHasOptionsMenu(true)
+
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = modelBundle.name
         activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.INVISIBLE
 
@@ -74,6 +77,17 @@ class ModelBundleFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
         callbacks = null
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home -> {
+                activity?.supportFragmentManager?.popBackStack()
+                true
+            }
+            else ->
+                super.onOptionsItemSelected(item)
+        }
     }
 
 }

@@ -9,6 +9,8 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.MenuItem
+import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
 
 class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callbacks, ModelBundleFragment.Callbacks {
@@ -23,12 +25,28 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
 
         modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
 
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
+        supportActionBar?.setHomeButtonEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         if (savedInstanceState == null) {
             val fragment = ModelBundleListFragment.newInstance()
             supportFragmentManager
                     .beginTransaction()
                     .add(R.id.container, fragment)
                     .commit()
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home ->
+                // Let the active fragment handle it
+                false
+            else ->
+                super.onOptionsItemSelected(item)
         }
     }
 

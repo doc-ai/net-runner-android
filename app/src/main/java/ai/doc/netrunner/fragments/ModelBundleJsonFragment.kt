@@ -5,6 +5,7 @@ import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -43,11 +44,24 @@ class ModelBundleJsonFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.fragment_model_bundle_json, container, false)
 
+        setHasOptionsMenu(true)
+
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = modelBundle.name
         activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.INVISIBLE
 
         view.findViewById<TextView>(R.id.json_textview).text = modelBundle.info.toString(2)
 
         return view
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item?.itemId) {
+            android.R.id.home -> {
+                activity?.supportFragmentManager?.popBackStack()
+                true
+            }
+            else ->
+                super.onOptionsItemSelected(item)
+        }
     }
 }
