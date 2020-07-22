@@ -127,7 +127,7 @@ class MainActivity : AppCompatActivity() {
 
         // Load the Model
 
-        modelBundlesViewModel.manager = TIOModelBundleManager(applicationContext, "")
+        modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
 
         try {
             val bundle = modelBundlesViewModel.bundleWithId(selectedModel)

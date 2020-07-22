@@ -6,17 +6,25 @@ import androidx.lifecycle.ViewModel
 
 class ModelBundlesViewModel : ViewModel() {
 
-    lateinit var manager: TIOModelBundleManager
+    private lateinit var assetsManager: TIOModelBundleManager
+    private lateinit var filesManager: TIOModelBundleManager
+
+    /** You must provide the view model with an assetsManager and a filesManager prior to using it */
+
+    fun setBundleManagers(assetsManager: TIOModelBundleManager, filesManager: TIOModelBundleManager) {
+        this.assetsManager = assetsManager
+        this.filesManager = filesManager
+    }
 
     val modelIds: List<String> by lazy {
-        manager.bundleIds.toList()
+        assetsManager.bundleIds.toList()
     }
 
     val modelBundles: List<TIOModelBundle> by lazy {
-        modelIds.map { this.manager.bundleWithId(it) }.sortedBy { it.identifier }
+        modelIds.map { this.assetsManager.bundleWithId(it) }.sortedBy { it.identifier }
     }
 
     fun bundleWithId(identifier: String): TIOModelBundle {
-        return manager.bundleWithId(identifier)
+        return assetsManager.bundleWithId(identifier)
     }
 }

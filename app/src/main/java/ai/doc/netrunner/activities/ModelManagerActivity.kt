@@ -21,7 +21,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_model_manager)
 
-        modelBundlesViewModel.manager = TIOModelBundleManager(applicationContext, "")
+        modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
 
         if (savedInstanceState == null) {
             val fragment = ModelBundleListFragment.newInstance()

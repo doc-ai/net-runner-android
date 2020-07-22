@@ -44,7 +44,7 @@ class ModelBundleFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         arguments?.getString(ARG_MODEL_BUNDLE_ID)?.let {
-            modelBundle = modelBundlesViewModel.manager.bundleWithId(it)
+            modelBundle = modelBundlesViewModel.bundleWithId(it)
         }
     }
 
