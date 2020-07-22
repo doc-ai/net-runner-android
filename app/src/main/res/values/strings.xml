@@ -44,4 +44,10 @@
     <string name="manage_models">Manage Models</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="model_bundle_name_title">Name</string>
+    <string name="model_bundle_authors_title">Authors</string>
+    <string name="model_bundle_details_title">Details</string>
+    <string name="model_bundle_license_title">License</string>
+    <string name="model_bundle_view_json_button">View JSON</string>
+    <string name="manage_models_activity_title">Manage Models</string>
 </resources>

@@ -17,7 +17,9 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Name"
+            android:text="@string/model_bundle_name_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -25,60 +27,66 @@
             android:id="@+id/title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
             android:layout_marginBottom="12dp"
-            />
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
         <!-- Author -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Authors"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+            android:text="@string/model_bundle_authors_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/authors"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
             android:layout_marginBottom="12dp"
-            />
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
         <!-- Description -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Details"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+            android:text="@string/model_bundle_details_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/info"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
             android:layout_marginBottom="12dp"
-            />
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
         <!-- License -->
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="License"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+            android:text="@string/model_bundle_license_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/license"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
             android:layout_marginBottom="12dp"
-            />
+            android:textColor="@color/black"
+            android:textSize="16sp" />
 
         <!-- More -->
 
@@ -86,10 +94,10 @@
             android:id="@+id/view_json_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="View JSON"
-            android:layout_marginBottom="12dp"
             android:layout_marginTop="12dp"
-            />
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="@color/colorAccent"
+            android:text="@string/model_bundle_view_json_button" />
 
 
         <!-- Actions -->
