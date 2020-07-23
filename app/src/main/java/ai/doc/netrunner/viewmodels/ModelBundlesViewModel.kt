@@ -9,25 +9,49 @@ class ModelBundlesViewModel : ViewModel() {
     private lateinit var assetsManager: TIOModelBundleManager
     private lateinit var filesManager: TIOModelBundleManager
 
+    lateinit var modelIds: List<String>
+        private set
+
+    lateinit var modelBundles: List<TIOModelBundle>
+        private set
+
     /** You must provide the view model with an assetsManager and a filesManager prior to using it */
 
     fun setBundleManagers(assetsManager: TIOModelBundleManager, filesManager: TIOModelBundleManager) {
         this.assetsManager = assetsManager
         this.filesManager = filesManager
+        loadIdsAndBundles()
     }
 
-    val modelIds: List<String> by lazy {
-        assetsManager.bundleIds.toList() + filesManager.bundleIds.toList()
+    /** Reload the managers when user models have changed (downloaded or deleted) */
+
+    fun reloadManagers() {
+        assetsManager.reload()
+        filesManager.reload()
+        loadIdsAndBundles()
     }
 
     /** Force unwrapping the optional bundle values because ids will only every come from the available bundles */
 
-    val modelBundles: List<TIOModelBundle> by lazy {
-        assetsManager.bundleIds.toList().map { this.assetsManager.bundleWithId(it)!! }.sortedBy { it.identifier } +
-                filesManager.bundleIds.toList().map { this.filesManager.bundleWithId(it)!! }.sortedBy { it.identifier }
+    private fun loadIdsAndBundles() {
+        val assetIds = assetsManager.bundleIds.toList()
+        val fileIds = filesManager.bundleIds.toList()
+
+        modelIds = assetIds + fileIds
+
+        val assetBundles = assetIds
+                .map { this.assetsManager.bundleWithId(it)!! }
+                .sortedBy { it.identifier }
+        val fileBundles = fileIds
+                .map { this.filesManager.bundleWithId(it)!! }
+                .sortedBy { it.identifier }
+
+        modelBundles = assetBundles + fileBundles
     }
 
     /** Prefers a downloaded model over one packaged with the application */
+
+    // TODO: Do not force unwrap here and return an option
 
     fun bundleWithId(identifier: String): TIOModelBundle {
         return filesManager.bundleWithId(identifier) ?: assetsManager.bundleWithId(identifier)!!
@@ -45,10 +69,4 @@ class ModelBundlesViewModel : ViewModel() {
         return filesManager.bundleIds.toList().contains(bundle.identifier)
     }
 
-    // TODO: Val's can't be lazy if we're reloading the model manager
-
-    fun reloadManagers() {
-        assetsManager.reload()
-        filesManager.reload()
-    }
 }

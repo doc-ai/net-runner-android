@@ -8,6 +8,7 @@ import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.TIOModel.TIOModelBundleValidator
 import ai.doc.tensorio.TIOModel.TIOModelBundleValidatorException
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -35,11 +36,16 @@ private const val TAG = "ImportModelBundleFrag"
 
 class ImportModelBundleFragment : DialogFragment() {
 
+    interface Callbacks {
+        fun onModelImported(file: File)
+    }
+
     lateinit var textField: EditText
     lateinit var progressBar: ProgressBar
 
     private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
 
+    private var callbacks: Callbacks? = null
     var downloadJob: Job? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -94,6 +100,16 @@ class ImportModelBundleFragment : DialogFragment() {
         }
     }
 
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        callbacks = context as Callbacks?
+    }
+
+    override fun onDetach() {
+        super.onDetach()
+        callbacks = null
+    }
+
     /** The retrofit service, http://localhost will be overwritten by the full url */
 
     private val service: NetRunnerService by lazy {
@@ -133,14 +149,11 @@ class ImportModelBundleFragment : DialogFragment() {
 
             // Copy To Models Dir
 
-            installModelBundle(modelBundleDir)
+            val installedModelDir = installModelBundle(modelBundleDir)
 
-            // Inform View Models
+            // Inform and Dismiss
 
-            modelBundlesViewModel.reloadManagers()
-
-            // Dismiss
-
+            callbacks?.onModelImported(installedModelDir)
             dialog?.dismiss()
 
         } catch (e: ConnectException) {
@@ -247,13 +260,15 @@ class ImportModelBundleFragment : DialogFragment() {
     /** Installs the validated model bundle */
 
     @Throws(IOException::class)
-    private suspend fun installModelBundle(sourceFile: File) = withContext(Dispatchers.IO) {
+    private suspend fun installModelBundle(sourceFile: File): File = withContext(Dispatchers.IO) {
         val modelsDir = ModelManagerUtilities.getModelFilesDir(requireContext())
         val modelDestination = File(modelsDir, sourceFile.name)
 
         sourceFile.copyRecursively(modelDestination) { _, exception ->
             throw exception
         }
+
+        return@withContext modelDestination
     }
 
     // Alert Dialogs

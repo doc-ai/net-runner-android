@@ -11,14 +11,18 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Handler
 import android.view.MenuItem
 import android.widget.ImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
+import java.io.File
 
 const val IMPORT_DIALOG_TAG = "import_dialog"
 
-class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callbacks, ModelBundleFragment.Callbacks {
+// TODO: Inform Main Activity that installed models have changed (downloaded or deleted)
+
+class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callbacks, ModelBundleFragment.Callbacks, ImportModelBundleFragment.Callbacks {
 
     private val modelBundlesViewModel: ModelBundlesViewModel by lazy {
         ViewModelProvider(this).get(ModelBundlesViewModel::class.java)
@@ -81,8 +85,19 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         supportFragmentManager.popBackStack()
 
         ModelManagerUtilities.deleteModelBundle(modelBundle)
-        // TODO: Reload view model
-        // TODO: Reload recycler view
+        modelBundlesViewModel.reloadManagers()
+
+        Handler().postDelayed({
+            (supportFragmentManager.findFragmentById(R.id.container) as? ModelBundleListFragment)?.reloadView()
+        }, 100)
+    }
+
+    override fun onModelImported(file: File) {
+        modelBundlesViewModel.reloadManagers()
+
+        Handler().postDelayed({
+            (supportFragmentManager.findFragmentById(R.id.container) as? ModelBundleListFragment)?.reloadView()
+        }, 100)
     }
 
     private fun importModel() {
