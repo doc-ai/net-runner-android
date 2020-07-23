@@ -9,6 +9,8 @@ import ai.doc.netrunner.fragments.ModelBundleListFragment
 import ai.doc.netrunner.utilities.ModelManagerUtilities
 import ai.doc.tensorio.TIOModel.TIOModelBundle
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
+import android.app.Activity
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -19,8 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import java.io.File
 
 const val IMPORT_DIALOG_TAG = "import_dialog"
-
-// TODO: Inform Main Activity that installed models have changed (downloaded or deleted)
+const val MODEL_MANAGER_DID_UPDATE_MODELS = "ai.doc.netrunner.model_manager.did_update_models"
 
 class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callbacks, ModelBundleFragment.Callbacks, ImportModelBundleFragment.Callbacks {
 
@@ -86,6 +87,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
 
         ModelManagerUtilities.deleteModelBundle(modelBundle)
         modelBundlesViewModel.reloadManagers()
+        setDidUpdateModels()
 
         Handler().postDelayed({
             (supportFragmentManager.findFragmentById(R.id.container) as? ModelBundleListFragment)?.reloadView()
@@ -94,10 +96,17 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
 
     override fun onModelImported(file: File) {
         modelBundlesViewModel.reloadManagers()
+        setDidUpdateModels()
 
         Handler().postDelayed({
             (supportFragmentManager.findFragmentById(R.id.container) as? ModelBundleListFragment)?.reloadView()
         }, 100)
+    }
+
+    private fun setDidUpdateModels() {
+        setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(MODEL_MANAGER_DID_UPDATE_MODELS, true)
+        })
     }
 
     private fun importModel() {

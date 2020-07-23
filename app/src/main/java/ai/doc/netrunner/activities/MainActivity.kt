@@ -54,7 +54,8 @@ import kotlin.collections.ArrayList
 
 private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
 private const val REQUEST_CODE_PICK_IMAGE = 1
-private const val REQUEST_IMAGE_CAPTURE = 2
+private const val REQUEST_CODE_IMAGE_CAPTURE = 2
+private const val REQUEST_CODE_MODEL_MANAGER = 3
 
 class MainActivity : AppCompatActivity() {
 
@@ -159,9 +160,14 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             REQUEST_CODE_PICK_IMAGE ->
                 showImageResults(data)
-            REQUEST_IMAGE_CAPTURE -> {
+            REQUEST_CODE_IMAGE_CAPTURE -> {
                 revokeCameraActivityPermissions(takePhotoUri)
                 showTakenPhotoResults()
+            }
+            REQUEST_CODE_MODEL_MANAGER -> {
+                if (data?.getBooleanExtra(MODEL_MANAGER_DID_UPDATE_MODELS, false) == true) {
+                    reloadModelBundles()
+                }
             }
         }
     }
@@ -193,6 +199,37 @@ class MainActivity : AppCompatActivity() {
                 alertInferenceException()
                 viewModel.modelRunner.reset()
             })
+        }
+    }
+
+    /** Called when the Model Manager downloads or deletes a model */
+
+    private fun reloadModelBundles() {
+
+        // Reload model managers
+
+        modelBundlesViewModel.reloadManagers()
+
+        // Refresh model spinner
+
+        val nav = findViewById<NavigationView>(R.id.nav_view)
+        val modelSpinner = nav.menu.findItem(R.id.nav_select_model).actionView.findViewById(R.id.spinner) as Spinner
+        val adapter = modelSpinner.adapter as? ModelBundleArrayAdapter
+
+        adapter?.clear()
+        adapter?.addAll(modelBundlesViewModel.modelBundles)
+        adapter?.notifyDataSetChanged()
+
+        // Fall back to default model if current model was deleted
+
+        val previousModel = viewModel.modelRunner.model.bundle
+        val defaultModelId = getString(R.string.prefs_default_selected_model)
+
+        if (!modelBundlesViewModel.modelIds.contains(previousModel.identifier)) {
+            modelSpinner.setSelection(modelBundlesViewModel.modelBundles.indexOf(modelBundlesViewModel.bundleWithId(defaultModelId)), false)
+            prefs.edit(true) {
+                putString(getString(R.string.prefs_selected_model), defaultModelId)
+            }
         }
     }
 
@@ -268,7 +305,7 @@ class MainActivity : AppCompatActivity() {
 
         (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
             (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
-            startActivity(Intent(this, ModelManagerActivity::class.java))
+            startActivityForResult(Intent(this, ModelManagerActivity::class.java), REQUEST_CODE_MODEL_MANAGER)
             return@setOnMenuItemClickListener true
         }
 
@@ -432,7 +469,7 @@ class MainActivity : AppCompatActivity() {
 
                     grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
                     takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
-                    startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+                    startActivityForResult(takePictureIntent, REQUEST_CODE_IMAGE_CAPTURE)
                 }
             }
         }
