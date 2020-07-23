@@ -2,6 +2,11 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.retrofit.NetRunnerService
+import ai.doc.netrunner.utilities.ModelManagerUtilities
+import ai.doc.netrunner.utilities.unzip
+import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
+import ai.doc.tensorio.TIOModel.TIOModelBundleValidator
+import ai.doc.tensorio.TIOModel.TIOModelBundleValidatorException
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
@@ -13,11 +18,8 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import androidx.fragment.app.activityViewModels
+import kotlinx.coroutines.*
 
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
@@ -31,8 +33,6 @@ import java.util.*
 
 private const val TAG = "ImportModelBundleFrag"
 
-// TODO: Store in cacheDir/model_downloads that is deleted and recreated every time
-// TODO: Use filename for model bundle instead of UUID
 // TODO: Disable ok button
 // TODO: Unzip, validate, move to filesDir/models, update view model
 
@@ -40,6 +40,10 @@ class ImportModelBundleFragment : DialogFragment() {
 
     lateinit var textField: EditText
     lateinit var progressBar: ProgressBar
+
+    private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
+
+    var downloadJob: Job? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireActivity()).apply {
@@ -72,13 +76,23 @@ class ImportModelBundleFragment : DialogFragment() {
 
         val d = dialog as? AlertDialog ?: return
 
-        // Custom click listener to prevent tapping OK from dismissing the dialog
+        // Custom click listener to prevent tapping OK and Cancel from dismissing the dialog
+        // so that we can perform our own actions first
 
         d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                CoroutineScope(Dispatchers.Main).launch {
-                    downloadModel(textField.text.toString())
-                }
+            if (downloadJob != null) {
+                return@setOnClickListener
+            }
+
+            downloadJob = CoroutineScope(Dispatchers.Main).launch {
+                downloadAndInstallModel(textField.text.toString())
+            }
+        }
+
+        d.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
+            CoroutineScope(Dispatchers.Main).launch {
+                downloadJob?.cancelAndJoin()
+                dialog?.cancel()
             }
         }
     }
@@ -95,37 +109,98 @@ class ImportModelBundleFragment : DialogFragment() {
 
     /** Download and install the model bundle zip file */
 
-    private suspend fun downloadModel(@Url modelUrl: String) {
+    private suspend fun downloadAndInstallModel(@Url modelUrl: String) {
         progressBar.visibility = View.VISIBLE
 
-        val filename = "${UUID.randomUUID().toString()}.zip"
-
         try {
-            saveDownloadToDisk(service.downloadModel(modelUrl), filename)
+            // Download File
+
+            val filename = "${UUID.randomUUID().toString()}.zip"
+            val fileDestination = prepFileDestination(filename)
+            val downloadResponse = service.downloadModel(modelUrl)
+
+            saveDownloadToDisk(downloadResponse, fileDestination)
+
+            // Unzip File
+
+            val unzipDir = fileDestination.unzip()
+            val modelBundleDir = unzipDir.listFiles()[0]
+
+            // Validate Model Bundle
+
+            val validator = TIOModelBundleValidator(requireContext(), modelBundleDir)
+
+            validator.validate() {_, json ->
+                // Reject models with non-unique identifiers, TODO: and non-unique filenames, currently fails on copy
+                !modelBundlesViewModel.modelIds.contains(json.getString("id"))
+            }
+
+            // Copy To Models Dir
+
+            val modelsDir = ModelManagerUtilities.getModelFilesDir(requireContext())
+            val modelDestination = File(modelsDir, modelBundleDir.name)
+
+            modelBundleDir.copyRecursively(modelDestination) { _, exception ->
+                throw exception
+            }
+
+            // Inform View Models
+
+            modelBundlesViewModel.reloadManagers()
+
+            // Dismiss
+
+            dialog?.dismiss()
+
         } catch (e: ConnectException) {
             showNetworkErrorAlert()
         } catch (e: IOException) {
             showFileDownloadErrorAlert()
+        } catch (e: ArrayIndexOutOfBoundsException) {
+            showModelBundleErrorAlert()
+        } catch (e: TIOModelBundleValidatorException) {
+            showModelBundleErrorAlert()
+        } catch (e: FileAlreadyExistsException) {
+            showModelBundleErrorAlert()
+        } catch (e: CancellationException) {
+            // We're good
         } catch (e: Exception) {
             showOtherErrorAlert()
-        } finally {
+        }  finally {
             progressBar.visibility = View.INVISIBLE
+            downloadJob = null
         }
+    }
+
+    /** Prepare the download destination: deletes the cache folder and recreates it */
+
+    @Throws(IOException::class)
+    fun prepFileDestination(filename: String): File {
+        val downloadsDir = File(requireActivity().cacheDir, "model_downloads")
+
+        if (downloadsDir.exists()) {
+            downloadsDir.deleteRecursively()
+        }
+
+        if (!downloadsDir.mkdir()) {
+            throw IOException()
+        }
+
+        return File(downloadsDir, filename)
     }
 
     /** Responsible for actually writing the received stream to disk */
 
-    private suspend fun saveDownloadToDisk(body: ResponseBody, filename: String) = withContext(Dispatchers.IO) {
+    @Throws(IOException::class)
+    private suspend fun saveDownloadToDisk(body: ResponseBody, file: File) = withContext(Dispatchers.IO) {
         // False positive warnings about Blocking IO but the Dispatchers.IO exactly addresses that
 
         var inputStream: InputStream? = null
         var outputStream: FileOutputStream? = null
 
         try {
-            val destination = File(requireActivity().cacheDir, filename)
-
             inputStream = body.byteStream()
-            outputStream = FileOutputStream(destination)
+            outputStream = FileOutputStream(file)
 
             val fileReader = ByteArray(4096)
             val fileSize = body.contentLength()
@@ -204,6 +279,19 @@ class ImportModelBundleFragment : DialogFragment() {
         AlertDialog.Builder(c).apply {
             setTitle("Unable to Download Model")
             setMessage("An error occurred while downloading the model, check the url or wait a few moments and try again.")
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun showModelBundleErrorAlert() {
+        val c = context ?: return
+
+        AlertDialog.Builder(c).apply {
+            setTitle("Unable to Validate Model")
+            setMessage("Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.")
 
             setPositiveButton("OK") { dialog, _ ->
                 dialog.dismiss()

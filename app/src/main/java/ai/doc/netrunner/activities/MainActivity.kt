@@ -4,10 +4,7 @@ import ai.doc.netrunner.*
 import ai.doc.netrunner.fragments.*
 import ai.doc.netrunner.viewmodels.MainViewModel.Tab
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
-import ai.doc.netrunner.utilities.DeviceUtilities
-import ai.doc.netrunner.utilities.HandlerUtilities
-import ai.doc.netrunner.utilities.ModelRunner
-import ai.doc.netrunner.utilities.ModelRunnerWatcher
+import ai.doc.netrunner.utilities.*
 import ai.doc.netrunner.viewmodels.MainViewModel
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.TIOModel.TIOModelBundle
@@ -127,7 +124,9 @@ class MainActivity : AppCompatActivity() {
 
         // Load the Model
 
-        modelBundlesViewModel.setBundleManagers(TIOModelBundleManager(applicationContext, ""), TIOModelBundleManager(applicationContext, ""))
+        modelBundlesViewModel.setBundleManagers(
+                TIOModelBundleManager(applicationContext, ""),
+                TIOModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
 
         try {
             val bundle = modelBundlesViewModel.bundleWithId(selectedModel)

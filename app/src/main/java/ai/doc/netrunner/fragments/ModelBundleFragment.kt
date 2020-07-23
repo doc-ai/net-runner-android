@@ -18,6 +18,8 @@ import androidx.fragment.app.activityViewModels
 
 private const val ARG_MODEL_BUNDLE_ID = "model_bundle_id"
 
+// TODO: Delete Model
+
 class ModelBundleFragment : Fragment() {
 
     companion object {

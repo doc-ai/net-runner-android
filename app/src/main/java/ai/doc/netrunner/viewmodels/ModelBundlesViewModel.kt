@@ -17,14 +17,26 @@ class ModelBundlesViewModel : ViewModel() {
     }
 
     val modelIds: List<String> by lazy {
-        assetsManager.bundleIds.toList()
+        assetsManager.bundleIds.toList() + filesManager.bundleIds.toList()
     }
+
+    /** Force unwrapping the optional bundle values because ids will only every come from the available bundles */
 
     val modelBundles: List<TIOModelBundle> by lazy {
-        modelIds.map { this.assetsManager.bundleWithId(it) }.sortedBy { it.identifier }
+        assetsManager.bundleIds.toList().map { this.assetsManager.bundleWithId(it)!! }.sortedBy { it.identifier } +
+                filesManager.bundleIds.toList().map { this.filesManager.bundleWithId(it)!! }.sortedBy { it.identifier }
     }
 
+    /** Prefers a downloaded model over one packaged with the application */
+
     fun bundleWithId(identifier: String): TIOModelBundle {
-        return assetsManager.bundleWithId(identifier)
+        return filesManager.bundleWithId(identifier) ?: assetsManager.bundleWithId(identifier)!!
+    }
+
+    // TODO: Val's can't be lazy if we're reloading the model manager
+
+    fun reloadManagers() {
+        assetsManager.reload()
+        filesManager.reload()
     }
 }

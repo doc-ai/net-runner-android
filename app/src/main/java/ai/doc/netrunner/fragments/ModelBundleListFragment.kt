@@ -85,6 +85,10 @@ class ModelBundleListFragment : Fragment() {
         modelBundleRecyclerView.layoutManager = LinearLayoutManager(context)
         modelBundleRecyclerView.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
+        // TODO: Update after model download
+        // TODO: Update after model deletion
+        // modelBundleRecyclerView.adapter.notifyDataSetChanged()
+
         return view
     }
 
