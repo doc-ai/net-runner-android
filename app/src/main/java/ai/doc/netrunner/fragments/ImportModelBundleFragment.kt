@@ -2,15 +2,18 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.retrofit.NetRunnerService
-import android.app.AlertDialog
 import android.app.Dialog
+import android.content.Intent
+import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import androidx.appcompat.app.AlertDialog
 
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
@@ -26,7 +29,11 @@ import java.util.*
 
 private const val TAG = "ImportModelBundleFrag"
 
+// TODO: Store in cacheDir/model_downloads that is deleted and recreated every time
+// TODO: Use filename for model bundle instead of UUID
+// TODO: Disable ok button
 // TODO: Unzip, validate, move to filesDir/models, update view model
+// TODO: Show errors
 
 class ImportModelBundleFragment : DialogFragment() {
 
@@ -34,15 +41,19 @@ class ImportModelBundleFragment : DialogFragment() {
     lateinit var progressBar: ProgressBar
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return AlertDialog.Builder(activity).apply {
+        return AlertDialog.Builder(requireActivity()).apply {
             setTitle("Import Model")
 
-            val inflater = activity?.layoutInflater
-            val view = inflater?.inflate(R.layout.fragment_import_model_bundle, null, false)
+            val inflater = requireActivity().layoutInflater
+            val view = inflater.inflate(R.layout.fragment_import_model_bundle, null, false)
 
-            view?.apply {
-                progressBar = findViewById(R.id.progress_bar)
-                textField = findViewById(R.id.url_text)
+            progressBar = view.findViewById(R.id.progress_bar)
+            textField = view.findViewById(R.id.url_text)
+
+            view.findViewById<TextView>(R.id.tensorio_info).setOnClickListener {
+                startActivity(Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://github.com/doc-ai/tensorio")
+                })
             }
 
             setView(view)
@@ -60,9 +71,19 @@ class ImportModelBundleFragment : DialogFragment() {
 
         val d = dialog as? AlertDialog ?: return
 
+        // Custom click listener to prevent tapping OK from dismissing the dialog
+
         d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             downloadModel(textField.text.toString())
         }
+    }
+
+    private val service: NetRunnerService by lazy {
+        Retrofit.Builder()
+                .baseUrl("http://localhost")
+                .client(OkHttpClient.Builder().build())
+                .build()
+                .create(NetRunnerService::class.java)
     }
 
     /** Downloads the zip file, http://localhost is overwritten by full url */
@@ -70,19 +91,11 @@ class ImportModelBundleFragment : DialogFragment() {
     private fun downloadModel(@Url modelUrl: String) {
         progressBar.visibility = View.VISIBLE
 
-        val service = Retrofit.Builder()
-                .baseUrl("http://localhost")
-                .client(OkHttpClient.Builder().build())
-                .build()
-                .create(NetRunnerService::class.java)
-
-        val call = service.downloadModel(modelUrl)
-
-        call.enqueue(object: Callback<ResponseBody> {
+        service.downloadModel(modelUrl).enqueue(object: Callback<ResponseBody> {
             override fun onFailure(call: Call<ResponseBody>?, t: Throwable?) {
                 Log.e(TAG, t?.message)
                 progressBar.visibility = View.INVISIBLE
-                // TODO: Show failure
+                showNetworkErrorAlert()
             }
             override fun onResponse(call: Call<ResponseBody>?, response: Response<ResponseBody>?) {
                 Log.d(TAG, "Got response")
@@ -90,6 +103,8 @@ class ImportModelBundleFragment : DialogFragment() {
             }
         })
     }
+
+    /** Responsible for actually writing the received stream to disk */
 
     private class DownloadModelZipFileTask(context: ImportModelBundleFragment) : AsyncTask<ResponseBody, Double, String>() {
 
@@ -141,7 +156,7 @@ class ImportModelBundleFragment : DialogFragment() {
 
             } catch (e: IOException) {
                 Log.e(TAG, "Failed to save the file!");
-                // TODO: Show error
+                fragmentReference.get()?.showFileDownloadErrorAlert()
             } finally {
                 inputStream?.close()
                 outputStream?.close()
@@ -151,6 +166,32 @@ class ImportModelBundleFragment : DialogFragment() {
         private fun calculateProgress(totalSize:Double,downloadSize:Double):Double{
             return ((downloadSize/totalSize)*100)
         }
+    }
+
+    private fun showNetworkErrorAlert() {
+        val c = context ?: return
+
+        AlertDialog.Builder(c).apply {
+            setTitle("Unable to Download Model")
+            setMessage("A network error occurred, check the url and try again.")
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun showFileDownloadErrorAlert() {
+        val c = context ?: return
+
+        AlertDialog.Builder(c).apply {
+            setTitle("Unable to Download Model")
+            setMessage("An error occurred while downloading the model, check the url or wait a few moments and try again.")
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
     }
 
 }

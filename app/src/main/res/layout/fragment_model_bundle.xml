@@ -20,7 +20,7 @@
             android:text="@string/model_bundle_name_title"
             android:textAllCaps="true"
             android:textColor="@color/colorAccent"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -39,7 +39,7 @@
             android:text="@string/model_bundle_authors_title"
             android:textAllCaps="true"
             android:textColor="@color/colorAccent"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -58,7 +58,7 @@
             android:text="@string/model_bundle_details_title"
             android:textAllCaps="true"
             android:textColor="@color/colorAccent"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -77,7 +77,7 @@
             android:text="@string/model_bundle_license_title"
             android:textAllCaps="true"
             android:textColor="@color/colorAccent"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView

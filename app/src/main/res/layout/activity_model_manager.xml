@@ -22,11 +22,11 @@
             android:id="@+id/import_model"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_menu_add"
-            android:background="?android:selectableItemBackgroundBorderless"
             android:layout_gravity="end"
-            android:layout_marginEnd="12dp"
-            />
+            android:background="?android:selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_menu_add"
+            android:tint="@color/black"
+            android:layout_marginEnd="20dp"/>
 
     </androidx.appcompat.widget.Toolbar>
 
