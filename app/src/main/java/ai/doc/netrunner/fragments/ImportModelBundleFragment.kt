@@ -120,8 +120,7 @@ class ImportModelBundleFragment : DialogFragment() {
 
             // Unzip File
 
-            val unzipDir = fileDestination.unzip()
-            val modelBundleDir = unzipDir.listFiles()[0]
+            val modelBundleDir = unzip(fileDestination)
 
             // Validate Model Bundle
 
@@ -134,12 +133,7 @@ class ImportModelBundleFragment : DialogFragment() {
 
             // Copy To Models Dir
 
-            val modelsDir = ModelManagerUtilities.getModelFilesDir(requireContext())
-            val modelDestination = File(modelsDir, modelBundleDir.name)
-
-            modelBundleDir.copyRecursively(modelDestination) { _, exception ->
-                throw exception
-            }
+            installModelBundle(modelBundleDir)
 
             // Inform View Models
 
@@ -172,7 +166,7 @@ class ImportModelBundleFragment : DialogFragment() {
     /** Prepare the download destination: deletes the cache folder and recreates it */
 
     @Throws(IOException::class)
-    fun prepFileDestination(filename: String): File {
+    private suspend fun prepFileDestination(filename: String): File = withContext(Dispatchers.IO) {
         val downloadsDir = File(requireActivity().cacheDir, "model_downloads")
 
         if (downloadsDir.exists()) {
@@ -183,7 +177,7 @@ class ImportModelBundleFragment : DialogFragment() {
             throw IOException()
         }
 
-        return File(downloadsDir, filename)
+        return@withContext File(downloadsDir, filename)
     }
 
     /** Responsible for actually writing the received stream to disk */
@@ -240,6 +234,26 @@ class ImportModelBundleFragment : DialogFragment() {
     private fun onDownloadProgressUpdate(progress: Double) {
         // Log.d(TAG, "Download progress: $progress")
         progressBar.progress = progress.toInt()
+    }
+
+    /** Unzips the downloaded file */
+
+    @Throws(IOException::class, ArrayIndexOutOfBoundsException::class)
+    private suspend fun unzip(fileDestination: File): File = withContext(Dispatchers.IO) {
+        val unzipDir = fileDestination.unzip()
+        return@withContext unzipDir.listFiles()[0]
+    }
+
+    /** Installs the validated model bundle */
+
+    @Throws(IOException::class)
+    private suspend fun installModelBundle(sourceFile: File) = withContext(Dispatchers.IO) {
+        val modelsDir = ModelManagerUtilities.getModelFilesDir(requireContext())
+        val modelDestination = File(modelsDir, sourceFile.name)
+
+        sourceFile.copyRecursively(modelDestination) { _, exception ->
+            throw exception
+        }
     }
 
     // Alert Dialogs
