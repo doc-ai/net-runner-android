@@ -33,6 +33,18 @@ class ModelBundlesViewModel : ViewModel() {
         return filesManager.bundleWithId(identifier) ?: assetsManager.bundleWithId(identifier)!!
     }
 
+    /** Returns true if the model bundle is one packaged with the application */
+
+    fun isAsset(bundle: TIOModelBundle): Boolean {
+        return !filesManager.bundleIds.toList().contains(bundle.identifier)
+    }
+
+    /** Returns true if the model bundle is one the user has downloaded */
+
+    fun isDownloaded(bundle: TIOModelBundle): Boolean {
+        return filesManager.bundleIds.toList().contains(bundle.identifier)
+    }
+
     // TODO: Val's can't be lazy if we're reloading the model manager
 
     fun reloadManagers() {

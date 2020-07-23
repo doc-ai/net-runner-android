@@ -99,6 +99,14 @@
             android:backgroundTint="@color/colorAccent"
             android:text="@string/model_bundle_view_json_button" />
 
+        <Button
+            android:id="@+id/delete_model_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="@android:color/holo_orange_dark"
+            android:text="@string/delete_model_button" />
 
         <!-- Actions -->
 

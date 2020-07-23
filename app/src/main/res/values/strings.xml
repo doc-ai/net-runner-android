@@ -50,4 +50,5 @@
     <string name="model_bundle_license_title">License</string>
     <string name="model_bundle_view_json_button">View JSON</string>
     <string name="manage_models_activity_title">Manage Models</string>
+    <string name="delete_model_button">Delete Model</string>
 </resources>

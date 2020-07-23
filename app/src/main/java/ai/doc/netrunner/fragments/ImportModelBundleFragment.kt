@@ -33,9 +33,6 @@ import java.util.*
 
 private const val TAG = "ImportModelBundleFrag"
 
-// TODO: Disable ok button
-// TODO: Unzip, validate, move to filesDir/models, update view model
-
 class ImportModelBundleFragment : DialogFragment() {
 
     lateinit var textField: EditText

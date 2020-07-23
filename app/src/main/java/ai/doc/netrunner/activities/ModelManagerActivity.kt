@@ -77,6 +77,14 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
                 .commit()
     }
 
+    override fun onDeleteModelSelected(modelBundle: TIOModelBundle) {
+        supportFragmentManager.popBackStack()
+
+        ModelManagerUtilities.deleteModelBundle(modelBundle)
+        // TODO: Reload view model
+        // TODO: Reload recycler view
+    }
+
     private fun importModel() {
         val fragment = ImportModelBundleFragment()
         fragment.show(supportFragmentManager, IMPORT_DIALOG_TAG)
