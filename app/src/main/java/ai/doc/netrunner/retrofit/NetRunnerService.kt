@@ -9,5 +9,5 @@ import retrofit2.http.Url
 interface NetRunnerService {
 
     @Streaming @GET
-    fun downloadModel(@Url fileUrl: String): Call<ResponseBody>
+    suspend fun downloadModel(@Url fileUrl: String): ResponseBody
 }

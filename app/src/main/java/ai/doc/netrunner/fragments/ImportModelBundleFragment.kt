@@ -5,7 +5,6 @@ import ai.doc.netrunner.retrofit.NetRunnerService
 import android.app.Dialog
 import android.content.Intent
 import android.net.Uri
-import android.os.AsyncTask
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,17 +13,20 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.http.Url
 import java.io.*
-import java.lang.ref.WeakReference
+import java.lang.Exception
+import java.net.ConnectException
 import java.util.*
 
 private const val TAG = "ImportModelBundleFrag"
@@ -33,7 +35,6 @@ private const val TAG = "ImportModelBundleFrag"
 // TODO: Use filename for model bundle instead of UUID
 // TODO: Disable ok button
 // TODO: Unzip, validate, move to filesDir/models, update view model
-// TODO: Show errors
 
 class ImportModelBundleFragment : DialogFragment() {
 
@@ -74,9 +75,15 @@ class ImportModelBundleFragment : DialogFragment() {
         // Custom click listener to prevent tapping OK from dismissing the dialog
 
         d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            downloadModel(textField.text.toString())
+            viewLifecycleOwner.lifecycleScope.launch {
+                CoroutineScope(Dispatchers.Main).launch {
+                    downloadModel(textField.text.toString())
+                }
+            }
         }
     }
+
+    /** The retrofit service, http://localhost will be overwritten by the full url */
 
     private val service: NetRunnerService by lazy {
         Retrofit.Builder()
@@ -86,87 +93,84 @@ class ImportModelBundleFragment : DialogFragment() {
                 .create(NetRunnerService::class.java)
     }
 
-    /** Downloads the zip file, http://localhost is overwritten by full url */
+    /** Download and install the model bundle zip file */
 
-    private fun downloadModel(@Url modelUrl: String) {
+    private suspend fun downloadModel(@Url modelUrl: String) {
         progressBar.visibility = View.VISIBLE
 
-        service.downloadModel(modelUrl).enqueue(object: Callback<ResponseBody> {
-            override fun onFailure(call: Call<ResponseBody>?, t: Throwable?) {
-                Log.e(TAG, t?.message)
-                progressBar.visibility = View.INVISIBLE
-                showNetworkErrorAlert()
-            }
-            override fun onResponse(call: Call<ResponseBody>?, response: Response<ResponseBody>?) {
-                Log.d(TAG, "Got response")
-                DownloadModelZipFileTask(this@ImportModelBundleFragment).execute(response?.body())
-            }
-        })
+        val filename = "${UUID.randomUUID().toString()}.zip"
+
+        try {
+            saveDownloadToDisk(service.downloadModel(modelUrl), filename)
+        } catch (e: ConnectException) {
+            showNetworkErrorAlert()
+        } catch (e: IOException) {
+            showFileDownloadErrorAlert()
+        } catch (e: Exception) {
+            showOtherErrorAlert()
+        } finally {
+            progressBar.visibility = View.INVISIBLE
+        }
     }
 
     /** Responsible for actually writing the received stream to disk */
 
-    private class DownloadModelZipFileTask(context: ImportModelBundleFragment) : AsyncTask<ResponseBody, Double, String>() {
+    private suspend fun saveDownloadToDisk(body: ResponseBody, filename: String) = withContext(Dispatchers.IO) {
+        // False positive warnings about Blocking IO but the Dispatchers.IO exactly addresses that
 
-        private val fragmentReference: WeakReference<ImportModelBundleFragment> = WeakReference(context)
+        var inputStream: InputStream? = null
+        var outputStream: FileOutputStream? = null
 
-        override fun doInBackground(vararg params: ResponseBody?): String {
-            val body = params[0] ?: return ""
-            saveToDisk(body, "${UUID.randomUUID().toString()}.zip")
-            return ""
-        }
+        try {
+            val destination = File(requireActivity().cacheDir, filename)
 
-        override fun onProgressUpdate(vararg values: Double?) {
-            val progress = values[0] ?: return
-            Log.d(TAG, "Download progress: $progress")
-            fragmentReference.get()?.progressBar?.progress = progress.toInt()
-        }
+            inputStream = body.byteStream()
+            outputStream = FileOutputStream(destination)
 
-        private fun saveToDisk(body: ResponseBody, filename: String) {
-            val myActivity = fragmentReference.get()?.activity ?: return
+            val fileReader = ByteArray(4096)
+            val fileSize = body.contentLength()
+            var fileSizeDownloaded: Long = 0
 
-            var inputStream: InputStream? = null
-            var outputStream: FileOutputStream? = null
-
-            try {
-                val destination = File(myActivity.cacheDir, filename)
-
-                inputStream = body.byteStream()
-                outputStream = FileOutputStream(destination)
-
-                val fileReader = ByteArray(4096)
-                val fileSize = body.contentLength()
-                var fileSizeDownloaded: Long = 0
-
-                while (true) {
-                    val read = inputStream.read(fileReader)
-                    if (read == -1) {
-                        break
-                    }
-
-                    outputStream?.write(fileReader, 0, read)
-                    fileSizeDownloaded += read.toLong()
-
-                    val progress = calculateProgress(fileSize.toDouble(), fileSizeDownloaded.toDouble())
-                    publishProgress(progress)
+            while (true) {
+                val read = inputStream.read(fileReader)
+                if (read == -1) {
+                    break
                 }
 
-                outputStream?.flush();
-                publishProgress(100.0)
+                outputStream.write(fileReader, 0, read)
+                fileSizeDownloaded += read.toLong()
 
-            } catch (e: IOException) {
-                Log.e(TAG, "Failed to save the file!");
-                fragmentReference.get()?.showFileDownloadErrorAlert()
-            } finally {
-                inputStream?.close()
-                outputStream?.close()
+                val progress = calculateProgress(fileSize.toDouble(), fileSizeDownloaded.toDouble())
+                withContext(Dispatchers.Main) {
+                    onDownloadProgressUpdate(progress)
+                }
             }
-        }
 
-        private fun calculateProgress(totalSize:Double,downloadSize:Double):Double{
-            return ((downloadSize/totalSize)*100)
+            outputStream.flush();
+
+            withContext(Dispatchers.Main) {
+                onDownloadProgressUpdate(100.0)
+            }
+
+        } catch (e: IOException) {
+            Log.e(TAG, "Failed to save the file!");
+            throw(e)
+        } finally {
+            inputStream?.close()
+            outputStream?.close()
         }
     }
+
+    private fun calculateProgress(totalSize:Double,downloadSize:Double):Double{
+        return ((downloadSize/totalSize)*100)
+    }
+
+    private fun onDownloadProgressUpdate(progress: Double) {
+        // Log.d(TAG, "Download progress: $progress")
+        progressBar.progress = progress.toInt()
+    }
+
+    // Alert Dialogs
 
     private fun showNetworkErrorAlert() {
         val c = context ?: return
@@ -182,6 +186,19 @@ class ImportModelBundleFragment : DialogFragment() {
     }
 
     private fun showFileDownloadErrorAlert() {
+        val c = context ?: return
+
+        AlertDialog.Builder(c).apply {
+            setTitle("Unable to Download Model")
+            setMessage("An error occurred while downloading the model, check the url or wait a few moments and try again.")
+
+            setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+        }.show()
+    }
+
+    private fun showOtherErrorAlert() {
         val c = context ?: return
 
         AlertDialog.Builder(c).apply {
