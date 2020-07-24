@@ -43,6 +43,10 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     // Creation
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_live_camera_tab, container, false)
     }
@@ -87,17 +91,17 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
     private fun toggleCameraPaused() {
         if (isCameraPaused) {
             child<OutputHandler>(R.id.outputContainer)?.output = null
-            startContinuousInference()
             resumeCamera()
+            startContinuousInference()
         } else {
             stopContinuousInference()
             pauseCamera()
         }
-        isCameraPaused = !isCameraPaused
     }
 
     private fun toggleCameraFacing() {
         stopContinuousInference()
+        pauseCamera()
 
         child<OutputHandler>(R.id.outputContainer)?.output = null
 
@@ -105,8 +109,8 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
         prefs?.edit(true) { putInt(getString(R.string.prefs_camera_facing), cameraFacing) }
 
         pauseButton.setImageResource(android.R.drawable.ic_media_pause)
-        isCameraPaused = false
 
+        resumeCamera()
         startContinuousInference()
     }
 

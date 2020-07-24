@@ -525,14 +525,18 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     }
 
     fun pauseCamera() {
-        try { captureSession?.stopRepeating() }
-        catch (e: CameraAccessException) {
+        try {
+            captureSession?.stopRepeating()
+            isCameraPaused = true
+        } catch (e: CameraAccessException) {
         }
     }
 
     fun resumeCamera() {
-        try { captureSession?.setRepeatingRequest(previewRequest, captureCallback, null) }
-        catch (e: CameraAccessException) {
+        try {
+            captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
+            isCameraPaused = false
+        } catch (e: CameraAccessException) {
         }
     }
 
