@@ -111,9 +111,10 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     protected var cameraFacing= CameraCharacteristics.LENS_FACING_BACK
 
-    /** Only set this property prior to the camera opening. Otherwise use [pauseCamera] */
+    /** Use [pauseCamera] to change the paused status */
 
-    protected var isCameraPaused: Boolean = false
+    var isCameraPaused: Boolean = false
+        private set
 
     /**
      * [TextureView.SurfaceTextureListener] handles several lifecycle events on a [ ].
@@ -227,16 +228,10 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
      */
 
     private val captureCallback: CaptureCallback = object : CaptureCallback() {
-        override fun onCaptureProgressed(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                partialResult: CaptureResult) {
+        override fun onCaptureProgressed(session: CameraCaptureSession, request: CaptureRequest, partialResult: CaptureResult) {
         }
 
-        override fun onCaptureCompleted(
-                session: CameraCaptureSession,
-                request: CaptureRequest,
-                result: TotalCaptureResult) {
+        override fun onCaptureCompleted(session: CameraCaptureSession, request: CaptureRequest, result: TotalCaptureResult) {
         }
     }
 
@@ -391,7 +386,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
             if (ActivityCompat.checkSelfPermission(requireActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return
             }
-            manager.openCamera(cameraId, stateCallback, null) // TODO: change to other handler
+            manager.openCamera(cameraId, stateCallback, null)
         } catch (e: CameraAccessException) {
             Log.e(TAG, "Failed to open Camera", e)
         } catch (e: InterruptedException) {
@@ -473,8 +468,9 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                         // Finally, we start displaying the camera preview.
                         previewRequest = previewRequestBuilder?.build()
 
-                        // TODO: change to other handler (Sam -- Phil: ?)
-                        captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null)
+                        if (!isCameraPaused) {
+                            captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null)
+                        }
                     }
                     catch (e: CameraAccessException) {
                         Log.e(TAG, "Failed to set up config to capture Camera", e)
@@ -525,14 +521,18 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     }
 
     fun pauseCamera() {
-        try { captureSession?.stopRepeating() }
-        catch (e: CameraAccessException) {
+        try {
+            captureSession?.stopRepeating()
+            isCameraPaused = true
+        } catch (e: CameraAccessException) {
         }
     }
 
     fun resumeCamera() {
-        try { captureSession?.setRepeatingRequest(previewRequest, captureCallback, null) }
-        catch (e: CameraAccessException) {
+        try {
+            captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
+            isCameraPaused = false
+        } catch (e: CameraAccessException) {
         }
     }
 
