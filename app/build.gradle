@@ -4,7 +4,7 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "ai.doc.netrunner"
+        applicationId "ai.doc.netrunner_android"
         minSdkVersion 22
         targetSdkVersion 28
         versionCode 1
