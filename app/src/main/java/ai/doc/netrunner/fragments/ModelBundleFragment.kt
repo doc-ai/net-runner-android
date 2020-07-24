@@ -57,7 +57,7 @@ class ModelBundleFragment : Fragment() {
         setHasOptionsMenu(true)
 
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = modelBundle.name
-        activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.INVISIBLE
+        activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.GONE
 
         view.findViewById<TextView>(R.id.title).text = modelBundle.name
         view.findViewById<TextView>(R.id.authors).text = modelBundle.author
@@ -68,8 +68,8 @@ class ModelBundleFragment : Fragment() {
             callbacks?.onViewJsonSelected(modelBundle)
         }
 
-        view.findViewById<Button>(R.id.delete_model_button).visibility = if (modelBundlesViewModel.isDownloaded(modelBundle)) View.VISIBLE else View.INVISIBLE
-        view.findViewById<Button>(R.id.delete_model_button).setOnClickListener {
+        activity?.findViewById<ImageButton>(R.id.delete_model)?.visibility = if (modelBundlesViewModel.isDownloaded(modelBundle)) View.VISIBLE else View.GONE
+        activity?.findViewById<ImageButton>(R.id.delete_model)?.setOnClickListener {
             requestDelete()
         }
 

@@ -106,7 +106,8 @@
             android:layout_marginTop="12dp"
             android:layout_marginBottom="12dp"
             android:backgroundTint="@android:color/holo_orange_dark"
-            android:text="@string/delete_model_button" />
+            android:text="@string/delete_model_button"
+            android:visibility="gone" />
 
         <!-- Actions -->
 

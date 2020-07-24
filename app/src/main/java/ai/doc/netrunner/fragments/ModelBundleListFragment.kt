@@ -77,6 +77,7 @@ class ModelBundleListFragment : Fragment() {
 
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = "Manage Models"
         activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.VISIBLE
+        activity?.findViewById<ImageButton>(R.id.delete_model)?.visibility = View.GONE
 
         // import_model
 

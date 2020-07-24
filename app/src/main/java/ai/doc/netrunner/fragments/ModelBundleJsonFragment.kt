@@ -47,7 +47,8 @@ class ModelBundleJsonFragment : Fragment() {
         setHasOptionsMenu(true)
 
         activity?.findViewById<Toolbar>(R.id.toolbar)?.title = modelBundle.name
-        activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.INVISIBLE
+        activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.GONE
+        activity?.findViewById<ImageButton>(R.id.delete_model)?.visibility = View.GONE
 
         view.findViewById<TextView>(R.id.json_textview).text = modelBundle.info.toString(2)
 
