@@ -43,10 +43,6 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.
 
     // Creation
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_live_camera_tab, container, false)
     }
