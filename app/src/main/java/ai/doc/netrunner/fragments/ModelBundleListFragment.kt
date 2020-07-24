@@ -51,16 +51,16 @@ class ModelBundleListFragment : Fragment() {
         }
     }
 
-    private inner class ModelBundleAdapter(var modelBundles: List<TIOModelBundle>) : RecyclerView.Adapter<ModelBundleHolder>() {
+    private inner class ModelBundleAdapter(var modelBundlesViewModel: ModelBundlesViewModel) : RecyclerView.Adapter<ModelBundleHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ModelBundleHolder {
             return ModelBundleHolder( layoutInflater.inflate(R.layout.list_item_model_bundle, parent, false) )
         }
 
-        override fun getItemCount(): Int = modelBundles.size
+        override fun getItemCount(): Int = modelBundlesViewModel.modelBundles.size
 
         override fun onBindViewHolder(holder: ModelBundleHolder, position: Int) {
-            holder.bind(modelBundles[position])
+            holder.bind(modelBundlesViewModel.modelBundles[position])
         }
     }
 
@@ -81,7 +81,7 @@ class ModelBundleListFragment : Fragment() {
         // import_model
 
         modelBundleRecyclerView = view.findViewById(R.id.model_bundle_recycler_view)
-        modelBundleRecyclerView.adapter = ModelBundleAdapter(modelBundlesViewModel.modelBundles)
+        modelBundleRecyclerView.adapter = ModelBundleAdapter(modelBundlesViewModel)
         modelBundleRecyclerView.layoutManager = LinearLayoutManager(context)
         modelBundleRecyclerView.addItemDecoration(DividerItemDecoration(context, DividerItemDecoration.VERTICAL))
 
@@ -107,5 +107,9 @@ class ModelBundleListFragment : Fragment() {
             else ->
                 super.onOptionsItemSelected(item)
         }
+    }
+
+    fun reloadView() {
+        modelBundleRecyclerView.adapter?.notifyDataSetChanged()
     }
 }

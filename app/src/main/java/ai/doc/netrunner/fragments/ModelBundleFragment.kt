@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -33,6 +34,7 @@ class ModelBundleFragment : Fragment() {
 
     interface Callbacks {
         fun onViewJsonSelected(modelBundle: TIOModelBundle)
+        fun onDeleteModelSelected(modelBundle: TIOModelBundle)
     }
 
     private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
@@ -66,6 +68,11 @@ class ModelBundleFragment : Fragment() {
             callbacks?.onViewJsonSelected(modelBundle)
         }
 
+        view.findViewById<Button>(R.id.delete_model_button).visibility = if (modelBundlesViewModel.isDownloaded(modelBundle)) View.VISIBLE else View.INVISIBLE
+        view.findViewById<Button>(R.id.delete_model_button).setOnClickListener {
+            requestDelete()
+        }
+
         return view
     }
 
@@ -88,6 +95,22 @@ class ModelBundleFragment : Fragment() {
             else ->
                 super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun requestDelete() {
+        AlertDialog.Builder(requireContext()).apply {
+            setTitle("Delete Model")
+            setMessage("Are you sure you want to delete the model? This operation cannot be undone.")
+
+            setPositiveButton("Delete") { dialog, _ ->
+                callbacks?.onDeleteModelSelected(modelBundle)
+                dialog.dismiss()
+            }
+            setNegativeButton("Cancel") { dialog, _ ->
+                dialog.cancel()
+            }
+
+        }.show()
     }
 
 }

@@ -42,12 +42,12 @@
     <string name="modelrunner_exception_change_model_message">This was a problem loading the model with the current settings, falling back to previous model"</string>
     <string name="modelrunner_exception_change_settings_message">This was a problem loading the model with these settings, falling back to previous models"</string>
     <string name="manage_models">Manage Models</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+
     <string name="model_bundle_name_title">Name</string>
     <string name="model_bundle_authors_title">Authors</string>
     <string name="model_bundle_details_title">Details</string>
     <string name="model_bundle_license_title">License</string>
     <string name="model_bundle_view_json_button">View JSON</string>
     <string name="manage_models_activity_title">Manage Models</string>
+    <string name="delete_model_button">Delete Model</string>
 </resources>
