@@ -33,6 +33,7 @@ import java.net.ConnectException
 import java.util.*
 
 private const val TAG = "ImportModelBundleFrag"
+private const val TENSORIO_URL = "https://github.com/doc-ai/tensorio"
 
 class ImportModelBundleFragment : DialogFragment() {
 
@@ -50,7 +51,7 @@ class ImportModelBundleFragment : DialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return AlertDialog.Builder(requireActivity()).apply {
-            setTitle("Import Model")
+            setTitle(R.string.import_model_dialog_title)
 
             val inflater = requireActivity().layoutInflater
             val view = inflater.inflate(R.layout.fragment_import_model_bundle, null, false)
@@ -60,13 +61,13 @@ class ImportModelBundleFragment : DialogFragment() {
 
             view.findViewById<TextView>(R.id.tensorio_info).setOnClickListener {
                 startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("https://github.com/doc-ai/tensorio")
+                    data = Uri.parse(TENSORIO_URL)
                 })
             }
 
             setView(view)
 
-            setPositiveButton("OK", null)
+            setPositiveButton(R.string.dialog_ok_button, null)
             setNegativeButton(android.R.string.cancel) { dialog, which ->
                 dialog.cancel()
             }
@@ -277,10 +278,10 @@ class ImportModelBundleFragment : DialogFragment() {
         val c = context ?: return
 
         AlertDialog.Builder(c).apply {
-            setTitle("Unable to Download Model")
-            setMessage("A network error occurred, check the url and try again.")
+            setTitle(R.string.import_model_network_error_dialog_title)
+            setMessage(R.string.import_model_network_error_dialog_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -290,10 +291,10 @@ class ImportModelBundleFragment : DialogFragment() {
         val c = context ?: return
 
         AlertDialog.Builder(c).apply {
-            setTitle("Unable to Download Model")
-            setMessage("An error occurred while downloading the model, check the url or wait a few moments and try again.")
+            setTitle(R.string.import_model_file_error_dialog_title)
+            setMessage(R.string.import_model_file_error_dialog_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -303,10 +304,10 @@ class ImportModelBundleFragment : DialogFragment() {
         val c = context ?: return
 
         AlertDialog.Builder(c).apply {
-            setTitle("Unable to Download Model")
-            setMessage("An error occurred while downloading the model, check the url or wait a few moments and try again.")
+            setTitle(R.string.import_model_other_error_dialog_title)
+            setMessage(R.string.import_model_other_error_dialog_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -316,10 +317,10 @@ class ImportModelBundleFragment : DialogFragment() {
         val c = context ?: return
 
         AlertDialog.Builder(c).apply {
-            setTitle("Unable to Validate Model")
-            setMessage("Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.")
+            setTitle(R.string.import_model_validation_error_dialog_title)
+            setMessage(R.string.import_model_validation_error_dialog_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()

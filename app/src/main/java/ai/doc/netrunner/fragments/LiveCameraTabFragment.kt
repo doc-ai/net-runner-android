@@ -24,7 +24,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
  * A simple [Fragment] subclass.
  */
 
-class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher /*, View.OnTouchListener */ {
+class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher {
 
     // UI
 

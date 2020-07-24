@@ -532,7 +532,7 @@ class MainActivity : AppCompatActivity() {
             setTitle(R.string.modelrunner_initfail_dialog_title)
             setMessage(R.string.modelrunner_initfail_dialog_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -545,7 +545,7 @@ class MainActivity : AppCompatActivity() {
             setTitle(R.string.modelrunner_exception_run_inference_dialog_title)
             setMessage(R.string.modelrunner_exception_run_inference_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -558,7 +558,7 @@ class MainActivity : AppCompatActivity() {
             setTitle(R.string.modelrunner_settings_exception_dialog_title)
             setMessage(R.string.modelrunner_exception_change_settings_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()
@@ -571,7 +571,7 @@ class MainActivity : AppCompatActivity() {
             setTitle(R.string.modelrunner_model_exception_dialog_title)
             setMessage(R.string.modelrunner_exception_change_model_message)
 
-            setPositiveButton("OK") { dialog, _ ->
+            setPositiveButton(R.string.dialog_ok_button) { dialog, _ ->
                 dialog.dismiss()
             }
         }.show()

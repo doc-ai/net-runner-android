@@ -99,14 +99,14 @@ class ModelBundleFragment : Fragment() {
 
     private fun requestDelete() {
         AlertDialog.Builder(requireContext()).apply {
-            setTitle("Delete Model")
-            setMessage("Are you sure you want to delete the model? This operation cannot be undone.")
+            setTitle(R.string.delete_model_dialog_title)
+            setMessage(R.string.delete_model_dialog_message)
 
-            setPositiveButton("Delete") { dialog, _ ->
+            setPositiveButton(R.string.delete_model_dialog_delete_button) { dialog, _ ->
                 callbacks?.onDeleteModelSelected(modelBundle)
                 dialog.dismiss()
             }
-            setNegativeButton("Cancel") { dialog, _ ->
+            setNegativeButton(R.string.delete_model_dialog_cancel_button) { dialog, _ ->
                 dialog.cancel()
             }
 
