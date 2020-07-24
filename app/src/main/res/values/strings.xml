@@ -48,6 +48,29 @@
     <string name="model_bundle_details_title">Details</string>
     <string name="model_bundle_license_title">License</string>
     <string name="model_bundle_view_json_button">View JSON</string>
+
     <string name="manage_models_activity_title">Manage Models</string>
+    <string name="model_bundle_list_title">Manage Models</string>
+
     <string name="delete_model_button">Delete Model</string>
+
+    <string name="delete_model_dialog_title">Delete Model</string>
+    <string name="delete_model_dialog_message">Are you sure you want to delete the model? This operation cannot be undone.</string>
+    <string name="delete_model_dialog_delete_button">Delete</string>
+    <string name="delete_model_dialog_cancel_button">Cancel</string>
+    <string name="import_model_dialog_title">Import Model</string>
+
+    <string name="import_model_network_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_network_error_dialog_message">A network error occurred, check the url and try again.</string>
+
+    <string name="import_model_file_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_file_error_dialog_message">An error occurred while downloading the model, check the url or wait a few moments and try again.</string>
+
+    <string name="import_model_other_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_other_error_dialog_message">An error occurred while downloading the model, check the url or wait a few moments and try again.</string>
+
+    <string name="import_model_validation_error_dialog_title">Unable to Validate Model</string>
+    <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.</string>
+
+    <string name="dialog_ok_button">OK</string>
 </resources>

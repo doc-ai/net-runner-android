@@ -75,7 +75,7 @@ class ModelBundleListFragment : Fragment() {
 
         setHasOptionsMenu(true)
 
-        activity?.findViewById<Toolbar>(R.id.toolbar)?.title = "Manage Models"
+        activity?.findViewById<Toolbar>(R.id.toolbar)?.title = getString(R.string.model_bundle_list_title)
         activity?.findViewById<ImageButton>(R.id.import_model)?.visibility = View.VISIBLE
         activity?.findViewById<ImageButton>(R.id.delete_model)?.visibility = View.GONE
 
@@ -100,7 +100,7 @@ class ModelBundleListFragment : Fragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item?.itemId) {
+        return when (item.itemId) {
             android.R.id.home -> {
                 activity?.finish()
                 true
