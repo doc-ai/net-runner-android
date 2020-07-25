@@ -108,11 +108,8 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         setupInputSourceButton()
         setupDrawer()
 
-        setupWelcome()
-
-        if (savedInstanceState == null) {
-            setupFragment(viewModel.currentTab)
-        }
+        setupWelcome(!alreadyWelcomed)
+        restoreState(savedInstanceState)
     }
 
     /** Initializes the model runner and falls back on default model if there are problems */
@@ -148,6 +145,21 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
             alertInitModelRunnerException()
             resetSettings()
             initModelRunner()
+        }
+    }
+
+    private fun restoreState(savedInstanceState: Bundle?) {
+        // Cold start: (savedInstanceState==null) Must install the current tab
+        // Warm start: (savedInstanceState==val ) UI recreated by OS
+
+        // If camera permissions have changed in the meantime, regardless the start,
+        // then relaunch welcome even if already shown
+
+        if (!PermissionsManager.hasCameraPermissions(this)) {
+            setupWelcome(true)
+            setupFragment(viewModel.currentTab)
+        } else  if (savedInstanceState == null) {
+            setupFragment(viewModel.currentTab)
         }
     }
 
@@ -539,13 +551,13 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         prefs.getBoolean(getString(R.string.prefs_welcomed), false)
     }
 
-    private fun setupWelcome() {
-        if (alreadyWelcomed) {
-            supportActionBar?.show()
-        } else {
+    private fun setupWelcome(showWelcome: Boolean) {
+        if (showWelcome) {
             window.statusBarColor = resources.getColor(R.color.black)
             viewModel.currentTab = Tab.Welcome
             supportActionBar?.hide()
+        } else {
+            supportActionBar?.show()
         }
     }
 
