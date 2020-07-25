@@ -86,5 +86,5 @@
     <string name="get_started_button">Get Started</string>
     <string name="net_runner">Net Runner</string>
     <string name="by">By</string>
-    <string name="about_net_runner">The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera for real-time inference.</string>
+    <string name="about_net_runner">The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera to get started.</string>
 </resources>
