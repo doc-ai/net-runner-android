@@ -406,11 +406,13 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (PermissionsManager.hasImageGalleryPermissions(this)) {
                 // Delay is necessary or app freezes with onActivityResult never called
                 Handler().postDelayed({
                     pickImage()
                 }, 100)
+            } else if (PermissionsManager.neverAskImageGalleryPermissionsAgain(this)) {
+                showImageGalleryRationale()
             }
         }
     }
@@ -420,12 +422,10 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     //region Image Picker
 
     private fun pickImage() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE_REQUEST_CODE)
+        if (PermissionsManager.hasImageGalleryPermissions(this)) {
+            startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, REQUEST_CODE_PICK_IMAGE)
         } else {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
+            PermissionsManager.requestImageGalleryPermissions(this, READ_EXTERNAL_STORAGE_REQUEST_CODE)
         }
     }
 
@@ -446,6 +446,21 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
             changeTab(Tab.SinglePhoto)
             cursor.close()
         }
+    }
+
+    private fun showImageGalleryRationale() {
+        AlertDialog.Builder(this).apply {
+            setTitle(getString(R.string.image_gallery_dialog_go_to_settings_title))
+            setMessage(getString(R.string.image_gallery_dialog_go_to_settings_message))
+
+            setPositiveButton(R.string.dialog_go_to_settings_button) { dialog, _ ->
+                PermissionsManager.openSettings(this@MainActivity)
+                dialog.dismiss()
+            }
+            setNegativeButton(R.string.dialog_cancel_button) { dialog, _ ->
+                dialog.cancel()
+            }
+        }.show()
     }
 
     //region Take Photo

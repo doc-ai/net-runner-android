@@ -74,7 +74,7 @@ class WelcomeFragment : Fragment(), ModelRunnerWatcher, ActivityCompat.OnRequest
             setTitle(getString(R.string.welcome_dialog_go_to_settings_title))
             setMessage(getString(R.string.welcome_dialog_go_to_settings_message))
 
-            setPositiveButton(R.string.welcome_dialog_go_to_settings_button) { dialog, _ ->
+            setPositiveButton(R.string.dialog_go_to_settings_button) { dialog, _ ->
                 PermissionsManager.openSettings(this@WelcomeFragment)
                 dialog.dismiss()
             }
