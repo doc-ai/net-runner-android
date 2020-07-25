@@ -2,17 +2,15 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.utilities.ModelRunnerWatcher
-import android.Manifest
+import ai.doc.netrunner.utilities.PermissionsManager
 import android.content.Context
-import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 
 private const val LIVE_CAMERA_PERMISSIONS_REQUEST_CODE = 2001
@@ -46,41 +44,44 @@ class WelcomeFragment : Fragment(), ModelRunnerWatcher, ActivityCompat.OnRequest
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        view.findViewById<Button>(R.id.start_camera_button).setOnClickListener {
+        view.findViewById<Button>(R.id.get_started_button).setOnClickListener {
             getStarted()
         }
     }
 
     // Get Started: Request Permissions
 
-    private val requiredPermissions = arrayOf(Manifest.permission.CAMERA)
-
-    // TODO: If "do not ask again" take to settings
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if (requiredPermissionsGranted()) {
-            callbacks?.onWelcomeCompleted(requiredPermissionsGranted())
+        if (PermissionsManager.hasCameraPermissions(requireActivity())) {
+            callbacks?.onWelcomeCompleted(true)
+        } else if (PermissionsManager.neverAskCameraPermissionsAgain(requireActivity())) {
+            showCameraRationale()
         }
-
-    }
-
-    private fun requiredPermissionsGranted(): Boolean {
-        for (permission in requiredPermissions) {
-            if (ContextCompat.checkSelfPermission(requireActivity(), permission!!) != PackageManager.PERMISSION_GRANTED) {
-                return false
-            }
-        }
-        return true
     }
 
     private fun getStarted() {
-        if (requiredPermissionsGranted()) {
+        if (PermissionsManager.hasCameraPermissions(requireActivity())) {
             callbacks?.onWelcomeCompleted(true)
         } else {
-            requestPermissions(requiredPermissions, LIVE_CAMERA_PERMISSIONS_REQUEST_CODE)
+            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST_CODE)
         }
+    }
+
+    private fun showCameraRationale() {
+        AlertDialog.Builder(requireContext()).apply {
+            setTitle(getString(R.string.welcome_dialog_go_to_settings_title))
+            setMessage(getString(R.string.welcome_dialog_go_to_settings_message))
+
+            setPositiveButton(R.string.welcome_dialog_go_to_settings_button) { dialog, _ ->
+                PermissionsManager.openSettings(this@WelcomeFragment)
+                dialog.dismiss()
+            }
+            setNegativeButton(R.string.dialog_cancel_button) { dialog, _ ->
+                dialog.cancel()
+            }
+        }.show()
     }
 
     // Model Runner is Unused

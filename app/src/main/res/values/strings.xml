@@ -73,5 +73,14 @@
     <string name="import_model_validation_error_dialog_title">Unable to Validate Model</string>
     <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.</string>
 
+    <string name="welcome_dialog_go_to_settings_button">Go to App Settings</string>
+
     <string name="dialog_ok_button">OK</string>
+    <string name="dialog_cancel_button">Cancel</string>
+    <string name="welcome_dialog_go_to_settings_title">About Camera Permissions</string>
+    <string name="welcome_dialog_go_to_settings_message">Net Runner is a real-time environment for running computer vision machine learning models and cannot function without the camera. Please enable camera permissions before continuing.</string>
+    <string name="get_started_button">Get Started</string>
+    <string name="net_runner">Net Runner</string>
+    <string name="by">By</string>
+    <string name="about_net_runner">The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera for real-time inference.</string>
 </resources>

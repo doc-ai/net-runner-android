@@ -507,7 +507,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     }
 
     private fun setupWelcome() {
-        if (alreadyWelcomed) {
+        if (alreadyWelcomed && PermissionsManager.hasCameraPermissions(this)) {
             supportActionBar?.show()
         } else {
             window.statusBarColor = resources.getColor(R.color.black)

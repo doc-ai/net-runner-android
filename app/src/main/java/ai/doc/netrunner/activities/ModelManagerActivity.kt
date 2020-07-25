@@ -18,7 +18,6 @@ import android.view.MenuItem
 import android.widget.ImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.navigation.NavigationView
 import java.io.File
 
 const val IMPORT_DIALOG_TAG = "import_dialog"
