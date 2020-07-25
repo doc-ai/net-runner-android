@@ -52,6 +52,7 @@ import kotlin.collections.ArrayList
 
 private const val READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST = 1001
 private const val LIVE_CAMERA_PERMISSIONS_REQUEST = 2001
+private const val TAKE_PHOTO_PERMISSIONS_REQUEST = 3001
 
 private const val PICK_IMAGE_ACTIVITY = 1
 private const val IMAGE_CAPTURE_ACTIVITY = 2
@@ -266,7 +267,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
                 setItems(items) { dialog, which ->
                     dialog.dismiss()
                     when (which) {
-                        0 -> changeTab(Tab.LiveVideo)
+                        0 -> runLiveVideo()
                         1 -> takePhoto()
                         2 -> pickImage()
                     }
@@ -406,23 +407,26 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
+        // Delays are necessary or app freezes with onActivityResult never called
+
         when (requestCode) {
             READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST -> {
                 if (PermissionsManager.hasImageGalleryPermissions(this)) {
-                    // Delay is necessary or app freezes with onActivityResult never called
-                    Handler().postDelayed({
-                        pickImage()
-                    }, 100)
+                    Handler().postDelayed({ pickImage() }, 100)
                 } else if (PermissionsManager.neverAskImageGalleryPermissionsAgain(this)) {
                     PermissionsManager.showImageGalleryRationale(this)
                 }
             }
+            TAKE_PHOTO_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasCameraPermissions(this)) {
+                    Handler().postDelayed({ takePhoto() }, 100)
+                } else if (PermissionsManager.neverAskCameraPermissionsAgain(this)) {
+                    PermissionsManager.showCameraRationale(this)
+                }
+            }
             LIVE_CAMERA_PERMISSIONS_REQUEST -> {
                 if (PermissionsManager.hasCameraPermissions(this)) {
-                    // Delay is necessary or app freezes with onActivityResult never called
-                    Handler().postDelayed({
-                        takePhoto()
-                    }, 100)
+                    Handler().postDelayed({ runLiveVideo() }, 100)
                 } else if (PermissionsManager.neverAskCameraPermissionsAgain(this)) {
                     PermissionsManager.showCameraRationale(this)
                 }
@@ -461,6 +465,18 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         }
     }
 
+    //region Live Video
+
+    private fun runLiveVideo() {
+        if (PermissionsManager.hasCameraPermissions(this)) {
+            changeTab(Tab.LiveVideo)
+        } else {
+            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST)
+        }
+    }
+
+    //endregion
+
     //region Take Photo
 
     // Really wish we could wrap this up into one method and lambdas rather than spreading it out
@@ -489,7 +505,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
                 }
             }
         } else {
-            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST)
+            PermissionsManager.requestCameraPermissions(this, TAKE_PHOTO_PERMISSIONS_REQUEST)
         }
     }
 
