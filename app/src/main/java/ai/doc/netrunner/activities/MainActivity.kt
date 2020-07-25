@@ -11,7 +11,6 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 
@@ -36,7 +35,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.GravityCompat
@@ -52,12 +50,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
-private const val REQUEST_CODE_PICK_IMAGE = 1
-private const val REQUEST_CODE_IMAGE_CAPTURE = 2
-private const val REQUEST_CODE_MODEL_MANAGER = 3
+private const val READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST = 1001
+private const val LIVE_CAMERA_PERMISSIONS_REQUEST = 2001
+private const val TAKE_PHOTO_PERMISSIONS_REQUEST = 3001
 
-class MainActivity : AppCompatActivity() {
+private const val PICK_IMAGE_ACTIVITY = 1
+private const val IMAGE_CAPTURE_ACTIVITY = 2
+private const val MODEL_MANAGER_ACTIVITY = 3
+
+class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
     private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<TIOModelBundle>) : ArrayAdapter<TIOModelBundle>(context, resource, list) {
 
@@ -106,6 +107,8 @@ class MainActivity : AppCompatActivity() {
 
         setupInputSourceButton()
         setupDrawer()
+
+        setupWelcome()
 
         if (savedInstanceState == null) {
             setupFragment(viewModel.currentTab)
@@ -158,13 +161,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         when (requestCode) {
-            REQUEST_CODE_PICK_IMAGE ->
+            PICK_IMAGE_ACTIVITY ->
                 showImageResults(data)
-            REQUEST_CODE_IMAGE_CAPTURE -> {
+            IMAGE_CAPTURE_ACTIVITY -> {
                 revokeCameraActivityPermissions(takePhotoUri)
                 showTakenPhotoResults()
             }
-            REQUEST_CODE_MODEL_MANAGER -> {
+            MODEL_MANAGER_ACTIVITY -> {
                 if (data?.getBooleanExtra(MODEL_MANAGER_DID_UPDATE_MODELS, false) == true) {
                     reloadModelBundles()
                 }
@@ -256,7 +259,6 @@ class MainActivity : AppCompatActivity() {
         button.setOnClickListener {
             AlertDialog.Builder(this).apply {
                 setTitle(R.string.input_source_dialog_title)
-                //setIcon(android.R.drawable.ic_menu_camera)
 
                 setNegativeButton(android.R.string.cancel) { dialog, which ->
                     dialog.cancel()
@@ -265,7 +267,7 @@ class MainActivity : AppCompatActivity() {
                 setItems(items) { dialog, which ->
                     dialog.dismiss()
                     when (which) {
-                        0 -> changeTab(Tab.LiveVideo)
+                        0 -> runLiveVideo()
                         1 -> takePhoto()
                         2 -> pickImage()
                     }
@@ -290,8 +292,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
         supportActionBar?.let { actionbar ->
-            actionbar.setDisplayHomeAsUpEnabled(true)
             actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp)
+            actionbar.setDisplayHomeAsUpEnabled(true)
         }
 
         val nav = findViewById<NavigationView>(R.id.nav_view)
@@ -305,7 +307,7 @@ class MainActivity : AppCompatActivity() {
 
         (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
             (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
-            startActivityForResult(Intent(this, ModelManagerActivity::class.java), REQUEST_CODE_MODEL_MANAGER)
+            startActivityForResult(Intent(this, ModelManagerActivity::class.java), MODEL_MANAGER_ACTIVITY)
             return@setOnMenuItemClickListener true
         }
 
@@ -404,12 +406,30 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                // Delays is necessary or app freezes with onActivityResult never called
-                Handler().postDelayed({
-                    pickImage()
-                }, 100)
+
+        // Delays are necessary or app freezes with onActivityResult never called
+
+        when (requestCode) {
+            READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasImageGalleryPermissions(this)) {
+                    Handler().postDelayed({ pickImage() }, 100)
+                } else if (PermissionsManager.neverAskImageGalleryPermissionsAgain(this)) {
+                    PermissionsManager.showImageGalleryRationale(this)
+                }
+            }
+            TAKE_PHOTO_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasCameraPermissions(this)) {
+                    Handler().postDelayed({ takePhoto() }, 100)
+                } else if (PermissionsManager.neverAskCameraPermissionsAgain(this)) {
+                    PermissionsManager.showCameraRationale(this)
+                }
+            }
+            LIVE_CAMERA_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasCameraPermissions(this)) {
+                    Handler().postDelayed({ runLiveVideo() }, 100)
+                } else if (PermissionsManager.neverAskCameraPermissionsAgain(this)) {
+                    PermissionsManager.showCameraRationale(this)
+                }
             }
         }
     }
@@ -419,12 +439,10 @@ class MainActivity : AppCompatActivity() {
     //region Image Picker
 
     private fun pickImage() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), READ_EXTERNAL_STORAGE_REQUEST_CODE)
+        if (PermissionsManager.hasImageGalleryPermissions(this)) {
+            startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, PICK_IMAGE_ACTIVITY)
         } else {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
-            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE)
+            PermissionsManager.requestImageGalleryPermissions(this, READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST)
         }
     }
 
@@ -447,6 +465,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    //region Live Video
+
+    private fun runLiveVideo() {
+        if (PermissionsManager.hasCameraPermissions(this)) {
+            changeTab(Tab.LiveVideo)
+        } else {
+            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST)
+        }
+    }
+
+    //endregion
+
     //region Take Photo
 
     // Really wish we could wrap this up into one method and lambdas rather than spreading it out
@@ -454,24 +484,28 @@ class MainActivity : AppCompatActivity() {
     private var takePhotoUri: Uri? = null
 
     private fun takePhoto() {
-         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            takePictureIntent.resolveActivity(packageManager)?.also {
+        if (PermissionsManager.hasCameraPermissions(this)) {
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                takePictureIntent.resolveActivity(packageManager)?.also {
 
-                val file: File? = try  {
-                    createTempTakenPhotoFile()
-                } catch (x: IOException) {
-                    // TODO: Show error
-                    null
-                }
+                    val file: File? = try {
+                        createTempTakenPhotoFile()
+                    } catch (x: IOException) {
+                        // TODO: Show error
+                        null
+                    }
 
-                file?.also {
-                    takePhotoUri = FileProvider.getUriForFile(this, "ai.doc.netrunner.fileprovider", file)
+                    file?.also {
+                        takePhotoUri = FileProvider.getUriForFile(this, "ai.doc.netrunner.fileprovider", file)
 
-                    grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
-                    startActivityForResult(takePictureIntent, REQUEST_CODE_IMAGE_CAPTURE)
+                        grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
+                        startActivityForResult(takePictureIntent, IMAGE_CAPTURE_ACTIVITY)
+                    }
                 }
             }
+        } else {
+            PermissionsManager.requestCameraPermissions(this, TAKE_PHOTO_PERMISSIONS_REQUEST)
         }
     }
 
@@ -499,6 +533,38 @@ class MainActivity : AppCompatActivity() {
 
     //endregion
 
+    //region Welcome
+
+    private val alreadyWelcomed by lazy {
+        prefs.getBoolean(getString(R.string.prefs_welcomed), false)
+    }
+
+    private fun setupWelcome() {
+        if (alreadyWelcomed) {
+            supportActionBar?.show()
+        } else {
+            window.statusBarColor = resources.getColor(R.color.black)
+            viewModel.currentTab = Tab.Welcome
+            supportActionBar?.hide()
+        }
+    }
+
+    override fun onWelcomeCompleted(didGrantPermissions: Boolean) {
+        if (!didGrantPermissions) {
+            return
+        }
+
+        prefs.edit(true) { putBoolean(getString(R.string.prefs_welcomed), true) }
+        changeTab(MainViewModel.Tab.LiveVideo)
+
+        Handler().postDelayed({ // for effect
+            window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
+            supportActionBar?.show()
+        }, 100)
+    }
+
+    //endregion
+
     //region Fragment Management
 
     /** Setup new tab unless we're on video and requesting video */
@@ -516,6 +582,7 @@ class MainActivity : AppCompatActivity() {
         val fragment: Fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraTabFragment()
             Tab.SinglePhoto -> SingleImageTabFragment()
+            Tab.Welcome -> WelcomeFragment()
         }
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()

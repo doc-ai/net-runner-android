@@ -10,10 +10,11 @@ class MainViewModel : ViewModel() {
 
     enum class Tab {
         LiveVideo,
-        SinglePhoto
+        SinglePhoto,
+        Welcome
     }
 
-    var currentTab = Tab.LiveVideo
+    var currentTab =  Tab.LiveVideo
 
     // Model Runner
 

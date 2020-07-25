@@ -24,6 +24,7 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
 
 // TODO: Migrate to CameraView (#53)
+// TODO: Move permissions check to Tab Fragment
 
 open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
@@ -363,16 +364,19 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
     }
 
     private val requiredPermissions = arrayOf(Manifest.permission.CAMERA)
-    private var checkedPermissions = false
+    // private var checkedPermissions = false
 
     private fun openCamera(width: Int, height: Int) {
-
-        checkedPermissions = if (!checkedPermissions && !allPermissionsGranted()) {
-            ActivityCompat.requestPermissions(requireActivity(), requiredPermissions, PERMISSIONS_REQUEST_CODE)
+        if (!requiredPermissionsGranted()) {
             return
-        } else {
-            true
         }
+
+//        checkedPermissions = if (!checkedPermissions && !requiredPermissionsGranted()) {
+//            ActivityCompat.requestPermissions(requireActivity(), requiredPermissions, PERMISSIONS_REQUEST_CODE)
+//            return
+//        } else {
+//            true
+//        }
 
         setUpCameraOutputs(width, height)
         configureTransform(width, height)
@@ -394,7 +398,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
     }
 
-    private fun allPermissionsGranted(): Boolean {
+    private fun requiredPermissionsGranted(): Boolean {
         for (permission in requiredPermissions) {
             if (ContextCompat.checkSelfPermission(requireActivity(), permission!!) != PackageManager.PERMISSION_GRANTED) {
                 return false
@@ -402,10 +406,10 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
         }
         return true
     }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
+//
+//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//    }
 
     /**
      * Closes the current [CameraDevice].

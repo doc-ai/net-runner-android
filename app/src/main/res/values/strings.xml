@@ -21,6 +21,7 @@
     <string name="nav_import_model">Import Model</string>
     <string name="nav_title_configuration">Configuration</string>
 
+    <string name="prefs_welcomed">prefs.welcomed</string>
     <string name="prefs_selected_model">prefs.model.selected_model</string>
     <string name="prefs_num_threads">prefs.model.num_threads</string>
     <string name="prefs_run_on_device">prefs.model.device</string>
@@ -73,4 +74,17 @@
     <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.</string>
 
     <string name="dialog_ok_button">OK</string>
+    <string name="dialog_cancel_button">Cancel</string>
+    <string name="dialog_go_to_settings_button">Go to App Settings</string>
+
+    <string name="welcome_dialog_go_to_settings_title">Camera Permissions</string>
+    <string name="welcome_dialog_go_to_settings_message">Net Runner is a real-time environment for running computer vision machine learning models and cannot function without the camera. Please enable the Camera permission in Settings to continue.</string>
+
+    <string name="image_gallery_dialog_go_to_settings_title">Image Gallery Permissions</string>
+    <string name="image_gallery_dialog_go_to_settings_message">Net Runner requires permission to access your photos. Please enable the Storage permission in Settings to continue.</string>
+
+    <string name="get_started_button">Get Started</string>
+    <string name="net_runner">Net Runner</string>
+    <string name="by">By</string>
+    <string name="about_net_runner">The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera for real-time inference.</string>
 </resources>
