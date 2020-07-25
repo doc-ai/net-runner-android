@@ -38,9 +38,6 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
                 TIOModelBundleManager(applicationContext, ""),
                 TIOModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
 
-        window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
-        findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
-
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

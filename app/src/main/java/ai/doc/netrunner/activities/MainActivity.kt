@@ -508,10 +508,9 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
     private fun setupWelcome() {
         if (alreadyWelcomed) {
-            findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
-            window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
             supportActionBar?.show()
         } else {
+            window.statusBarColor = resources.getColor(R.color.black)
             viewModel.currentTab = Tab.Welcome
             supportActionBar?.hide()
         }
@@ -527,7 +526,6 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
         Handler().postDelayed({ // for effect
             window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
-            findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
             supportActionBar?.show()
         }, 100)
     }

@@ -61,7 +61,7 @@
             android:layout_marginTop="24dp"
             android:layout_marginBottom="24dp"
             android:lineSpacingExtra="1sp"
-            android:text="The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera to work correctly. "
+            android:text="The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera for real-time inference. "
             android:textAlignment="center"
             android:textColor="#BBBBBB"
             android:textSize="12sp" />
@@ -76,7 +76,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="16dp"
         android:backgroundTint="@color/colorAccent"
-        android:text="Start Camera"
+        android:text="Get Started"
         android:layout_alignParentBottom="true"/>
 
 </RelativeLayout>
