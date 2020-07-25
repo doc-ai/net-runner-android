@@ -7,13 +7,19 @@ import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.tensorio.TIOModel.TIOModel
+import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 
 import android.os.Bundle
 import android.view.*
+import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 
 import androidx.fragment.app.Fragment
@@ -23,6 +29,10 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 /**
  * A simple [Fragment] subclass.
  */
+
+// TODO: LiveCamera should be a separate fragment that is managed by this one, this shouldn't be a subclass (
+
+private const val LIVE_CAMERA_PERMISSIONS_REQUEST_CODE = 2001
 
 class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher {
 
@@ -80,6 +90,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher {
 
         val resId = if (isCameraPaused) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause
         pauseButton.setImageResource(resId)
+
     }
 
     // Camera Control

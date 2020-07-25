@@ -52,12 +52,12 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 123
+private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 1001
 private const val REQUEST_CODE_PICK_IMAGE = 1
 private const val REQUEST_CODE_IMAGE_CAPTURE = 2
 private const val REQUEST_CODE_MODEL_MANAGER = 3
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
     private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<TIOModelBundle>) : ArrayAdapter<TIOModelBundle>(context, resource, list) {
 
@@ -106,6 +106,8 @@ class MainActivity : AppCompatActivity() {
 
         setupInputSourceButton()
         setupDrawer()
+
+        setupWelcome()
 
         if (savedInstanceState == null) {
             setupFragment(viewModel.currentTab)
@@ -256,7 +258,6 @@ class MainActivity : AppCompatActivity() {
         button.setOnClickListener {
             AlertDialog.Builder(this).apply {
                 setTitle(R.string.input_source_dialog_title)
-                //setIcon(android.R.drawable.ic_menu_camera)
 
                 setNegativeButton(android.R.string.cancel) { dialog, which ->
                     dialog.cancel()
@@ -290,8 +291,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
         supportActionBar?.let { actionbar ->
-            actionbar.setDisplayHomeAsUpEnabled(true)
             actionbar.setHomeAsUpIndicator(R.drawable.ic_menu_black_24dp)
+            actionbar.setDisplayHomeAsUpEnabled(true)
         }
 
         val nav = findViewById<NavigationView>(R.id.nav_view)
@@ -406,7 +407,7 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-                // Delays is necessary or app freezes with onActivityResult never called
+                // Delay is necessary or app freezes with onActivityResult never called
                 Handler().postDelayed({
                     pickImage()
                 }, 100)
@@ -499,6 +500,40 @@ class MainActivity : AppCompatActivity() {
 
     //endregion
 
+    //region Welcome
+
+    private val alreadyWelcomed by lazy {
+        prefs.getBoolean(getString(R.string.prefs_welcomed), false)
+    }
+
+    private fun setupWelcome() {
+        if (alreadyWelcomed) {
+            findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
+            window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
+            supportActionBar?.show()
+        } else {
+            viewModel.currentTab = Tab.Welcome
+            supportActionBar?.hide()
+        }
+    }
+
+    override fun onWelcomeCompleted(didGrantPermissions: Boolean) {
+        if (!didGrantPermissions) {
+            return
+        }
+
+        prefs.edit(true) { putBoolean(getString(R.string.prefs_welcomed), true) }
+        changeTab(MainViewModel.Tab.LiveVideo)
+
+        Handler().postDelayed({ // for effect
+            window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
+            findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
+            supportActionBar?.show()
+        }, 100)
+    }
+
+    //endregion
+
     //region Fragment Management
 
     /** Setup new tab unless we're on video and requesting video */
@@ -516,6 +551,7 @@ class MainActivity : AppCompatActivity() {
         val fragment: Fragment = when (tab) {
             Tab.LiveVideo -> LiveCameraTabFragment()
             Tab.SinglePhoto -> SingleImageTabFragment()
+            Tab.Welcome -> WelcomeFragment()
         }
 
         supportFragmentManager.beginTransaction().replace(R.id.container, fragment).commit()

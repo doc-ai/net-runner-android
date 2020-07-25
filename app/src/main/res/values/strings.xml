@@ -21,6 +21,7 @@
     <string name="nav_import_model">Import Model</string>
     <string name="nav_title_configuration">Configuration</string>
 
+    <string name="prefs_welcomed">prefs.welcomed</string>
     <string name="prefs_selected_model">prefs.model.selected_model</string>
     <string name="prefs_num_threads">prefs.model.num_threads</string>
     <string name="prefs_run_on_device">prefs.model.device</string>

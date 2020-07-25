@@ -18,6 +18,7 @@ import android.view.MenuItem
 import android.widget.ImageButton
 import androidx.appcompat.widget.Toolbar
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.navigation.NavigationView
 import java.io.File
 
 const val IMPORT_DIALOG_TAG = "import_dialog"
@@ -36,6 +37,9 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         modelBundlesViewModel.setBundleManagers(
                 TIOModelBundleManager(applicationContext, ""),
                 TIOModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
+
+        window.statusBarColor = resources.getColor(R.color.colorPrimaryDark)
+        findViewById<Toolbar>(R.id.toolbar).rootView.setBackgroundColor(resources.getColor(R.color.white))
 
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)

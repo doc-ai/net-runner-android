@@ -4,7 +4,8 @@
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:background="@color/black" >
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,11 +24,10 @@
                 android:id="@+id/actionbar_camera_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@android:drawable/ic_menu_camera"
-                android:background="?android:selectableItemBackgroundBorderless"
                 android:layout_gravity="end"
                 android:layout_marginEnd="@dimen/actionbar_camera_margin_right"
-                />
+                android:background="?android:selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_camera" />
 
         </androidx.appcompat.widget.Toolbar>
 
@@ -42,6 +42,7 @@
 
     <com.google.android.material.navigation.NavigationView
         android:id="@+id/nav_view"
+        android:background="@color/white"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
