@@ -9,11 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 
-private const val LIVE_CAMERA_PERMISSIONS_REQUEST_CODE = 2001
+private const val LIVE_CAMERA_PERMISSIONS_REQUEST = 2001
 
 class WelcomeFragment : Fragment(), ModelRunnerWatcher, ActivityCompat.OnRequestPermissionsResultCallback {
 
@@ -57,7 +56,7 @@ class WelcomeFragment : Fragment(), ModelRunnerWatcher, ActivityCompat.OnRequest
         if (PermissionsManager.hasCameraPermissions(requireActivity())) {
             callbacks?.onWelcomeCompleted(true)
         } else if (PermissionsManager.neverAskCameraPermissionsAgain(requireActivity())) {
-            showCameraRationale()
+            PermissionsManager.showCameraRationale(requireActivity())
         }
     }
 
@@ -65,23 +64,8 @@ class WelcomeFragment : Fragment(), ModelRunnerWatcher, ActivityCompat.OnRequest
         if (PermissionsManager.hasCameraPermissions(requireActivity())) {
             callbacks?.onWelcomeCompleted(true)
         } else {
-            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST_CODE)
+            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST)
         }
-    }
-
-    private fun showCameraRationale() {
-        AlertDialog.Builder(requireContext()).apply {
-            setTitle(getString(R.string.welcome_dialog_go_to_settings_title))
-            setMessage(getString(R.string.welcome_dialog_go_to_settings_message))
-
-            setPositiveButton(R.string.dialog_go_to_settings_button) { dialog, _ ->
-                PermissionsManager.openSettings(this@WelcomeFragment)
-                dialog.dismiss()
-            }
-            setNegativeButton(R.string.dialog_cancel_button) { dialog, _ ->
-                dialog.cancel()
-            }
-        }.show()
     }
 
     // Model Runner is Unused

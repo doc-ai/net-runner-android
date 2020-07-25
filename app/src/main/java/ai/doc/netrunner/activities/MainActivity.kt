@@ -11,7 +11,6 @@ import ai.doc.tensorio.TIOModel.TIOModelBundle
 
 import ai.doc.tensorio.TIOModel.TIOModelBundleManager
 import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 
@@ -36,7 +35,6 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.GravityCompat
@@ -52,10 +50,12 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-private const val READ_EXTERNAL_STORAGE_REQUEST_CODE = 1001
-private const val REQUEST_CODE_PICK_IMAGE = 1
-private const val REQUEST_CODE_IMAGE_CAPTURE = 2
-private const val REQUEST_CODE_MODEL_MANAGER = 3
+private const val READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST = 1001
+private const val LIVE_CAMERA_PERMISSIONS_REQUEST = 2001
+
+private const val PICK_IMAGE_ACTIVITY = 1
+private const val IMAGE_CAPTURE_ACTIVITY = 2
+private const val MODEL_MANAGER_ACTIVITY = 3
 
 class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
@@ -160,13 +160,13 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         }
 
         when (requestCode) {
-            REQUEST_CODE_PICK_IMAGE ->
+            PICK_IMAGE_ACTIVITY ->
                 showImageResults(data)
-            REQUEST_CODE_IMAGE_CAPTURE -> {
+            IMAGE_CAPTURE_ACTIVITY -> {
                 revokeCameraActivityPermissions(takePhotoUri)
                 showTakenPhotoResults()
             }
-            REQUEST_CODE_MODEL_MANAGER -> {
+            MODEL_MANAGER_ACTIVITY -> {
                 if (data?.getBooleanExtra(MODEL_MANAGER_DID_UPDATE_MODELS, false) == true) {
                     reloadModelBundles()
                 }
@@ -306,7 +306,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
         (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
             (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
-            startActivityForResult(Intent(this, ModelManagerActivity::class.java), REQUEST_CODE_MODEL_MANAGER)
+            startActivityForResult(Intent(this, ModelManagerActivity::class.java), MODEL_MANAGER_ACTIVITY)
             return@setOnMenuItemClickListener true
         }
 
@@ -405,14 +405,27 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == READ_EXTERNAL_STORAGE_REQUEST_CODE) {
-            if (PermissionsManager.hasImageGalleryPermissions(this)) {
-                // Delay is necessary or app freezes with onActivityResult never called
-                Handler().postDelayed({
-                    pickImage()
-                }, 100)
-            } else if (PermissionsManager.neverAskImageGalleryPermissionsAgain(this)) {
-                showImageGalleryRationale()
+
+        when (requestCode) {
+            READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasImageGalleryPermissions(this)) {
+                    // Delay is necessary or app freezes with onActivityResult never called
+                    Handler().postDelayed({
+                        pickImage()
+                    }, 100)
+                } else if (PermissionsManager.neverAskImageGalleryPermissionsAgain(this)) {
+                    PermissionsManager.showImageGalleryRationale(this)
+                }
+            }
+            LIVE_CAMERA_PERMISSIONS_REQUEST -> {
+                if (PermissionsManager.hasCameraPermissions(this)) {
+                    // Delay is necessary or app freezes with onActivityResult never called
+                    Handler().postDelayed({
+                        takePhoto()
+                    }, 100)
+                } else if (PermissionsManager.neverAskCameraPermissionsAgain(this)) {
+                    PermissionsManager.showCameraRationale(this)
+                }
             }
         }
     }
@@ -423,9 +436,9 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
     private fun pickImage() {
         if (PermissionsManager.hasImageGalleryPermissions(this)) {
-            startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, REQUEST_CODE_PICK_IMAGE)
+            startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, PICK_IMAGE_ACTIVITY)
         } else {
-            PermissionsManager.requestImageGalleryPermissions(this, READ_EXTERNAL_STORAGE_REQUEST_CODE)
+            PermissionsManager.requestImageGalleryPermissions(this, READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST)
         }
     }
 
@@ -448,21 +461,6 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         }
     }
 
-    private fun showImageGalleryRationale() {
-        AlertDialog.Builder(this).apply {
-            setTitle(getString(R.string.image_gallery_dialog_go_to_settings_title))
-            setMessage(getString(R.string.image_gallery_dialog_go_to_settings_message))
-
-            setPositiveButton(R.string.dialog_go_to_settings_button) { dialog, _ ->
-                PermissionsManager.openSettings(this@MainActivity)
-                dialog.dismiss()
-            }
-            setNegativeButton(R.string.dialog_cancel_button) { dialog, _ ->
-                dialog.cancel()
-            }
-        }.show()
-    }
-
     //region Take Photo
 
     // Really wish we could wrap this up into one method and lambdas rather than spreading it out
@@ -470,24 +468,28 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     private var takePhotoUri: Uri? = null
 
     private fun takePhoto() {
-         Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
-            takePictureIntent.resolveActivity(packageManager)?.also {
+        if (PermissionsManager.hasCameraPermissions(this)) {
+            Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+                takePictureIntent.resolveActivity(packageManager)?.also {
 
-                val file: File? = try  {
-                    createTempTakenPhotoFile()
-                } catch (x: IOException) {
-                    // TODO: Show error
-                    null
-                }
+                    val file: File? = try {
+                        createTempTakenPhotoFile()
+                    } catch (x: IOException) {
+                        // TODO: Show error
+                        null
+                    }
 
-                file?.also {
-                    takePhotoUri = FileProvider.getUriForFile(this, "ai.doc.netrunner.fileprovider", file)
+                    file?.also {
+                        takePhotoUri = FileProvider.getUriForFile(this, "ai.doc.netrunner.fileprovider", file)
 
-                    grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
-                    startActivityForResult(takePictureIntent, REQUEST_CODE_IMAGE_CAPTURE)
+                        grantCameraActivityPermissions(takePictureIntent, takePhotoUri)
+                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, takePhotoUri)
+                        startActivityForResult(takePictureIntent, IMAGE_CAPTURE_ACTIVITY)
+                    }
                 }
             }
+        } else {
+            PermissionsManager.requestCameraPermissions(this, LIVE_CAMERA_PERMISSIONS_REQUEST)
         }
     }
 
@@ -522,7 +524,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     }
 
     private fun setupWelcome() {
-        if (alreadyWelcomed && PermissionsManager.hasCameraPermissions(this)) {
+        if (alreadyWelcomed) {
             supportActionBar?.show()
         } else {
             window.statusBarColor = resources.getColor(R.color.black)
