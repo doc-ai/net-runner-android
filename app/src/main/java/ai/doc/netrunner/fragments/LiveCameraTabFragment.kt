@@ -7,19 +7,13 @@ import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.HandlerUtilities
 import ai.doc.tensorio.TIOModel.TIOModel
-import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
 import android.hardware.camera2.CameraCharacteristics
 
 import android.os.Bundle
 import android.view.*
-import android.widget.Button
-import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 
 import androidx.fragment.app.Fragment
