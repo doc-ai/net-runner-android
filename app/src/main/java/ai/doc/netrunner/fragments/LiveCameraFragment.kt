@@ -346,11 +346,13 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
             if (!cameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw RuntimeException("Time out waiting to lock camera opening.")
             }
-            manager.openCamera(cameraId, stateCallback, null)
+            manager.openCamera(cameraId!!, stateCallback, null)
         } catch (e: CameraAccessException) {
             Log.e(TAG, "Failed to open Camera", e)
         } catch (e: InterruptedException) {
             throw RuntimeException("Interrupted while trying to lock camera opening.", e)
+        } catch (e: Exception) {
+            Log.e(TAG, "Other error while opening camera", e)
         }
     }
 
@@ -412,7 +414,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
                         previewRequest = previewRequestBuilder?.build()
 
                         if (!isCameraPaused) {
-                            captureSession!!.setRepeatingRequest(previewRequest, captureCallback, null)
+                            captureSession!!.setRepeatingRequest(previewRequest!!, captureCallback, null)
                         }
                     }
                     catch (e: CameraAccessException) {
@@ -473,7 +475,7 @@ open class LiveCameraFragment : Fragment(), OnRequestPermissionsResultCallback {
 
     fun resumeCamera() {
         try {
-            captureSession?.setRepeatingRequest(previewRequest, captureCallback, null)
+            captureSession?.setRepeatingRequest(previewRequest!!, captureCallback, null)
             isCameraPaused = false
         } catch (e: CameraAccessException) {
         }
