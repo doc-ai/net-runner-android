@@ -1,23 +1,23 @@
 package ai.doc.netrunner.viewmodels
 
-import ai.doc.tensorio.TIOModel.TIOModelBundle
-import ai.doc.tensorio.TIOModel.TIOModelBundleManager
+import ai.doc.tensorio.core.modelbundle.ModelBundle
+import ai.doc.tensorio.core.modelbundle.Manager
 import androidx.lifecycle.ViewModel
 
 class ModelBundlesViewModel : ViewModel() {
 
-    private lateinit var assetsManager: TIOModelBundleManager
-    private lateinit var filesManager: TIOModelBundleManager
+    private lateinit var assetsManager: Manager
+    private lateinit var filesManager: Manager
 
     lateinit var modelIds: List<String>
         private set
 
-    lateinit var modelBundles: List<TIOModelBundle>
+    lateinit var modelBundles: List<ModelBundle>
         private set
 
     /** You must provide the view model with an assetsManager and a filesManager prior to using it */
 
-    fun setBundleManagers(assetsManager: TIOModelBundleManager, filesManager: TIOModelBundleManager) {
+    fun setBundleManagers(assetsManager: Manager, filesManager: Manager) {
         this.assetsManager = assetsManager
         this.filesManager = filesManager
         loadIdsAndBundles()
@@ -53,19 +53,19 @@ class ModelBundlesViewModel : ViewModel() {
 
     // TODO: Do not force unwrap here and return an option
 
-    fun bundleWithId(identifier: String): TIOModelBundle {
+    fun bundleWithId(identifier: String): ModelBundle {
         return filesManager.bundleWithId(identifier) ?: assetsManager.bundleWithId(identifier)!!
     }
 
     /** Returns true if the model bundle is one packaged with the application */
 
-    fun isAsset(bundle: TIOModelBundle): Boolean {
+    fun isAsset(bundle: ModelBundle): Boolean {
         return !filesManager.bundleIds.toList().contains(bundle.identifier)
     }
 
     /** Returns true if the model bundle is one the user has downloaded */
 
-    fun isDownloaded(bundle: TIOModelBundle): Boolean {
+    fun isDownloaded(bundle: ModelBundle): Boolean {
         return filesManager.bundleIds.toList().contains(bundle.identifier)
     }
 

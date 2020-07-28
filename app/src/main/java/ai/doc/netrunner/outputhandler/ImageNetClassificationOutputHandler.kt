@@ -6,7 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import ai.doc.netrunner.R
-import ai.doc.tensorio.TIOUtilities.TIOClassificationHelper
+import ai.doc.tensorio.core.utilities.ClassificationHelper
 import android.widget.TextView
 
 private const val CLASSIFICATION_TOP_N_COUNT = 3
@@ -60,9 +60,9 @@ class MobileNetClassificationOutputHandler : Fragment(), OutputHandler {
     private fun processOutput(output: Map<String, Any>?) {
         output?.let {
             val classification = it["classification"] as Map<String, Float>
-            val top5 = TIOClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
+            val top5 = ClassificationHelper.topN(classification, CLASSIFICATION_TOP_N_COUNT)
             if (previousTop5.size == 0) { previousTop5 = top5 as ArrayList<Map.Entry<String, Float>> }
-            val top5smoothed = TIOClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
+            val top5smoothed = ClassificationHelper.smoothClassification(previousTop5, top5, SMOOTHING_DECAY, SMOOTHING_THRESHOLD)
             val top5ordered = top5smoothed.take(SMOOTHING_TOP_N_COUNT).sortedWith(compareBy { it.value }).reversed()
             val top5formatted = formattedResults(top5ordered)
 

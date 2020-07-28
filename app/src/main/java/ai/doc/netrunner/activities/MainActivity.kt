@@ -7,10 +7,10 @@ import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.*
 import ai.doc.netrunner.viewmodels.MainViewModel
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
-import ai.doc.tensorio.TIOModel.TIOModelBundle
+import ai.doc.tensorio.core.modelbundle.ModelBundle
 
-import ai.doc.tensorio.TIOModel.TIOModelBundleManager
-import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
+import ai.doc.tensorio.core.modelbundle.Manager
+import ai.doc.tensorio.tflite.model.TFLiteModel
 import android.app.Activity
 import android.content.Context
 
@@ -60,7 +60,7 @@ private const val MODEL_MANAGER_ACTIVITY = 3
 
 class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
-    private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<TIOModelBundle>) : ArrayAdapter<TIOModelBundle>(context, resource, list) {
+    private class ModelBundleArrayAdapter(context: Context, @LayoutRes resource: Int, list: List<ModelBundle>) : ArrayAdapter<ModelBundle>(context, resource, list) {
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = super.getView(position, convertView, parent) as TextView
@@ -126,14 +126,14 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         // Load the Model
 
         modelBundlesViewModel.setBundleManagers(
-                TIOModelBundleManager(applicationContext, ""),
-                TIOModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
+                Manager(applicationContext, ""),
+                Manager(ModelManagerUtilities.getModelFilesDir(this)))
 
         try {
             val bundle = modelBundlesViewModel.bundleWithId(selectedModel)
             val model = bundle.newModel()
 
-            val modelRunner = ModelRunner((model as TIOTFLiteModel), modelRunnerExceptionHandler)
+            val modelRunner = ModelRunner((model as TFLiteModel), modelRunnerExceptionHandler)
 
             viewModel.modelRunner = modelRunner
             viewModel.modelRunner.device = ModelRunner.deviceFromString(device)
@@ -339,7 +339,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
                 val selectedModelId = selectedBundle.identifier
 
                 try { restartingInference {
-                    viewModel.modelRunner.model = selectedBundle.newModel() as TIOTFLiteModel
+                    viewModel.modelRunner.model = selectedBundle.newModel() as TFLiteModel
                     prefs.edit(true) { putString(getString(R.string.prefs_selected_model), selectedModelId) }
                     child<ModelRunnerWatcher>(R.id.container)?.modelDidChange()
                 }} catch (e: Exception) {

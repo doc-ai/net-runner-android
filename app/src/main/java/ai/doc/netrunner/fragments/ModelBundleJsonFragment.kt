@@ -2,7 +2,7 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
-import ai.doc.tensorio.TIOModel.TIOModelBundle
+import ai.doc.tensorio.core.modelbundle.ModelBundle
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
@@ -19,7 +19,7 @@ private const val ARG_MODEL_BUNDLE_ID = "model_bundle_id"
 class ModelBundleJsonFragment : Fragment() {
 
     companion object {
-        fun newInstance(modelBundle: TIOModelBundle): ModelBundleJsonFragment {
+        fun newInstance(modelBundle: ModelBundle): ModelBundleJsonFragment {
             val args = Bundle().apply {
                 putString(ARG_MODEL_BUNDLE_ID, modelBundle.identifier)
             }
@@ -31,7 +31,7 @@ class ModelBundleJsonFragment : Fragment() {
 
     private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
 
-    private lateinit var modelBundle: TIOModelBundle
+    private lateinit var modelBundle: ModelBundle
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

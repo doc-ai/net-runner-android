@@ -5,8 +5,8 @@ import ai.doc.netrunner.retrofit.NetRunnerService
 import ai.doc.netrunner.utilities.ModelManagerUtilities
 import ai.doc.netrunner.utilities.unzip
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
-import ai.doc.tensorio.TIOModel.TIOModelBundleValidator
-import ai.doc.tensorio.TIOModel.TIOModelBundleValidatorException
+import ai.doc.tensorio.core.modelbundle.Validator
+import ai.doc.tensorio.core.modelbundle.ValidatorException
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -141,7 +141,7 @@ class ImportModelBundleFragment : DialogFragment() {
 
             // Validate Model Bundle
 
-            val validator = TIOModelBundleValidator(requireContext(), modelBundleDir)
+            val validator = Validator(requireContext(), modelBundleDir)
 
             validator.validate() {_, json ->
                 // Reject models with non-unique identifiers, TODO: and non-unique filenames, currently fails on copy
@@ -163,7 +163,7 @@ class ImportModelBundleFragment : DialogFragment() {
             showFileDownloadErrorAlert()
         } catch (e: ArrayIndexOutOfBoundsException) {
             showModelBundleErrorAlert()
-        } catch (e: TIOModelBundleValidatorException) {
+        } catch (e: ValidatorException) {
             showModelBundleErrorAlert()
         } catch (e: FileAlreadyExistsException) {
             showModelBundleErrorAlert()

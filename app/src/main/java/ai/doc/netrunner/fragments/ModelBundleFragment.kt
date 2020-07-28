@@ -2,7 +2,7 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.R
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
-import ai.doc.tensorio.TIOModel.TIOModelBundle
+import ai.doc.tensorio.core.modelbundle.ModelBundle
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -22,7 +22,7 @@ private const val ARG_MODEL_BUNDLE_ID = "model_bundle_id"
 class ModelBundleFragment : Fragment() {
 
     companion object {
-        fun newInstance(modelBundle: TIOModelBundle): ModelBundleFragment {
+        fun newInstance(modelBundle: ModelBundle): ModelBundleFragment {
             val args = Bundle().apply {
                 putString(ARG_MODEL_BUNDLE_ID, modelBundle.identifier)
             }
@@ -33,13 +33,13 @@ class ModelBundleFragment : Fragment() {
     }
 
     interface Callbacks {
-        fun onViewJsonSelected(modelBundle: TIOModelBundle)
-        fun onDeleteModelSelected(modelBundle: TIOModelBundle)
+        fun onViewJsonSelected(modelBundle: ModelBundle)
+        fun onDeleteModelSelected(modelBundle: ModelBundle)
     }
 
     private val modelBundlesViewModel by activityViewModels<ModelBundlesViewModel>()
 
-    private lateinit var modelBundle: TIOModelBundle
+    private lateinit var modelBundle: ModelBundle
 
     private var callbacks: Callbacks? = null
 
