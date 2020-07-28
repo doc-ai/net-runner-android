@@ -6,7 +6,7 @@ import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.HandlerUtilities
-import ai.doc.tensorio.TIOModel.TIOModel
+import ai.doc.tensorio.core.model.Model
 import android.content.Context
 import android.content.SharedPreferences
 import android.hardware.camera2.CameraCharacteristics
@@ -115,7 +115,7 @@ class LiveCameraTabFragment : LiveCameraFragment(), ModelRunnerWatcher {
         startContinuousInference()
     }
 
-    private fun loadFragmentForModel(model: TIOModel) {
+    private fun loadFragmentForModel(model: Model) {
         val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
     }

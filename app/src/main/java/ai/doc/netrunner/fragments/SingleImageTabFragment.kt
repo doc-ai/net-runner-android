@@ -6,7 +6,7 @@ import ai.doc.netrunner.R
 import ai.doc.netrunner.outputhandler.OutputHandler
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.HandlerUtilities
-import ai.doc.tensorio.TIOModel.TIOModel
+import ai.doc.tensorio.core.model.Model
 
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -53,7 +53,7 @@ class SingleImageTabFragment : Fragment(), ModelRunnerWatcher {
         }
     }
 
-    private fun loadFragmentForModel(model: TIOModel) {
+    private fun loadFragmentForModel(model: Model) {
         val outputHandler = OutputHandlerManager.handlerForType(model.type).newInstance() as Fragment
         childFragmentManager.beginTransaction().replace(R.id.outputContainer, outputHandler).commit()
     }

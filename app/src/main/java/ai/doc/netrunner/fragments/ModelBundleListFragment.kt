@@ -2,7 +2,7 @@ package ai.doc.netrunner.fragments
 
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.netrunner.R
-import ai.doc.tensorio.TIOModel.TIOModelBundle
+import ai.doc.tensorio.core.modelbundle.ModelBundle
 import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -27,11 +27,11 @@ class ModelBundleListFragment : Fragment() {
     }
 
     interface Callbacks {
-        fun onModelBundleSelected(modelBundle: TIOModelBundle)
+        fun onModelBundleSelected(modelBundle: ModelBundle)
     }
 
     private inner class ModelBundleHolder(view: View) : RecyclerView.ViewHolder(view), View.OnClickListener {
-        private lateinit var modelBundle: TIOModelBundle
+        private lateinit var modelBundle: ModelBundle
 
         private val titleTextView: TextView = itemView.findViewById(R.id.model_bundle_title)
         private val infoTextView: TextView = itemView.findViewById(R.id.model_bundle_info)
@@ -40,7 +40,7 @@ class ModelBundleListFragment : Fragment() {
             itemView.setOnClickListener(this)
         }
 
-        fun bind(modelBundle: TIOModelBundle) {
+        fun bind(modelBundle: ModelBundle) {
             this.modelBundle = modelBundle
             titleTextView.text = modelBundle.name
             infoTextView.text = modelBundle.details

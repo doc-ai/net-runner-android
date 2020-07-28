@@ -1,9 +1,9 @@
 package ai.doc.netrunner.utilities
 
-import ai.doc.tensorio.TIOTFLiteModel.GpuDelegateHelper
-import ai.doc.tensorio.TIOTFLiteModel.NnApiDelegateHelper
-import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel
-import ai.doc.tensorio.TIOTFLiteModel.TIOTFLiteModel.HardwareBacking.*
+import ai.doc.tensorio.tflite.model.GpuDelegateHelper
+import ai.doc.tensorio.tflite.model.NnApiDelegateHelper
+import ai.doc.tensorio.tflite.model.TFLiteModel
+import ai.doc.tensorio.tflite.model.TFLiteModel.HardwareBacking.*
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.HandlerThread
@@ -45,7 +45,7 @@ interface ModelRunnerWatcher {
  * inference is executed can be caught and effectively dealt with.
  */
 
-class ModelRunner(model: TIOTFLiteModel, private var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
+class ModelRunner(model: TFLiteModel, private var uncaughtExceptionHandler: Thread.UncaughtExceptionHandler) {
     inner class GPUUnavailableException(): RuntimeException()
     inner class ModelLoadingException(): RuntimeException()
     inner class ModelInferenceException(): RuntimeException()
@@ -127,7 +127,7 @@ class ModelRunner(model: TIOTFLiteModel, private var uncaughtExceptionHandler: T
      * what to do next.
      */
 
-    var model: TIOTFLiteModel = model
+    var model: TFLiteModel = model
         @Throws(ModelLoadingException::class) set(newModel) {
             backgroundHandler.post {
                 try {

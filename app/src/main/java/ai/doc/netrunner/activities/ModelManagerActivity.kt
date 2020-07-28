@@ -7,8 +7,8 @@ import ai.doc.netrunner.fragments.ModelBundleFragment
 import ai.doc.netrunner.fragments.ModelBundleJsonFragment
 import ai.doc.netrunner.fragments.ModelBundleListFragment
 import ai.doc.netrunner.utilities.ModelManagerUtilities
-import ai.doc.tensorio.TIOModel.TIOModelBundle
-import ai.doc.tensorio.TIOModel.TIOModelBundleManager
+import ai.doc.tensorio.core.modelbundle.ModelBundle
+import ai.doc.tensorio.core.modelbundle.Manager
 import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -34,8 +34,8 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         setContentView(R.layout.activity_model_manager)
 
         modelBundlesViewModel.setBundleManagers(
-                TIOModelBundleManager(applicationContext, ""),
-                TIOModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
+                Manager(applicationContext, ""),
+                Manager(ModelManagerUtilities.getModelFilesDir(this)))
 
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)
@@ -64,7 +64,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         }
     }
 
-    override fun onModelBundleSelected(modelBundle: TIOModelBundle) {
+    override fun onModelBundleSelected(modelBundle: ModelBundle) {
         val fragment = ModelBundleFragment.newInstance(modelBundle)
         supportFragmentManager
                 .beginTransaction()
@@ -73,7 +73,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
                 .commit()
     }
 
-    override fun onViewJsonSelected(modelBundle: TIOModelBundle) {
+    override fun onViewJsonSelected(modelBundle: ModelBundle) {
         val fragment = ModelBundleJsonFragment.newInstance(modelBundle)
         supportFragmentManager
                 .beginTransaction()
@@ -82,7 +82,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
                 .commit()
     }
 
-    override fun onDeleteModelSelected(modelBundle: TIOModelBundle) {
+    override fun onDeleteModelSelected(modelBundle: ModelBundle) {
         supportFragmentManager.popBackStack()
 
         ModelManagerUtilities.deleteModelBundle(modelBundle)
