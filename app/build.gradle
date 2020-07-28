@@ -2,11 +2,11 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
     defaultConfig {
         applicationId "ai.doc.netrunner_android"
         minSdkVersion 22
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 2
         versionName "1.1"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -69,8 +69,8 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.8'
 
-    implementation 'com.github.doc-ai.tensorio-android:core:0.9.10'
-    implementation 'com.github.doc-ai.tensorio-android:tflite:0.9.10'
+    implementation 'com.github.doc-ai.tensorio-android:core:0.9.11'
+    implementation 'com.github.doc-ai.tensorio-android:tflite:0.9.11'
 
     testImplementation 'junit:junit:4.13'
 

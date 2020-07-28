@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
 
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
             val view = super.getView(position, convertView, parent) as TextView
-            view.text = getItem(position).name
+            view.text = getItem(position)!!.name
             return view
         }
 
