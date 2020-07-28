@@ -1,0 +1,90 @@
+<resources>
+    <string name="app_name">Net Runner</string>
+    <string name="doc_ai_logo">Doc.ai logo</string>
+    <string name="nnapi">NNAPI</string>
+    <string name="gpu">GPU</string>
+    <string name="cpu">CPU</string>
+    <string name="live_camera_menu_item_title">Live camera</string>
+    <string name="single_image_menu_item_title">Single image</string>
+    <string name="model_menu_item_title">Model</string>
+    <string name="device_menu_item_title">Accelerator</string>
+    <string name="threads_menu_item_title">Threads</string>
+    <string name="active_fragment_tag">active_fragment</string>
+    <string name="select_picture">Select picture</string>
+
+    <string name="use_16_bit_precision_menu_item_title">Use 16 bit precision</string>
+    <string name="configuration_menu_item_title">Configuration</string>
+    <string name="input_source_dialog_title">Select an Input Source</string>
+    <string name="input_source_dialog_choice_live_video">Live Video</string>
+    <string name="input_source_dialog_take_picture">Take a Picture</string>
+    <string name="input_source_dialog_choose_photo">Choose Photo</string>
+    <string name="nav_import_model">Import Model</string>
+    <string name="nav_title_configuration">Configuration</string>
+
+    <string name="prefs_welcomed">prefs.welcomed</string>
+    <string name="prefs_selected_model">prefs.model.selected_model</string>
+    <string name="prefs_num_threads">prefs.model.num_threads</string>
+    <string name="prefs_run_on_device">prefs.model.device</string>
+    <string name="prefs_use_16_bit">prefs.model.16_bit</string>
+
+    <string name="prefs_default_selected_model">Mobilenet_V2_1.0_224</string>
+    <string name="prefs_default_device">CPU</string>
+
+    <string name="prefs_camera_facing">prefs.camera.facing</string>
+
+    <string name="modelrunner_initfail_dialog_title">Unable to load model</string>
+    <string name="modelrunner_initfail_dialog_message">There was a problem initializing the previous model, falling back to default model and settings</string>
+
+    <string name="modelrunner_model_exception_dialog_title">Unable to change model</string>
+    <string name="modelrunner_settings_exception_dialog_title">Unable to change setting</string>
+    <string name="modelrunner_exception_run_inference_dialog_title">Unable to run the model</string>
+
+    <string name="modelrunner_exception_run_inference_message">There was a problem executing inference with this model, try another one or change the model settings</string>
+    <string name="modelrunner_exception_change_model_message">This was a problem loading the model with the current settings, falling back to previous model"</string>
+    <string name="modelrunner_exception_change_settings_message">This was a problem loading the model with these settings, falling back to previous models"</string>
+    <string name="manage_models">Manage Models</string>
+
+    <string name="model_bundle_name_title">Name</string>
+    <string name="model_bundle_authors_title">Authors</string>
+    <string name="model_bundle_details_title">Details</string>
+    <string name="model_bundle_license_title">License</string>
+    <string name="model_bundle_view_json_button">View JSON</string>
+
+    <string name="manage_models_activity_title">Manage Models</string>
+    <string name="model_bundle_list_title">Manage Models</string>
+
+    <string name="delete_model_button">Delete Model</string>
+
+    <string name="delete_model_dialog_title">Delete Model</string>
+    <string name="delete_model_dialog_message">Are you sure you want to delete the model? This operation cannot be undone.</string>
+    <string name="delete_model_dialog_delete_button">Delete</string>
+    <string name="delete_model_dialog_cancel_button">Cancel</string>
+    <string name="import_model_dialog_title">Import Model</string>
+
+    <string name="import_model_network_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_network_error_dialog_message">A network error occurred, check the url and try again.</string>
+
+    <string name="import_model_file_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_file_error_dialog_message">An error occurred while downloading the model, check the url or wait a few moments and try again.</string>
+
+    <string name="import_model_other_error_dialog_title">Unable to Download Model</string>
+    <string name="import_model_other_error_dialog_message">An error occurred while downloading the model, check the url or wait a few moments and try again.</string>
+
+    <string name="import_model_validation_error_dialog_title">Unable to Validate Model</string>
+    <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.</string>
+
+    <string name="dialog_ok_button">OK</string>
+    <string name="dialog_cancel_button">Cancel</string>
+    <string name="dialog_go_to_settings_button">Go to App Settings</string>
+
+    <string name="welcome_dialog_go_to_settings_title">Camera Permissions</string>
+    <string name="welcome_dialog_go_to_settings_message">Net Runner is a real-time environment for running computer vision machine learning models and cannot function without the camera. Please enable the Camera permission in Settings to continue.</string>
+
+    <string name="image_gallery_dialog_go_to_settings_title">Image Gallery Permissions</string>
+    <string name="image_gallery_dialog_go_to_settings_message">Net Runner requires permission to access your photos. Please enable the Storage permission in Settings to continue.</string>
+
+    <string name="get_started_button">Get Started</string>
+    <string name="net_runner">Net Runner</string>
+    <string name="by">By</string>
+    <string name="about_net_runner">The on device environment for running and evaluating computer vision machine learning models. Net Runner requires access to your camera to get started.</string>
+</resources>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <!-- Name -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/model_bundle_name_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <!-- Author -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/model_bundle_authors_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/authors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <!-- Description -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/model_bundle_details_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <!-- License -->
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/model_bundle_license_title"
+            android:textAllCaps="true"
+            android:textColor="@color/colorAccent"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/license"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:textColor="@color/black"
+            android:textSize="16sp" />
+
+        <!-- More -->
+
+        <Button
+            android:id="@+id/view_json_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="@color/colorAccent"
+            android:text="@string/model_bundle_view_json_button" />
+
+        <Button
+            android:id="@+id/delete_model_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:backgroundTint="@android:color/holo_orange_dark"
+            android:text="@string/delete_model_button"
+            android:visibility="gone" />
+
+        <!-- Actions -->
+
+    </LinearLayout>
+
+</ScrollView>

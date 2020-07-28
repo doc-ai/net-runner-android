@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="top"
+    android:padding="24dp" >
+
+    <TextView
+        android:id="@+id/tensorio_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Models must be packaged for Tensor/IO. Learn more at https://github.com/doc-ai/tensorio"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Enter Model Bundle URL:"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:layout_marginTop="12dp"/>
+
+    <EditText
+        android:id="@+id/url_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textUri"
+        android:imeOptions="actionDone"
+        android:layout_marginStart="-3dp"
+        android:layout_marginEnd="-3dp"
+        />
+
+
+
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:max="100"
+        android:progressTint="@color/colorAccent"
+        android:visibility="invisible" />
+
+
+</LinearLayout>

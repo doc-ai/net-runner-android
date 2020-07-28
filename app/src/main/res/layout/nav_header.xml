@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/nav_header_height"
+    android:background="@android:color/transparent"
+    android:paddingTop="@dimen/padding_nav_header"
+    android:orientation="horizontal"
+    android:theme="@style/ThemeOverlay.AppCompat.Dark">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/nav_header_margin"
+        android:layout_marginBottom="@dimen/nav_header_margin"
+        android:layout_marginStart="@dimen/nav_header_margin_small"
+        android:layout_marginEnd="@dimen/nav_header_margin"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/doc_ai_logo"
+        android:src="@drawable/logo" />
+
+</LinearLayout>
