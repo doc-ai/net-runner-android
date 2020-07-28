@@ -8,7 +8,7 @@ import ai.doc.netrunner.fragments.ModelBundleJsonFragment
 import ai.doc.netrunner.fragments.ModelBundleListFragment
 import ai.doc.netrunner.utilities.ModelManagerUtilities
 import ai.doc.tensorio.core.modelbundle.ModelBundle
-import ai.doc.tensorio.core.modelbundle.Manager
+import ai.doc.tensorio.core.modelbundle.ModelBundleManager
 import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -34,8 +34,8 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         setContentView(R.layout.activity_model_manager)
 
         modelBundlesViewModel.setBundleManagers(
-                Manager(applicationContext, ""),
-                Manager(ModelManagerUtilities.getModelFilesDir(this)))
+                ModelBundleManager(applicationContext, ""),
+                ModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
 
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)

@@ -1,13 +1,13 @@
 package ai.doc.netrunner.viewmodels
 
 import ai.doc.tensorio.core.modelbundle.ModelBundle
-import ai.doc.tensorio.core.modelbundle.Manager
+import ai.doc.tensorio.core.modelbundle.ModelBundleManager
 import androidx.lifecycle.ViewModel
 
 class ModelBundlesViewModel : ViewModel() {
 
-    private lateinit var assetsManager: Manager
-    private lateinit var filesManager: Manager
+    private lateinit var assetsManager: ModelBundleManager
+    private lateinit var filesManager: ModelBundleManager
 
     lateinit var modelIds: List<String>
         private set
@@ -17,7 +17,7 @@ class ModelBundlesViewModel : ViewModel() {
 
     /** You must provide the view model with an assetsManager and a filesManager prior to using it */
 
-    fun setBundleManagers(assetsManager: Manager, filesManager: Manager) {
+    fun setBundleManagers(assetsManager: ModelBundleManager, filesManager: ModelBundleManager) {
         this.assetsManager = assetsManager
         this.filesManager = filesManager
         loadIdsAndBundles()

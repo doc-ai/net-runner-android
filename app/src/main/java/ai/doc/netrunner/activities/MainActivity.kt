@@ -8,12 +8,11 @@ import ai.doc.netrunner.utilities.*
 import ai.doc.netrunner.viewmodels.MainViewModel
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.core.modelbundle.ModelBundle
-
-import ai.doc.tensorio.core.modelbundle.Manager
+import ai.doc.tensorio.core.modelbundle.ModelBundleManager
 import ai.doc.tensorio.tflite.model.TFLiteModel
+
 import android.app.Activity
 import android.content.Context
-
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -126,8 +125,8 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         // Load the Model
 
         modelBundlesViewModel.setBundleManagers(
-                Manager(applicationContext, ""),
-                Manager(ModelManagerUtilities.getModelFilesDir(this)))
+                ModelBundleManager(applicationContext, ""),
+                ModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
 
         try {
             val bundle = modelBundlesViewModel.bundleWithId(selectedModel)
