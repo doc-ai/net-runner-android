@@ -7,8 +7,9 @@ import ai.doc.netrunner.fragments.ModelBundleFragment
 import ai.doc.netrunner.fragments.ModelBundleJsonFragment
 import ai.doc.netrunner.fragments.ModelBundleListFragment
 import ai.doc.netrunner.utilities.ModelManagerUtilities
+import ai.doc.tensorio.core.modelbundle.FileModelBundle
 import ai.doc.tensorio.core.modelbundle.ModelBundle
-import ai.doc.tensorio.core.modelbundle.ModelBundleManager
+import ai.doc.tensorio.core.modelbundle.ModelBundlesManager
 import android.app.Activity
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -34,8 +35,8 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         setContentView(R.layout.activity_model_manager)
 
         modelBundlesViewModel.setBundleManagers(
-                ModelBundleManager(applicationContext, ""),
-                ModelBundleManager(ModelManagerUtilities.getModelFilesDir(this)))
+                ModelBundlesManager.managerWithAssets(applicationContext, ""),
+                ModelBundlesManager.managerWithFiles(ModelManagerUtilities.getModelFilesDir(this)))
 
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
         supportActionBar?.setHomeButtonEnabled(true)
@@ -85,7 +86,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
     override fun onDeleteModelSelected(modelBundle: ModelBundle) {
         supportFragmentManager.popBackStack()
 
-        ModelManagerUtilities.deleteModelBundle(modelBundle)
+        ModelManagerUtilities.deleteModelBundle(modelBundle as FileModelBundle)
         modelBundlesViewModel.reloadManagers()
         setDidUpdateModels()
 
