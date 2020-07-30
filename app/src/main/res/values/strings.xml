@@ -71,7 +71,7 @@
     <string name="import_model_other_error_dialog_message">An error occurred while downloading the model, check the url or wait a few moments and try again.</string>
 
     <string name="import_model_validation_error_dialog_title">Unable to Validate Model</string>
-    <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and whose filename and model identifier are unique.</string>
+    <string name="import_model_validation_error_dialog_message">Ensure the zip file contains a single .tiobundle folder whose contents have been correctly packaged and with a valid mode.json file.</string>
 
     <string name="dialog_ok_button">OK</string>
     <string name="dialog_cancel_button">Cancel</string>
