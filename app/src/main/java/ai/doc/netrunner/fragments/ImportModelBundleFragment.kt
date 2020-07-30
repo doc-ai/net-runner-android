@@ -5,7 +5,9 @@ import ai.doc.netrunner.retrofit.NetRunnerService
 import ai.doc.netrunner.utilities.ModelManagerUtilities
 import ai.doc.netrunner.utilities.unzip
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
-import ai.doc.tensorio.core.modelbundle.ModelBundleValidator
+import ai.doc.tensorio.core.model.Model.ModelException
+import ai.doc.tensorio.core.modelbundle.ModelBundle
+import ai.doc.tensorio.core.modelbundle.ModelBundle.ModelBundleException
 import ai.doc.tensorio.core.modelbundle.ModelBundleValidator.ValidatorException
 import android.app.Dialog
 import android.content.Context
@@ -17,18 +19,18 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.fragment.app.DialogFragment
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import kotlinx.coroutines.*
-
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
-
 import retrofit2.Retrofit
 import retrofit2.http.Url
-import java.io.*
-import java.lang.Exception
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.net.ConnectException
 import java.util.*
 
@@ -140,7 +142,7 @@ class ImportModelBundleFragment : DialogFragment() {
             val modelBundleDir = unzip(fileDestination)
 
             // Validate Model Bundle
-            // Disabled until fix is found, see #83
+            // Disabled until fix is found, for now just try to load bundle and model, see #83
 
 //            val validator = ModelBundleValidator.validatorWithFile(requireContext(), modelBundleDir)
 //
@@ -148,6 +150,12 @@ class ImportModelBundleFragment : DialogFragment() {
 //                // Reject models with non-unique identifiers, TODO: and non-unique filenames, currently fails on copy
 //                !modelBundlesViewModel.modelIds.contains(json.getString("id"))
 //            }
+
+            val bundle = ModelBundle.bundleWithFile(modelBundleDir)
+            val model = bundle.newModel()
+
+            model.load()
+            model.unload()
 
             // Copy To Models Dir
 
@@ -163,6 +171,10 @@ class ImportModelBundleFragment : DialogFragment() {
         } catch (e: IOException) {
             showFileDownloadErrorAlert()
         } catch (e: ArrayIndexOutOfBoundsException) {
+            showModelBundleErrorAlert()
+        } catch (e: ModelBundleException) {
+            showModelBundleErrorAlert()
+        } catch (e: ModelException) {
             showModelBundleErrorAlert()
         } catch (e: ValidatorException) {
             showModelBundleErrorAlert()
