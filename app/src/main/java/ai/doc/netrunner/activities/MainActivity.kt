@@ -317,7 +317,6 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         // Model Management
 
         (nav.menu.findItem(R.id.nav_import_model)).setOnMenuItemClickListener {
-            (findViewById<View>(R.id.drawer_layout) as DrawerLayout).closeDrawer(GravityCompat.START)
             startActivityForResult(Intent(this, ModelManagerActivity::class.java), MODEL_MANAGER_ACTIVITY)
             return@setOnMenuItemClickListener true
         }
