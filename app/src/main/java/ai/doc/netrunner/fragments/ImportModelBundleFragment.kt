@@ -140,13 +140,14 @@ class ImportModelBundleFragment : DialogFragment() {
             val modelBundleDir = unzip(fileDestination)
 
             // Validate Model Bundle
+            // Disabled until fix is found, see #83
 
-            val validator = ModelBundleValidator(requireContext(), modelBundleDir)
-
-            validator.validate() {_, json ->
-                // Reject models with non-unique identifiers, TODO: and non-unique filenames, currently fails on copy
-                !modelBundlesViewModel.modelIds.contains(json.getString("id"))
-            }
+//            val validator = ModelBundleValidator.validatorWithFile(requireContext(), modelBundleDir)
+//
+//            validator.validate() {_, json ->
+//                // Reject models with non-unique identifiers, TODO: and non-unique filenames, currently fails on copy
+//                !modelBundlesViewModel.modelIds.contains(json.getString("id"))
+//            }
 
             // Copy To Models Dir
 
