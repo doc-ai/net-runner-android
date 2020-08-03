@@ -8,7 +8,6 @@ import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.core.model.Model.ModelException
 import ai.doc.tensorio.core.modelbundle.ModelBundle
 import ai.doc.tensorio.core.modelbundle.ModelBundle.ModelBundleException
-import ai.doc.tensorio.core.modelbundle.ModelBundleValidator.ValidatorException
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
@@ -175,8 +174,6 @@ class ImportModelBundleFragment : DialogFragment() {
         } catch (e: ModelBundleException) {
             showModelBundleErrorAlert()
         } catch (e: ModelException) {
-            showModelBundleErrorAlert()
-        } catch (e: ValidatorException) {
             showModelBundleErrorAlert()
         } catch (e: FileAlreadyExistsException) {
             showModelBundleErrorAlert()
