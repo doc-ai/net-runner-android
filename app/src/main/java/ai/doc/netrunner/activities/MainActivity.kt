@@ -467,7 +467,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
             val options = BitmapFactory.Options().apply {
                 inPreferredConfig = Bitmap.Config.ARGB_8888
             }
-
+            
             viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
 
             changeTab(Tab.SinglePhoto)
