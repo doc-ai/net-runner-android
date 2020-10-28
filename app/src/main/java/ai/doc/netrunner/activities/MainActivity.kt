@@ -536,6 +536,10 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     }
 
     private fun showTakenPhotoResults() {
+        if (takePhotoUri == null) {
+            return
+        }
+
         val orientation = exifOrientation(takePhotoUri!!)
         val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, takePhotoUri!!)
         viewModel.bitmap = orientedPhoto(bitmap, orientation)
