@@ -1,16 +1,17 @@
 package ai.doc.netrunner.activities
 
-import ai.doc.netrunner.*
-import ai.doc.netrunner.fragments.*
-import ai.doc.netrunner.viewmodels.MainViewModel.Tab
+import ai.doc.netrunner.R
+import ai.doc.netrunner.fragments.LiveCameraTabFragment
+import ai.doc.netrunner.fragments.SingleImageTabFragment
+import ai.doc.netrunner.fragments.WelcomeFragment
 import ai.doc.netrunner.outputhandler.OutputHandlerManager
 import ai.doc.netrunner.utilities.*
 import ai.doc.netrunner.viewmodels.MainViewModel
+import ai.doc.netrunner.viewmodels.MainViewModel.Tab
 import ai.doc.netrunner.viewmodels.ModelBundlesViewModel
 import ai.doc.tensorio.core.modelbundle.ModelBundle
 import ai.doc.tensorio.core.modelbundle.ModelBundlesManager
 import ai.doc.tensorio.tflite.model.TFLiteModel
-
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -19,6 +20,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -29,7 +31,6 @@ import android.view.ViewGroup
 import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
 import androidx.annotation.LayoutRes
-
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
@@ -38,16 +39,14 @@ import androidx.core.content.FileProvider
 import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-
 import com.google.android.material.navigation.NavigationView
 import java.io.File
-
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 private const val READ_EXTERNAL_STORAGE_PERMISSIONS_REQUEST = 1001
 private const val LIVE_CAMERA_PERMISSIONS_REQUEST = 2001
@@ -140,7 +139,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
             viewModel.modelRunner.use16Bit = use16Bit
 
             model.load()
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             alertInitModelRunnerException()
             resetSettings()
             initModelRunner()
@@ -209,7 +208,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     private val modelRunnerExceptionHandler: Thread.UncaughtExceptionHandler by lazy {
         Thread.UncaughtExceptionHandler() { _, _ ->
             HandlerUtilities.main(Runnable {
-                 viewModel.modelRunner.model.unload()
+                viewModel.modelRunner.model.unload()
                 alertInferenceException()
                 viewModel.modelRunner.reset()
             })
@@ -460,14 +459,14 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         val image = data?.data ?: return
         val filePath = arrayOf(MediaStore.Images.Media.DATA)
 
-        this.contentResolver.query(image, filePath, null, null, null)?.let {cursor ->
+        this.contentResolver.query(image, filePath, null, null, null)?.let { cursor ->
             cursor.moveToFirst()
 
             val imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]))
             val options = BitmapFactory.Options().apply {
                 inPreferredConfig = Bitmap.Config.ARGB_8888
             }
-            
+
             viewModel.bitmap = BitmapFactory.decodeFile(imagePath, options)
 
             changeTab(Tab.SinglePhoto)
@@ -533,12 +532,41 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
     @Throws(IOException::class)
     private fun createTempTakenPhotoFile(): File {
         val timestamp: String = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        return File.createTempFile(timestamp,".jpg", filesDir)
+        return File.createTempFile(timestamp, ".jpg", filesDir)
     }
 
     private fun showTakenPhotoResults() {
-        viewModel.bitmap = MediaStore.Images.Media.getBitmap(contentResolver, takePhotoUri)
+        val orientation = exifOrientation(takePhotoUri!!)
+        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, takePhotoUri!!)
+        viewModel.bitmap = orientedPhoto(bitmap, orientation)
         changeTab(Tab.SinglePhoto)
+    }
+
+    private fun exifOrientation(photoUri: Uri): Int {
+        val stream = applicationContext.contentResolver.openInputStream(photoUri) ?: return 0
+        val ei = ExifInterface(stream)
+        return ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED)
+    }
+
+    private fun orientedPhoto(bitmap: Bitmap, orientation: Int): Bitmap {
+        return when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 ->
+                rotateImage(bitmap, 90f)
+            ExifInterface.ORIENTATION_ROTATE_180 ->
+                rotateImage(bitmap, 180f)
+            ExifInterface.ORIENTATION_ROTATE_270 ->
+                rotateImage(bitmap, 270f)
+            ExifInterface.ORIENTATION_NORMAL ->
+                bitmap
+            else ->
+                bitmap
+        }
+    }
+
+    private fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(angle)
+        return Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
     }
 
     //endregion
@@ -663,7 +691,7 @@ class MainActivity : AppCompatActivity(), WelcomeFragment.Callbacks {
         return supportFragmentManager.findFragmentById(id) as? T
     }
 
-    private fun restartingInference(around: ()->Unit) {
+    private fun restartingInference(around: () -> Unit) {
         child<ModelRunnerWatcher>(R.id.container)?.stopRunning()
         around()
         child<ModelRunnerWatcher>(R.id.container)?.startRunning()
