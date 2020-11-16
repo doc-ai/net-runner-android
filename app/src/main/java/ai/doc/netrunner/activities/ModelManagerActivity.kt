@@ -55,7 +55,7 @@ class ModelManagerActivity : AppCompatActivity(), ModelBundleListFragment.Callba
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item?.itemId) {
             android.R.id.home ->
                 // Let the active fragment handle it
